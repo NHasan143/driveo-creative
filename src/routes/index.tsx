@@ -11,10 +11,10 @@ import { LanguageProvider, languages, useLanguage, type LanguageCode } from "@/l
 import businessImage from "../assets/fleet-business-2026.jpg";
 import firstImage from "../assets/fleet-first-2026-front.jpg";
 import vanImage from "../assets/fleet-van-vle.jpg";
-import logoAsset from "../assets/driveo-logo.jpg.asset.json";
-import cityJourneyAsset from "../assets/driveo-city-journey.mp4.asset.json";
-import sofiaDubaiAsset from "../assets/driveo-sofia-dubai.mp4.asset.json";
-import journeyPosterAsset from "../assets/driveo-journey-poster.jpg.asset.json";
+import logoImage from "../assets/driveo-logo.jpg";
+import cityJourneyVideo from "../assets/driveo-city-journey.mp4";
+import sofiaDubaiVideo from "../assets/driveo-sofia-dubai.mp4";
+import journeyPosterImage from "../assets/driveo-journey-poster.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [
@@ -70,12 +70,12 @@ const cityValues = ["London", "Paris", "Bulgaria", "Dubai"] as const;
 type VehicleClass = (typeof vehicleValues)[number];
 
 function BrandMark({ className = "" }: { className?: string }) {
-  return <span className={`brand-mark ${className}`}><img src={logoAsset.url} alt="Driveo" width={768} height={768} /></span>;
+  return <span className={`brand-mark ${className}`}><img src={logoImage} alt="Driveo" width={768} height={768} /></span>;
 }
 function HeroJourney({ label }: { label: string }) {
   const [chapter, setChapter] = useState(0);
-  const journeys = [cityJourneyAsset.url, sofiaDubaiAsset.url];
-  return <video key={chapter} className="hero-video" autoPlay muted playsInline preload="auto" poster={journeyPosterAsset.url} onEnded={() => setChapter((chapter + 1) % journeys.length)} aria-label={label}><source src={journeys[chapter]} type="video/mp4" /></video>;
+  const journeys = [cityJourneyVideo, sofiaDubaiVideo];
+  return <video key={chapter} className="hero-video" autoPlay muted playsInline preload="auto" poster={journeyPosterImage} onEnded={() => setChapter((chapter + 1) % journeys.length)} aria-label={label}><source src={journeys[chapter]} type="video/mp4" /></video>;
 }
 function QuoteLink({ children, className = "button-primary" }: { children: React.ReactNode; className?: string }) {
   return <a href="#quote" className={className}>{children}</a>;

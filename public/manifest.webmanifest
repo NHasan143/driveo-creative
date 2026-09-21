@@ -1,0 +1,14 @@
+{
+  "name": "Driveo Exclusive Limited",
+  "short_name": "Driveo",
+  "description": "Fixed-price private chauffeur travel in London, Paris, Bulgaria and Dubai.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#12100e",
+  "theme_color": "#12100e",
+  "icons": [
+    { "src": "/app-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/app-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

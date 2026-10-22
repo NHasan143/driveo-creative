@@ -115,6 +115,8 @@ docker-compose.override.yml
 .claude
 .antigravity
 .gemini
+#  commenting github cicd for now.
+.github
 # ==== Coverage & test output ==============================================
 coverage/
 

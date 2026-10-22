@@ -1,0 +1,221 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------ */
+/* Design tokens                                                       */
+/* ------------------------------------------------------------------ */
+
+:root {
+  --background: oklch(14.5% 0.008 55);
+  --foreground: oklch(93% 0.019 78);
+  --card: oklch(19% 0.011 55);
+  --card-foreground: oklch(93% 0.019 78);
+  --primary: oklch(75.5% 0.095 56);
+  --primary-foreground: oklch(14.5% 0.008 55);
+  --secondary: oklch(19% 0.011 55);
+  --secondary-foreground: oklch(93% 0.019 78);
+  --muted: oklch(23% 0.014 55);
+  --muted-foreground: oklch(69% 0.022 73);
+  --accent: var(--primary);
+  --accent-foreground: oklch(14.5% 0.008 55);
+  --destructive: oklch(62% 0.2 25);
+  --destructive-foreground: oklch(98% 0 0);
+  --border: oklch(93% 0.019 78 / 0.12);
+  --input: oklch(93% 0.019 78 / 0.18);
+  --ring: var(--primary);
+
+  --ease-out-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --header-height: 5rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --font-sans: var(--font-manrope), var(--font-arabic), system-ui, sans-serif;
+  --font-display: var(--font-fraunces), var(--font-arabic), Georgia, serif;
+  --font-mono: var(--font-space-mono), var(--font-arabic), ui-monospace, monospace;
+}
+
+/* ------------------------------------------------------------------ */
+/* Base                                                                */
+/* ------------------------------------------------------------------ */
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: var(--header-height);
+    background: var(--background);
+    color-scheme: dark;
+  }
+
+  body {
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 1px solid var(--ring);
+    outline-offset: 3px;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Shared primitives (reused across features)                          */
+/* ------------------------------------------------------------------ */
+
+@layer components {
+  .site-shell {
+    width: min(100% - 3rem, 1320px);
+    margin-inline: auto;
+  }
+
+  .section-band {
+    padding-block: 7rem;
+  }
+
+  .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .eyebrow > .eyebrow-rule {
+    width: 2rem;
+    height: 1px;
+    background: var(--primary);
+  }
+
+  .mono-label {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+  }
+
+  .section-title {
+    max-width: 18ch;
+    margin-top: 1rem;
+    font-family: var(--font-display);
+    font-size: clamp(2.65rem, 5vw, 4.8rem);
+    font-weight: 500;
+    line-height: 0.98;
+  }
+
+  .card-title {
+    margin-top: 1rem;
+    font-family: var(--font-display);
+    font-size: 1.8rem;
+    font-weight: 500;
+  }
+
+  .body-muted {
+    margin-top: 0.75rem;
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: var(--muted-foreground);
+  }
+
+  .social-icon {
+    display: inline-grid;
+    flex: 0 0 2.65rem;
+    place-items: center;
+    width: 2.65rem;
+    height: 2.65rem;
+    padding: 0;
+    border: 1px solid color-mix(in oklab, var(--primary) 48%, transparent);
+    border-radius: 50%;
+    color: var(--primary);
+    background: color-mix(in oklab, var(--background) 72%, transparent);
+    transition:
+      color 0.25s,
+      background 0.25s,
+      border-color 0.25s,
+      transform 0.25s;
+  }
+
+  .social-icon svg {
+    width: 1.15rem;
+    height: 1.15rem;
+  }
+
+  .social-icon:hover {
+    color: var(--primary-foreground);
+    background: var(--primary);
+    border-color: var(--primary);
+    transform: translateY(-3px);
+  }
+}
+
+@media (width <= 639px) {
+  .site-shell {
+    width: min(100% - 2rem, 1320px);
+  }
+
+  .section-band {
+    padding-block: 5rem;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Motion                                                              */
+/* ------------------------------------------------------------------ */
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-rise {
+  animation: rise 0.8s var(--ease-out-soft) both;
+}
+
+.animate-rise-delay {
+  animation: rise 1s var(--ease-out-soft) 0.12s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  ::before,
+  ::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

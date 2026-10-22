@@ -1,0 +1,91 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 0.75rem;
+  padding: 0.7rem 1.1rem;
+  border: 1px solid color-mix(in oklab, var(--primary) 48%, transparent);
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--background) 72%, transparent);
+  color: var(--primary);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    color 0.25s,
+    background 0.25s,
+    border-color 0.25s,
+    transform 0.25s;
+}
+
+.button:hover {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  transform: translateY(-2px);
+}
+
+.button svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: color-mix(in oklab, var(--background) 88%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.content {
+  position: relative;
+  width: min(100%, 24rem);
+  padding: 2rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow: 0 30px 80px color-mix(in oklab, var(--background) 60%, transparent);
+  text-align: start;
+}
+
+.content h3 {
+  margin-bottom: 1rem;
+  font-family: var(--font-display);
+  font-size: 1.9rem;
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+.content p {
+  line-height: 1.7;
+  color: var(--muted-foreground);
+}
+
+.close {
+  position: absolute;
+  top: 0.75rem;
+  inset-inline-end: 0.75rem;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    background 0.2s;
+}
+
+.close:hover {
+  background: var(--secondary);
+  color: var(--foreground);
+}

@@ -1,35 +1,120 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# Driveo Exclusive platform — repository-wide ignore rules.
+# Each app keeps its own .gitignore for app-specific output (see frontend/.gitignore).
 
-node_modules
-dist
-dist-ssr
-.output
-.vinxi
-.tanstack/**
-.nitro
-*.local
+# ==== Separate repositories ===============================================
+# Lovable prototype: design reference with its own git history
+# (https://github.com/NHasan143/driveo-creative). Never commit it here.
+/driveo-creative/
 
-# Wrangler / Cloudflare
-.wrangler/
-.dev.vars
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# Environment
+# ==== Secrets & local configuration =======================================
 .env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+!debug.keystore
+secrets/
+credentials*.json
+service-account*.json
+google-services.json
+GoogleService-Info.plist
+
+# ==== Operating systems ===================================================
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# ==== Editors & IDEs ======================================================
+.idea/
+*.iml
+*.swp
+*.swo
+*~
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+*.sublime-workspace
+
+# Claude Code: share project config, keep personal settings local
+.claude/settings.local.json
+
+# ==== Logs & temp =========================================================
+logs/
+*.log
+tmp/
+.tmp/
+*.tmp
+*.bak
+
+# ==== Node (frontend, mobile) =============================================
+node_modules/
+.npm/
+.pnpm-store/
+.eslintcache
+
+# ==== Python / Django (backend) ===========================================
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.python-version
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+celerybeat-schedule*
+celerybeat.pid
+db.sqlite3
+db.sqlite3-journal
+/backend/staticfiles/
+/backend/media/
+
+# ==== Mobile (React + Capacitor) ==========================================
+/mobile/dist/
+/mobile/android/.gradle/
+/mobile/android/build/
+/mobile/android/app/build/
+/mobile/android/local.properties
+/mobile/android/app/release/
+/mobile/ios/App/Pods/
+/mobile/ios/App/build/
+/mobile/ios/App/App/public/
+/mobile/ios/DerivedData/
+xcuserdata/
+*.xcuserstate
+*.apk
+*.aab
+*.ipa
+
+# ==== Infrastructure ======================================================
+docker-compose.override.yml
+/infra/**/data/
+/infra/**/backups/
+*.dump
+*.sql.gz
+.terraform/
+*.tfstate
+*.tfstate.*
+
+.claude
+.antigravity
+.gemini
+# ==== Coverage & test output ==============================================
+coverage/
+

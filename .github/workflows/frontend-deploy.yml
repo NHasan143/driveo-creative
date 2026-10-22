@@ -1,0 +1,181 @@
+# Website delivery: verify → build & publish image to GHCR → deploy to the VPS.
+#
+# Runs on every push to main that touches the website (deploys to production),
+# or manually for any environment. Configuration lives in GitHub Environments
+# (Settings → Environments → staging / production):
+#
+#   Variables  NEXT_PUBLIC_SITE_URL      public origin, e.g. https://driveoexclusive.com
+#              NEXT_PUBLIC_API_BASE_URL  Django API base, e.g. https://driveoexclusive.com/api
+#              DEPLOY_PATH               directory on the server holding docker-compose.yml
+#              ALLOW_MOCK_DEPLOY         "true" only for preview environments without an API
+#   Secrets    DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY, DEPLOY_KNOWN_HOSTS
+#              DEPLOY_PORT (optional, default 22)
+#
+# Until DEPLOY_HOST is set the image is still published, but the deploy job is skipped.
+name: Frontend Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-ci.yml"
+      - ".github/workflows/frontend-deploy.yml"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        type: environment
+        default: production
+
+permissions:
+  contents: read
+
+# Never run two deployments to the same environment at once; let a running one finish.
+concurrency:
+  group: frontend-deploy-${{ inputs.environment || 'production' }}
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/frontend-ci.yml
+
+  publish:
+    name: Build & publish image
+    needs: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: ${{ inputs.environment || 'production' }}
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.name.outputs.image }}@${{ steps.build.outputs.digest }}
+      mock: ${{ steps.mode.outputs.mock }}
+    steps:
+      - uses: actions/checkout@v7
+
+      # Registry paths must be lowercase; GitHub owner names may not be.
+      - name: Resolve image name
+        id: name
+        env:
+          OWNER: ${{ github.repository_owner }}
+        run: echo "image=ghcr.io/${OWNER,,}/driveo-frontend" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve API mode
+        id: mode
+        env:
+          API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}
+        run: |
+          if [ -z "$API_BASE_URL" ]; then
+            echo "mock=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::NEXT_PUBLIC_API_BASE_URL is not set for this environment; the image is built in mock mode and quote requests will NOT reach the business."
+          else
+            echo "mock=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Image tags
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ${{ steps.name.outputs.image }}
+          tags: |
+            type=sha,format=short
+            type=raw,value=${{ inputs.environment || 'production' }}
+
+      - name: Build & push
+        id: build
+        uses: docker/build-push-action@v7
+        with:
+          context: frontend
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL }}
+            NEXT_PUBLIC_API_BASE_URL=${{ vars.NEXT_PUBLIC_API_BASE_URL }}
+            NEXT_PUBLIC_API_MOCK=${{ steps.mode.outputs.mock }}
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,scope=frontend,mode=max
+
+  deploy:
+    name: Deploy to ${{ inputs.environment || 'production' }}
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: ${{ inputs.environment || 'production' }}
+    steps:
+      - name: Check deployment prerequisites
+        id: gate
+        env:
+          HAS_HOST: ${{ secrets.DEPLOY_HOST != '' }}
+          MOCK: ${{ needs.publish.outputs.mock }}
+          ALLOW_MOCK: ${{ vars.ALLOW_MOCK_DEPLOY }}
+        run: |
+          if [ "$HAS_HOST" != "true" ]; then
+            echo "::notice::DEPLOY_HOST is not configured for this environment; skipping deployment. The image was published."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          elif [ "$MOCK" = "true" ] && [ "$ALLOW_MOCK" != "true" ]; then
+            echo "::error::Refusing to deploy a mock-mode build: set NEXT_PUBLIC_API_BASE_URL, or ALLOW_MOCK_DEPLOY=true for a preview environment."
+            exit 1
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Configure SSH
+        if: steps.gate.outputs.skip == 'false'
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Pull & restart frontend container
+        if: steps.gate.outputs.skip == 'false'
+        env:
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          USER: ${{ secrets.DEPLOY_USER }}
+          PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+          IMAGE: ${{ needs.publish.outputs.image }}
+          REGISTRY_USER: ${{ github.actor }}
+          REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "$PORT" -o StrictHostKeyChecking=yes "$USER@$HOST" \
+            "DEPLOY_PATH='$DEPLOY_PATH' FRONTEND_IMAGE='$IMAGE' REGISTRY_USER='$REGISTRY_USER' sh -s" <<EOF
+          set -eu
+          cd "\$DEPLOY_PATH"
+          echo "$REGISTRY_TOKEN" | docker login ghcr.io -u "\$REGISTRY_USER" --password-stdin
+          FRONTEND_IMAGE="\$FRONTEND_IMAGE" docker compose pull frontend
+          FRONTEND_IMAGE="\$FRONTEND_IMAGE" docker compose up -d --no-deps frontend
+          docker logout ghcr.io
+          docker image prune -f
+          EOF
+
+      - name: Smoke test
+        if: steps.gate.outputs.skip == 'false' && vars.NEXT_PUBLIC_SITE_URL != ''
+        env:
+          SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+        run: |
+          for attempt in 1 2 3 4 5 6; do
+            if curl -fsS -o /dev/null "$SITE_URL/robots.txt" && curl -fsS -o /dev/null "$SITE_URL/en"; then
+              echo "Site is up: $SITE_URL"
+              exit 0
+            fi
+            echo "Waiting for $SITE_URL (attempt $attempt)…"
+            sleep 10
+          done
+          echo "::error::Smoke test failed for $SITE_URL"
+          exit 1

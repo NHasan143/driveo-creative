@@ -1,0 +1,67 @@
+.root {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid color-mix(in oklab, var(--primary) 45%, transparent);
+  border-radius: 999px;
+  color: var(--foreground);
+  transition:
+    border-color 0.25s,
+    color 0.25s,
+    opacity 0.25s;
+}
+
+.root:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.root[data-pending] {
+  opacity: 0.6;
+}
+
+.root svg {
+  flex: none;
+  width: 0.9rem;
+  height: 0.9rem;
+  opacity: 0.75;
+}
+
+.root select {
+  appearance: none;
+  padding-inline-end: 0.1rem;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.root option {
+  background: var(--background);
+  color: var(--foreground);
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+@media (width <= 639px) {
+  .root {
+    padding: 0.35rem 0.45rem;
+  }
+
+  .chevron {
+    display: none;
+  }
+
+  .root select {
+    max-width: 5.2rem;
+    font-size: 0.55rem;
+    letter-spacing: 0.06em;
+  }
+}

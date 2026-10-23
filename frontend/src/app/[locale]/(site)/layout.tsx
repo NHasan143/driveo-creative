@@ -11,7 +11,7 @@ export default async function SiteLayout({ children }: { children: ReactNode }) 
 
   return (
     <QuotePresetProvider>
-      <SiteHeader locale={locale} nav={t.nav} />
+      <SiteHeader locale={locale} nav={t.nav} services={t.services.items} allServices={t.pages.links.services} />
       {children}
       <SiteFooter
         locale={locale}

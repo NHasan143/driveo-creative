@@ -10,9 +10,11 @@ import { MainNav } from "./main-nav";
 interface SiteHeaderProps {
   locale: Locale;
   nav: Dictionary["nav"];
+  services: Dictionary["services"]["items"];
+  allServices: string;
 }
 
-export function SiteHeader({ locale, nav }: SiteHeaderProps) {
+export function SiteHeader({ locale, nav, services, allServices }: SiteHeaderProps) {
   return (
     <header className="absolute inset-x-0 top-0 z-50 border-b border-border/60 bg-background/45 backdrop-blur-md">
       <div className="site-shell flex h-20 items-center justify-between gap-3">
@@ -23,7 +25,7 @@ export function SiteHeader({ locale, nav }: SiteHeaderProps) {
           </span>
         </Link>
 
-        <MainNav locale={locale} nav={nav} className="hidden items-center gap-8 lg:flex" />
+        <MainNav locale={locale} nav={nav} services={services} allServices={allServices} className="hidden items-center gap-8 lg:flex" />
 
         <div className="flex items-center gap-2">
           <LanguageSwitcher locale={locale} label={nav.language} />
@@ -38,7 +40,9 @@ export function SiteHeader({ locale, nav }: SiteHeaderProps) {
       <MainNav
         locale={locale}
         nav={nav}
-        className="site-shell flex h-10 items-center gap-6 overflow-x-auto border-t border-border/60 lg:hidden"
+        services={services}
+        allServices={allServices}
+        className="site-shell flex min-h-11 flex-wrap items-center gap-x-6 border-t border-border/60 lg:hidden"
         linkClassName="shrink-0 text-[0.6rem]"
       />
     </header>

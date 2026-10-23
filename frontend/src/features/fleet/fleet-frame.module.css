@@ -1,0 +1,63 @@
+.frame {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  padding: 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 0.45rem;
+  background: var(--background);
+  box-shadow: 0 30px 70px color-mix(in oklab, var(--background) 75%, transparent);
+}
+
+.clip {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 0.3rem;
+}
+
+.image {
+  object-fit: cover;
+  transition: transform 0.8s var(--ease-out-soft);
+  animation: drift 8s ease-in-out infinite;
+}
+
+.reflection {
+  position: absolute;
+  inset: 0.7rem;
+  background: linear-gradient(
+    115deg,
+    transparent 38%,
+    color-mix(in oklab, var(--foreground) 13%, transparent) 50%,
+    transparent 62%
+  );
+  transform: translateX(-120%);
+  transition: transform 0.8s;
+}
+
+/* Hovering the surrounding card pauses the drift, zooms in and sweeps light across. */
+:global(article):hover .image {
+  animation-play-state: paused;
+  transform: scale(1.055);
+}
+
+:global(article):hover .reflection {
+  transform: translateX(120%);
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: scale(1.1) translateX(-1.6%);
+  }
+  25% {
+    transform: scale(1.1) translateY(-1.6%);
+  }
+  50% {
+    transform: scale(1.1) translateX(1.6%);
+  }
+  75% {
+    transform: scale(1.1) translateY(1.6%);
+  }
+}

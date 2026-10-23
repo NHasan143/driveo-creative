@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 
 const securityHeaders = [
@@ -14,6 +15,8 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {
+    // This app is self-contained; never let a lockfile in a parent folder become the root.
+    root: path.join(__dirname),
     rules: {
       "*.css": {
         // CSS Modules must keep their module type so class names stay scoped;

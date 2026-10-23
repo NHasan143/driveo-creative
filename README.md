@@ -53,7 +53,8 @@ Legend: 🟢 done · 🟡 in progress · ⚪ not started · 🔒 frozen
 ### Website milestones
 
 - [x] Design ported from Lovable: hero, assurance, services, fleet, cities, process, quote, testimonial, footer
-- [x] Four languages (EN, FR, BG, AR) with locale URLs and right-to-left Arabic
+- [x] Four languages (EN, FR, BG, AR) at `/?lang=xx` URLs, with right-to-left Arabic
+- [x] Inner pages: Services, Fleet, Cities, Process (same design system, each ending in the quote form)
 - [x] SEO: metadata, hreflang, sitemap, robots, JSON-LD, web app manifest
 - [x] Quote form with client validation and a typed API client (mock mode)
 - [x] "Add to Home Screen" (PWA install prompt)
@@ -167,7 +168,7 @@ Source: _Technology Stack & Deployment Architecture_ proposal (v1.0).
 cd frontend
 cp .env.example .env.local
 npm install
-npm run dev            # http://localhost:3000 → redirects to /en
+npm run dev            # http://localhost:3000 → redirects to /?lang=en
 ```
 
 Useful scripts: `npm run build`, `npm run lint`, `npm run typecheck`.
@@ -342,7 +343,8 @@ Record decisions that would surprise a newcomer. Add new entries at the top.
 | --- | --- | --- |
 | 2026-10-22 | CI/CD on GitHub Actions: images in GHCR, deploy over SSH with `docker compose` | No extra services to pay for; matches the Docker/VPS plan; the pipeline refuses mock-mode deploys |
 | 2026-10-22 | Website rebuilt in Next.js instead of extending the Lovable (TanStack Start) code | Matches the agreed stack; better SEO and long-term maintainability |
-| 2026-10-22 | Locale in the URL (`/en`, `/fr`, `/bg`, `/ar`) instead of a client-side switch only | Each language can be indexed by search engines, with hreflang |
+| 2026-10-23 | Language is a query parameter (`/?lang=en`) in public URLs, replacing `/en` paths | Client preference. Each language is still prerendered (the proxy rewrites internally) and indexable via hreflang/canonical. Old `/en` links redirect |
+| 2026-10-22 | Language in the URL instead of a client-side switch only (first as `/en` paths) | Each language can be indexed by search engines, with hreflang |
 | 2026-10-22 | API values are stable snake_case ids; labels live in dictionaries | Renaming or translating labels never breaks stored data |
 | 2026-10-22 | Quote form posts to the Django API; Supabase from the prototype is dropped | One shared backend for web, mobile and admin |
 | 2026-10-22 | Frontend runs in mock mode until the API is ready | Frontend and backend can be built in parallel |
@@ -363,6 +365,29 @@ Record decisions that would surprise a newcomer. Add new entries at the top.
 ## Changelog
 
 Newest first. Follow [Keep a Changelog](https://keepachangelog.com/) headings: Added / Changed / Fixed / Removed.
+
+### 2026-10-23
+
+**Added**
+- `frontend`: Services, Fleet, Cities and Process pages (`/services?lang=xx` …) in all four languages. Each has:
+  - a compact page hero (parallax, breadcrumb, quote CTA);
+  - its own content: per-service inclusions; fleet showcase and comparison table; a city directory;
+    a booking timeline and checklist;
+  - the quote form at the end.
+- `frontend`: "Quote this service / car / journey here" buttons pre-fill the service, vehicle or city in the form.
+- `frontend`: header page links with an active state (a second row on phones). The footer has "Explore"
+  and city links, and the home sections link to the full pages. The sitemap covers all 20 page URLs.
+
+**Changed**
+- `frontend`: the language switcher is now a custom dropdown. It lists English, Français, Български and
+  العربية in their own scripts, matches the button's width and style, and shows the short code
+  (EN/FR/BG/AR) on phones.
+- `frontend`: public URLs now carry the language as `/?lang=en|fr|bg|ar`. Bare `/`, old `/en`-style links
+  and invalid values redirect there, and the choice is saved in a cookie. SEO canonical/hreflang tags and
+  the sitemap use the new URLs.
+
+**Fixed**
+- `frontend`: pinned `turbopack.root` so a stray lockfile in a parent folder can't change the workspace root.
 
 ### 2026-10-22
 

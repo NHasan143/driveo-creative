@@ -1,6 +1,7 @@
 import { BrandMark } from "@/components/brand/brand-mark";
 import { buttonClassName } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { localePath } from "@/i18n/config";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 
 export default async function NotFound() {
@@ -15,7 +16,7 @@ export default async function NotFound() {
         <h1 className="section-title">{notFound.title}</h1>
         <p className="mt-6 leading-7 text-muted-foreground">{notFound.body}</p>
         {/* Plain anchor: a full load resets any client state from the broken route. */}
-        <a href={`/${locale}`} className={buttonClassName({}, "mt-8")}>
+        <a href={localePath(locale)} className={buttonClassName({}, "mt-8")}>
           {notFound.cta}
         </a>
       </div>

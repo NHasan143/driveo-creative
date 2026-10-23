@@ -10,6 +10,7 @@ import {
   HIRE_HOURS,
   SERVICE_TYPES,
   VEHICLE_CLASSES,
+  type City,
   type ServiceType,
   type VehicleClass,
 } from "@/domain/booking";
@@ -17,7 +18,7 @@ import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import { cn } from "@/lib/cn";
 import { useQuoteSubmission } from "../hooks/use-quote-submission";
-import { useQuoteVehicle } from "../quote-vehicle-context";
+import { useQuotePreset } from "../quote-preset-context";
 import type { QuoteRequestInput } from "../schema";
 import { Field, NumberStepper, Select } from "./form-fields";
 import styles from "./quote-form.module.css";
@@ -40,9 +41,10 @@ function todayIso() {
 }
 
 export function QuoteForm({ locale, labels, cityNames }: QuoteFormProps) {
-  const { vehicle, setVehicle } = useQuoteVehicle();
+  // Vehicle, city and service can be pre-filled from elsewhere on the page.
+  const { preset, update: updatePreset, reset: resetPreset } = useQuotePreset();
+  const { vehicle, city, service: serviceType } = preset;
   const { status, reference, submit, reset } = useQuoteSubmission(locale);
-  const [serviceType, setServiceType] = useState<ServiceType | "">("");
   const [passengers, setPassengers] = useState(1);
   const [luggage, setLuggage] = useState(0);
   const [minDate, setMinDate] = useState<string>();
@@ -86,7 +88,7 @@ export function QuoteForm({ locale, labels, cityNames }: QuoteFormProps) {
     });
 
     if (sent) {
-      setServiceType("");
+      resetPreset();
       setPassengers(1);
       setLuggage(0);
     }
@@ -170,7 +172,12 @@ export function QuoteForm({ locale, labels, cityNames }: QuoteFormProps) {
         </Field>
 
         <Field label={labels.city}>
-          <Select name="city" required defaultValue="">
+          <Select
+            name="city"
+            required
+            value={city}
+            onChange={(event) => updatePreset({ city: event.target.value as City })}
+          >
             <option value="" disabled>
               {labels.selectCity}
             </option>
@@ -186,7 +193,7 @@ export function QuoteForm({ locale, labels, cityNames }: QuoteFormProps) {
             name="serviceType"
             required
             value={serviceType}
-            onChange={(event) => setServiceType(event.target.value as ServiceType)}
+            onChange={(event) => updatePreset({ service: event.target.value as ServiceType })}
           >
             <option value="" disabled>
               {labels.selectService}
@@ -204,7 +211,7 @@ export function QuoteForm({ locale, labels, cityNames }: QuoteFormProps) {
             name="vehicleClass"
             required
             value={vehicle}
-            onChange={(event) => setVehicle(event.target.value as VehicleClass)}
+            onChange={(event) => updatePreset({ vehicle: event.target.value as VehicleClass })}
           >
             {VEHICLE_CLASSES.map((option) => (
               <option key={option} value={option}>

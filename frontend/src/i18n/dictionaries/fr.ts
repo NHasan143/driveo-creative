@@ -190,6 +190,136 @@ export const fr: Dictionary = {
     cities: "Villes",
     copyright: "© 2026 Driveo Exclusive Limited",
     motto: "Discrétion · Précision · Silence",
+    explore: "Explorer",
+  },
+  pages: {
+    breadcrumbHome: "Accueil",
+    links: {
+      services: "Tous les services",
+      fleet: "Découvrir la flotte",
+      cities: "Toutes les destinations",
+      process: "Le déroulement complet",
+    },
+    services: {
+      meta: {
+        title: "Services | Driveo Exclusive",
+        description:
+          "Transferts aéroport, trajets point à point, location horaire et événements privés, chacun chiffré personnellement à prix fixe.",
+      },
+      eyebrow: "Services",
+      title: "Quatre façons de voyager. Un seul prix fixe.",
+      intro:
+        "Chaque trajet est organisé et chiffré personnellement. Choisissez le service qui vous convient et nous répondons avec un prix unique tout compris, par écrit.",
+      includedLabel: "Inclus",
+      quoteCta: "Demander pour ce service",
+      included: {
+        airport_transfer: [
+          "Suivi du vol en direct dès le décollage",
+          "Accueil personnalisé dans le terminal",
+          "60 minutes d’attente offertes",
+          "Un prix fixe, confirmé par écrit",
+        ],
+        point_to_point: [
+          "Prix convenu avant le départ",
+          "Du bureau à la résidence, de la ville à la côte",
+          "Chauffeur vérifié en costume et cravate",
+          "Pas de majoration, pas de compteur, pas de surprise",
+        ],
+        hourly_hire: [
+          "De 2 à 16 heures",
+          "15 miles par heure inclus dans le Grand Londres",
+          "Votre chauffeur attend à chaque arrêt",
+          "Réunions, visites et événements",
+        ],
+        private_event: [
+          "Mariages, avant-premières et longs trajets",
+          "Organisé personnellement avec vous",
+          "Chiffré par écrit avant tout engagement",
+          "Discrétion totale pour vous et vos invités",
+        ],
+      },
+      standardEyebrow: "À chaque trajet",
+      standardTitle: "Le standard de la maison",
+    },
+    fleet: {
+      meta: {
+        title: "Flotte | Driveo Exclusive",
+        description:
+          "Business Class, First Class et Business Van : des Mercedes-Benz noires avec des chauffeurs vérifiés en costume.",
+      },
+      eyebrow: "La flotte",
+      title: "Trois classes. Un seul niveau de finition.",
+      intro:
+        "Chaque voiture est noire, impeccable et conduite par un chauffeur vérifié en costume et cravate. Choisissez la classe adaptée au trajet.",
+      passengers: "Passagers",
+      luggage: "Bagages",
+      upTo: "Jusqu’à",
+      featuresLabel: "À bord",
+      features: {
+        business_class: ["Wi-Fi à bord", "Chargeurs", "Eau plate", "Un habitacle silencieux"],
+        first_class: [
+          "Empattement long",
+          "Sièges arrière inclinables",
+          "Vitres teintées",
+          "Zones climatiques séparées",
+        ],
+        business_van: [
+          "Sièges en configuration réunion",
+          "Wi-Fi",
+          "USB-C partout",
+          "De la place pour les bagages",
+        ],
+      },
+      compareEyebrow: "En un coup d’œil",
+      compareTitle: "Comparer les classes",
+      compareClass: "Classe",
+      compareVehicle: "Véhicule",
+    },
+    cities: {
+      meta: {
+        title: "Villes | Driveo Exclusive",
+        description:
+          "Chauffeur privé à Londres, Paris, en Bulgarie et à Dubaï, avec les mêmes chauffeurs vérifiés et la même rigueur de prix fixe.",
+      },
+      eyebrow: "Où nous opérons",
+      title: "Quatre destinations. Un seul standard.",
+      intro:
+        "Où que vous arriviez, vous retrouvez les mêmes chauffeurs vérifiés, des voitures impeccables et la même rigueur de prix fixe.",
+      servicesLabel: "Services",
+      quoteCta: "Demander un trajet ici",
+      standardEyebrow: "Dans chaque ville",
+      standardTitle: "Le même standard partout",
+    },
+    process: {
+      meta: {
+        title: "Comment ça marche | Driveo Exclusive",
+        description:
+          "Envoyez le trajet, recevez un prix fixe par écrit et montez à bord. Comment réserver un chauffeur Driveo.",
+      },
+      eyebrow: "Comment ça marche",
+      title: "Trois étapes, aucune friction.",
+      intro:
+        "De votre premier message jusqu’à l’arrivée, une personne réelle s’occupe de votre trajet.",
+      details: [
+        "Indiquez la ville, le service, la date, l’heure et les arrêts. Ajoutez un numéro de vol ou toute information utile dans les notes.",
+        "Votre demande est enregistrée en toute sécurité et étudiée par un concierge Driveo, qui répond avec un prix unique tout compris, par écrit.",
+        "Votre chauffeur arrive en avance, en costume et cravate. Pour les prises en charge à l’aéroport, nous suivons votre vol et vous accueillons dans le terminal.",
+      ],
+      checklistEyebrow: "Avant votre demande",
+      checklistTitle: "Ce que nous vous demanderons",
+      checklistIntro:
+        "Environ soixante secondes sur le formulaire. En cas de doute, laissez une note et nous vous aiderons.",
+      checklist: [
+        "Ville et service",
+        "Date et heure de prise en charge",
+        "Lieu de prise en charge et destination, ou nombre d’heures pour la location horaire",
+        "Nombre de passagers et de bagages",
+        "Classe de véhicule souhaitée, ou laissez-nous conseiller",
+        "Numéro de vol ou demandes particulières (facultatif)",
+      ],
+      commitmentsEyebrow: "Nos engagements",
+      commitmentsTitle: "Ce sur quoi vous pouvez compter",
+    },
   },
   notFound: {
     eyebrow: "Erreur 404",

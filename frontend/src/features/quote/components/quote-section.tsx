@@ -3,7 +3,7 @@ import { Reveal } from "@/components/motion/reveal";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/get-dictionary";
-import { QUOTE_SECTION_ID } from "../quote-vehicle-context";
+import { QUOTE_SECTION_ID } from "../quote-preset-context";
 import { QuoteForm } from "./quote-form";
 import styles from "./quote-section.module.css";
 

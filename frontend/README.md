@@ -13,7 +13,7 @@ It is built from the approved Lovable design and talks to the shared Django REST
 ```bash
 cp .env.example .env.local   # then adjust values
 npm install
-npm run dev                  # http://localhost:3000 → redirects to /en
+npm run dev                  # http://localhost:3000 → redirects to /?lang=en
 ```
 
 | Script | Purpose |
@@ -23,6 +23,11 @@ npm run dev                  # http://localhost:3000 → redirects to /en
 | `npm start` | Serve the production build |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | TypeScript check |
+
+> **Don't run `npm run build` while `npm run dev` is running.** Both write to `.next/`, and the
+> dev server's cache gets corrupted. The symptoms are pages reloading in a loop and
+> "Unexpected end of JSON input" errors. If it happens, stop the dev server, delete `.next/`
+> and start it again.
 
 ## Environment
 
@@ -40,26 +45,36 @@ npm run dev                  # http://localhost:3000 → redirects to /en
 src/
 ├── app/                      # Routing only: layouts, pages, metadata routes
 │   ├── [locale]/             # Root layout per language (en, fr, bg, ar), statically generated
-│   │   ├── page.tsx          # Home page: composes feature sections
-│   │   ├── not-found.tsx     # Localized 404
+│   │   ├── (site)/           # Public pages sharing header, footer and quote pre-fill state
+│   │   │   ├── layout.tsx    # SiteHeader + SiteFooter + QuotePresetProvider
+│   │   │   ├── page.tsx      # Home  → /?lang=xx
+│   │   │   ├── services/     # /services?lang=xx
+│   │   │   ├── fleet/        # /fleet?lang=xx
+│   │   │   ├── cities/       # /cities?lang=xx
+│   │   │   └── process/      # /process?lang=xx
+│   │   ├── not-found.tsx     # Localized 404 (outside (site), no header)
 │   │   └── [...rest]/        # Sends unknown paths to the 404
 │   ├── fonts.ts              # next/font (self-hosted Google fonts)
 │   ├── manifest.ts · robots.ts · sitemap.ts
-├── proxy.ts                  # Redirects "/" to the visitor's language (cookie → Accept-Language)
+├── proxy.ts                  # Language routing: "/?lang=fr" is served from app/[locale] (rewrite)
 ├── components/               # Shared, feature-agnostic building blocks
-│   ├── ui/                   # Button, Eyebrow …
-│   ├── layout/               # SiteHeader, SiteFooter, LanguageSwitcher
+│   ├── ui/                   # Button, Eyebrow, ArrowLink, CheckList …
+│   ├── layout/               # SiteHeader, MainNav, SiteFooter, LanguageSwitcher
+│   ├── page/                 # PageHero, SectionHeading (inner-page building blocks)
 │   ├── brand/ · icons/
-│   └── motion/               # GSAP setup, <Reveal>, <ParallaxSurface>
+│   └── motion/               # GSAP setup, <Reveal>, <ScrollFade>, <ParallaxSurface>
 ├── features/                 # Self-contained product areas
 │   ├── home/                 # Hero, assurance, services, cities, process, testimonial
-│   ├── fleet/                # Fleet cards + media config
-│   ├── quote/                # Quote form: schema, API client, hooks, context, UI
+│   ├── services/             # Services page: per-service details
+│   ├── fleet/                # Fleet cards, showcase, comparison table, media config
+│   ├── cities/               # Cities page: city directory
+│   ├── process/              # Process page: timeline, request checklist
+│   ├── quote/                # Quote form: schema, API client, hooks, pre-fill context, UI
 │   └── pwa/                  # "Add to Home Screen"
 ├── domain/booking.ts         # Cities, services, vehicles, capacity rules (stable API ids)
 ├── i18n/                     # Locale config + typed dictionaries
 ├── lib/                      # http client, SEO helpers, cn()
-├── config/                   # env + site constants (contact, socials, assets)
+├── config/                   # env, site constants, navigation (page list)
 └── styles/globals.css        # Design tokens, base styles, shared primitives
 ```
 
@@ -73,6 +88,36 @@ src/
   orbits and the light-on-dark form. Use logical properties (`ps-*`, `inset-inline-*`) so RTL works.
 - **i18n.** Add a language by adding it to `i18n/config.ts` and creating a dictionary typed
   as `Dictionary`. The compiler then flags any missing keys.
+  - **URLs:** the public form is a query parameter: `/?lang=en`, `/?lang=fr`, `/?lang=bg`, `/?lang=ar`.
+    Internally each language is still a statically generated `app/[locale]` route. `proxy.ts`
+    rewrites `/?lang=fr` to `/fr` without changing the address bar, and redirects everything else
+    to that form:
+
+    | Request | Result |
+    | --- | --- |
+    | `/` | 307 → `/?lang=<cookie, else Accept-Language, else en>` |
+    | `/?lang=bg` | 200, Bulgarian page (choice saved in the `NEXT_LOCALE` cookie) |
+    | `/?lang=EN`, `/?lang=xx` | 307 → normalized or detected language |
+    | `/bg`, `/fr/x` (old path links) | 307 → `/?lang=bg`, `/x?lang=fr` |
+
+  - **Building links:** use `localePath(locale)` from `i18n/config.ts`, or `localeUrl()` in
+    `lib/seo/metadata.ts` for absolute URLs. Don't read `usePathname()` for language logic: on
+    rewritten pages it returns the internal path and can cause hydration mismatches.
+  - **Switcher:** the language switcher (`components/layout/language-switcher.tsx`) is a dropdown of
+    real links, each labelled with the language's own name (`localeMeta[code].label`). It supports
+    keyboard navigation (arrow keys, Home/End, Escape) and keeps the scroll position when the
+    language changes.
+- **Adding a page:**
+  1. Create `app/[locale]/(site)/<segment>/page.tsx`. Start with `<PageHero>` and end with `<QuoteSection>`,
+     so the header's "Request quote" link always has a target.
+  2. Add its copy under `pages.<key>` in every dictionary. The compiler flags missing keys.
+  3. Export `generateMetadata` using `buildPageMetadata(locale, meta, "/<segment>")`.
+  4. Add it to `SITE_PAGES` in `config/navigation.ts`. The header, footer and sitemap pick it up from there.
+- **Active page:** navigation reads `useSelectedLayoutSegment()`, not the URL, because the `?lang=`
+  rewrite makes `usePathname()` unreliable.
+- **Quote pre-fill:** `<RequestQuoteButton preset={{ vehicle | city | service }}>` fills the form and
+  scrolls to it. Next.js keeps recently visited pages mounted but hidden (React `<Activity>`), so
+  there can be several `#quote` sections; the scroll targets the visible one.
 - **Domain ids vs labels.** Values sent to the API are stable snake_case ids from
   `domain/booking.ts`. Labels come from the dictionaries.
 - **Motion.** GSAP runs only under `prefers-reduced-motion: no-preference`. The server-rendered

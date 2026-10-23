@@ -1,26 +1,32 @@
+import Link from "next/link";
 import { BrandMark } from "@/components/brand/brand-mark";
 import { socialIcons, WhatsAppIcon } from "@/components/icons/social-icons";
 import { ButtonLink } from "@/components/ui/button";
 import { siteConfig, type SocialNetwork } from "@/config/site";
+import { pagePath, SITE_PAGES } from "@/config/navigation";
 import { CITIES } from "@/domain/booking";
 import { InstallAppButton } from "@/features/pwa/install-app-button";
+import { localePath, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/get-dictionary";
 
 interface SiteFooterProps {
+  locale: Locale;
+  nav: Dictionary["nav"];
   footer: Dictionary["footer"];
   install: Dictionary["install"];
   cityNames: Dictionary["cities"]["names"];
 }
 
 const footerLink = "inline-block text-[0.9rem] text-foreground transition-colors hover:text-accent";
+const listLink = "text-muted-foreground transition-colors hover:text-accent";
 
-export function SiteFooter({ footer, install, cityNames }: SiteFooterProps) {
+export function SiteFooter({ locale, nav, footer, install, cityNames }: SiteFooterProps) {
   const socialNetworks = Object.keys(siteConfig.social) as SocialNetwork[];
 
   return (
     <footer id="contact" className="border-t border-border bg-secondary">
       <div className="site-shell py-16">
-        <div className="grid gap-12 md:grid-cols-[1.5fr_1fr_1fr]">
+        <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-[1.5fr_1.2fr_0.8fr_0.8fr]">
           <div>
             <div className="flex items-center gap-3">
               <BrandMark size="md" />
@@ -78,11 +84,28 @@ export function SiteFooter({ footer, install, cityNames }: SiteFooterProps) {
             </div>
           </div>
 
+          <nav aria-label={footer.explore}>
+            <p className="mono-label">{footer.explore}</p>
+            <ul className="mt-3 text-sm leading-7">
+              {SITE_PAGES.map(({ key, segment }) => (
+                <li key={key}>
+                  <Link href={localePath(locale, pagePath(segment))} className={listLink}>
+                    {nav[key]}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
           <div>
             <p className="mono-label">{footer.cities}</p>
-            <ul className="mt-3 text-sm leading-7 text-muted-foreground">
+            <ul className="mt-3 text-sm leading-7">
               {CITIES.map((city) => (
-                <li key={city}>{cityNames[city]}</li>
+                <li key={city}>
+                  <Link href={`${localePath(locale, "/cities")}#${city}`} className={listLink}>
+                    {cityNames[city]}
+                  </Link>
+                </li>
               ))}
             </ul>
           </div>

@@ -4,7 +4,7 @@
 > why, how, where it stands, and what comes next. It is written for anyone joining the project:
 > developers, designers, the client, or an AI assistant picking up the work.
 >
-> - **Last updated:** 2026-10-22
+> - **Last updated:** 2026-10-23
 > - **Current phase:** Phase 1, Website frontend (≈ 85 % done)
 > - **Next milestone:** Start Phase 2 (Django API) and connect the quote form to it
 >
@@ -181,7 +181,7 @@ Each objective has a definition of done (DoD). Tick it when it's done, and updat
 ### WS1: Website (`frontend/`)
 
 - [x] **W1.1 Port the design.** DoD: every Lovable section rebuilt, and section heights at 1440 px match the original within a few pixels.
-- [x] **W1.2 Internationalisation.** DoD: `/en`, `/fr`, `/bg`, `/ar` statically generated. The language is detected from cookie, then Accept-Language. Arabic is right-to-left. A missing translation key fails the build.
+- [x] **W1.2 Internationalisation.** DoD: every language is statically generated and served at `/?lang=en|fr|bg|ar`. Bare `/` picks the language from the cookie, then Accept-Language. Old `/en` links redirect. The dropdown shows each language in its own script. Arabic is right-to-left. A missing translation key fails the build.
 - [x] **W1.3 SEO.** DoD: per-locale metadata, canonical, hreflang, sitemap, robots, LocalBusiness JSON-LD, manifest.
 - [x] **W1.4 Quote form (client side).** DoD: validation, vehicle capacity limits, hourly-hire flow, honeypot, typed API client, mock mode.
 - [x] **W1.5 Motion.** DoD: GSAP scroll reveals and hero fade plus CSS 3D parallax, all disabled under `prefers-reduced-motion`.
@@ -191,6 +191,7 @@ Each objective has a definition of done (DoD). Tick it when it's done, and updat
 - [ ] **W1.9 Performance pass.** DoD: hero videos compressed and served in modern formats, poster-first loading on mobile, Lighthouse targets from O1 met.
 - [ ] **W1.10 Automated tests.** DoD: unit tests for the schema, DTO mapping and proxy locale logic. Playwright end-to-end tests for the language switch, the fleet → quote preselection and quote submission.
 - [ ] **W1.11 Accessibility audit.** DoD: WCAG 2.1 AA check (contrast, keyboard, screen-reader labels) with issues fixed.
+- [x] **W1.12 Inner pages.** DoD: Services, Fleet, Cities and Process pages in four languages, matching the home design. Each has a page hero, its own content, and the quote form with matching pre-fill. Nav shows the active page, links are in the footer and sitemap, and each page has its own metadata and hreflang.
 
 ### WS2: Backend API and admin (`backend/`)
 
@@ -266,12 +267,15 @@ _Snapshot as of 2026-10-22._
 
 ### Recently completed
 
+- 2026-10-23: Services, Fleet, Cities and Process pages (four languages, quote pre-fill per service, vehicle and city).
+- 2026-10-23: Language dropdown (endonyms, matches the button, keyboard support, keeps scroll position). Public URLs switched to `/?lang=xx`.
+- 2026-10-23: Git repository set up on GitHub (`NHasan143/driveo-creative`); `main` now holds the new platform.
 - 2026-10-22: GitHub Actions CI/CD for the website (PR checks, GHCR image, SSH deploy with safety rails) and Dependabot.
 - 2026-10-22: Next.js frontend built, verified and documented. Root README, `.gitignore` files and this file added.
 
 ### Next up (in priority order)
 
-1. Initialise git, push to GitHub, and activate CI/CD: environments, secrets, branch protection (W6.4, W4.3b).
+1. Activate CI/CD: `production` environment, secrets, branch protection on `main` (W4.3b, W6.4).
 2. Resolve the open questions in §12 that block the backend (notification recipients, email provider, accounts in v1).
 3. Start the backend: project setup, data model and the quote-request endpoint (W2.1–W2.3).
 4. Connect the website to the real endpoint, then add end-to-end tests (Phase 4, W1.10).
@@ -314,7 +318,8 @@ Newest first. The README has the same log for developers. Keep the two in sync.
 | 2026-10-22 | CI/CD on GitHub Actions: GHCR images, SSH + `docker compose` deploy, mock-mode deploys blocked | No paid CI/CD or registry services; fits the Docker/VPS plan; protects against launching without a backend | Self-hosted runner on the VPS; a PaaS (e.g. Vercel) for the website |
 | 2026-10-22 | `driveo-creative/` kept as a read-only reference and git-ignored | Separate repository and stack; avoids accidental commits | Git submodule (unnecessary for a reference) |
 | 2026-10-22 | Website rebuilt in Next.js, not extended from Lovable | Matches the agreed stack; better SEO and maintainability | Keep TanStack Start + Supabase |
-| 2026-10-22 | Language in the URL (`/en` …) with a cookie to remember the choice | Each language can be indexed by search engines; shareable links | Client-only language switch (prototype approach) |
+| 2026-10-23 | Public language URLs use a query parameter (`/?lang=en`) instead of `/en` paths | Client preference. Pages stay prerendered (proxy rewrite) and indexable via canonical/hreflang. Old `/en` links redirect | Keep `/en` path URLs (Google's general recommendation) |
+| 2026-10-22 | Language in the URL with a cookie to remember the choice | Each language can be indexed by search engines; shareable links | Client-only language switch (prototype approach) |
 | 2026-10-22 | API uses stable snake_case ids; labels live in translations | Labels can change or be translated without breaking data | Sending display text (prototype approach) |
 | 2026-10-22 | Frontend mock mode until the API exists | Frontend and backend can be built in parallel | Wait for the backend |
 | 2026-10-22 | Styling: Tailwind for layout, CSS Modules for complex effects, tokens as CSS variables | Faithful port of the custom design while staying maintainable | Rewrite every effect as Tailwind utilities |

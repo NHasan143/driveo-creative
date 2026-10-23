@@ -1,19 +1,27 @@
 import { Reveal } from "@/components/motion/reveal";
-import { Eyebrow } from "@/components/ui/eyebrow";
+import { SectionHeading } from "@/components/page/section-heading";
+import { ArrowLink } from "@/components/ui/arrow-link";
 import { SERVICE_TYPES } from "@/domain/booking";
+import { localePath, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/get-dictionary";
 
-export function ServicesSection({ services }: { services: Dictionary["services"] }) {
+interface ServicesSectionProps {
+  locale: Locale;
+  services: Dictionary["services"];
+  /** Label of the link to the full Services page. */
+  more: string;
+}
+
+export function ServicesSection({ locale, services, more }: ServicesSectionProps) {
   return (
     <section id="services" className="section-band bg-background">
       <div className="site-shell">
-        <Reveal className="grid items-end gap-8 border-b border-border pb-10 md:grid-cols-[1.2fr_0.8fr]">
-          <div>
-            <Eyebrow>{services.eyebrow}</Eyebrow>
-            <h2 className="section-title">{services.title}</h2>
-          </div>
-          <p className="max-w-lg leading-7 text-muted-foreground">{services.intro}</p>
-        </Reveal>
+        <SectionHeading
+          eyebrow={services.eyebrow}
+          title={services.title}
+          intro={services.intro}
+          action={<ArrowLink href={localePath(locale, "/services")}>{more}</ArrowLink>}
+        />
 
         <Reveal
           stagger

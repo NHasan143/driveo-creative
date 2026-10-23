@@ -1,13 +1,13 @@
 import { BrandMark } from "@/components/brand/brand-mark";
 import { WhatsAppIcon } from "@/components/icons/social-icons";
 import { ParallaxSurface } from "@/components/motion/parallax-surface";
+import { ScrollFade } from "@/components/motion/scroll-fade";
 import { buttonClassName } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { siteConfig } from "@/config/site";
 import { CITIES } from "@/domain/booking";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import { cn } from "@/lib/cn";
-import { HeroScrollFade } from "./hero-scroll-fade";
 import { HeroVideo } from "./hero-video";
 import styles from "./hero-section.module.css";
 
@@ -32,8 +32,8 @@ export function HeroSection({ hero, cityNames }: HeroSectionProps) {
       </div>
       <div className={styles.shade} />
 
-      <div className="site-shell relative z-10 flex min-h-[92svh] items-center pt-32 pb-16">
-        <HeroScrollFade className="max-w-4xl">
+      <div className="site-shell relative z-10 flex min-h-[92svh] items-center pt-40 pb-16 lg:pt-32">
+        <ScrollFade className="max-w-4xl">
           <BrandMark
             size="lg"
             priority
@@ -68,7 +68,7 @@ export function HeroSection({ hero, cityNames }: HeroSectionProps) {
               <span key={city}>{cityNames[city]}</span>
             ))}
           </div>
-        </HeroScrollFade>
+        </ScrollFade>
       </div>
 
       <div className={styles.rail} aria-hidden="true">

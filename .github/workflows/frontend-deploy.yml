@@ -170,7 +170,7 @@ jobs:
           SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
         run: |
           for attempt in 1 2 3 4 5 6; do
-            if curl -fsS -o /dev/null "$SITE_URL/robots.txt" && curl -fsS -o /dev/null "$SITE_URL/en"; then
+            if curl -fsS -o /dev/null "$SITE_URL/robots.txt" && curl -fsS -o /dev/null "$SITE_URL/?lang=en"; then
               echo "Site is up: $SITE_URL"
               exit 0
             fi

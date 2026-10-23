@@ -1,11 +1,20 @@
 import { Reveal } from "@/components/motion/reveal";
+import { ArrowLink } from "@/components/ui/arrow-link";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { siteConfig } from "@/config/site";
 import { CITIES } from "@/domain/booking";
+import { localePath, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import styles from "./cities-section.module.css";
 
-export function CitiesSection({ cities }: { cities: Dictionary["cities"] }) {
+interface CitiesSectionProps {
+  locale: Locale;
+  cities: Dictionary["cities"];
+  /** Label of the link to the full Cities page. */
+  more: string;
+}
+
+export function CitiesSection({ locale, cities, more }: CitiesSectionProps) {
   return (
     <section id="cities" className="section-band bg-background">
       <div className="site-shell grid items-center gap-16 lg:grid-cols-[0.8fr_1.2fr]">
@@ -17,6 +26,9 @@ export function CitiesSection({ cities }: { cities: Dictionary["cities"] }) {
             {cities.titleLine2}
           </h2>
           <p className="mt-6 max-w-md leading-7 text-muted-foreground">{cities.copy}</p>
+          <ArrowLink href={localePath(locale, "/cities")} className="mt-6">
+            {more}
+          </ArrowLink>
         </Reveal>
 
         <Reveal stagger className={styles.grid}>

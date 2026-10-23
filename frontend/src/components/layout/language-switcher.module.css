@@ -1,67 +1,143 @@
 .root {
   position: relative;
+  display: flex;
+}
+
+.trigger {
   display: inline-flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.4rem;
-  padding: 0.45rem 0.6rem;
+  /* Never narrower than the menu's widest option, so both edges always line up. */
+  min-width: 7.4rem;
+  min-height: 2.45rem;
+  padding: 0.45rem 0.7rem;
   border: 1px solid color-mix(in oklab, var(--primary) 45%, transparent);
   border-radius: 999px;
   color: var(--foreground);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
   transition:
     border-color 0.25s,
-    color 0.25s,
-    opacity 0.25s;
+    color 0.25s;
 }
 
-.root:hover {
+.trigger:hover,
+.trigger[aria-expanded="true"] {
   border-color: var(--primary);
   color: var(--primary);
 }
 
-.root[data-pending] {
-  opacity: 0.6;
-}
-
-.root svg {
+.trigger svg {
   flex: none;
   width: 0.9rem;
   height: 0.9rem;
   opacity: 0.75;
 }
 
-.root select {
-  appearance: none;
-  padding-inline-end: 0.1rem;
-  border: 0;
-  outline: none;
-  background: transparent;
-  color: inherit;
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  cursor: pointer;
+.chevron {
+  transition: transform 0.25s var(--ease-out-soft);
 }
 
-.root option {
-  background: var(--background);
+.chevron[data-open] {
+  transform: rotate(180deg);
+}
+
+.short {
+  display: none;
+}
+
+/* Same width, type and pill shape as the trigger, so the two read as one control. */
+.menu {
+  position: absolute;
+  top: calc(100% + 0.45rem);
+  inset-inline-end: 0;
+  z-index: 60;
+  width: max-content;
+  min-width: 100%;
+  padding: 0.25rem;
+  border: 1px solid color-mix(in oklab, var(--primary) 45%, transparent);
+  border-radius: 1.2rem;
+  background: color-mix(in oklab, var(--card) 96%, transparent);
+  box-shadow: 0 24px 60px color-mix(in oklab, var(--background) 70%, transparent);
+  backdrop-filter: blur(14px);
+  animation: menu-in 0.18s var(--ease-out-soft);
+}
+
+.menu[hidden] {
+  display: none;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.55rem 0.5rem;
+  border-radius: 999px;
+  line-height: 1rem;
   color: var(--foreground);
-  letter-spacing: normal;
-  text-transform: none;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-align: start;
+  outline: none;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+.option:hover,
+.option:focus-visible {
+  background: var(--muted);
+  color: var(--primary);
+}
+
+.option[aria-current] {
+  color: var(--primary);
+}
+
+.option svg {
+  flex: none;
+  width: 0.8rem;
+  height: 0.8rem;
+}
+
+/* Arabic has no capitals and reads poorly with wide tracking. */
+.option:lang(ar) {
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  letter-spacing: 0;
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (width <= 639px) {
-  .root {
-    padding: 0.35rem 0.45rem;
+  .trigger {
+    min-width: 0;
+    padding: 0.35rem 0.55rem;
+    letter-spacing: 0.08em;
   }
 
-  .chevron {
+  .full {
     display: none;
   }
 
-  .root select {
-    max-width: 5.2rem;
-    font-size: 0.55rem;
-    letter-spacing: 0.06em;
+  .short {
+    display: inline;
   }
 }

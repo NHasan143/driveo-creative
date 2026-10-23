@@ -6,6 +6,7 @@ import { FULL_MOTION, gsap, useGSAP } from "./gsap";
 interface RevealProps {
   children: ReactNode;
   as?: ElementType;
+  id?: string;
   className?: string;
   /** Animate direct children one after another instead of the wrapper as a whole. */
   stagger?: boolean;
@@ -17,7 +18,7 @@ interface RevealProps {
  * Content is rendered visible on the server; motion is applied only when the
  * user has not asked for reduced motion.
  */
-export function Reveal({ children, as: Tag = "div", className, stagger = false, y = 36 }: RevealProps) {
+export function Reveal({ children, as: Tag = "div", id, className, stagger = false, y = 36 }: RevealProps) {
   const ref = useRef<HTMLElement>(null);
 
   useGSAP(
@@ -43,7 +44,7 @@ export function Reveal({ children, as: Tag = "div", className, stagger = false, 
   );
 
   return (
-    <Tag ref={ref} className={className}>
+    <Tag ref={ref} id={id} className={className}>
       {children}
     </Tag>
   );

@@ -3,8 +3,8 @@
 import { useRef, type ReactNode } from "react";
 import { FULL_MOTION, gsap, useGSAP } from "@/components/motion/gsap";
 
-/** Lets the hero copy drift up and dissolve as the visitor scrolls past it. */
-export function HeroScrollFade({ children, className }: { children: ReactNode; className?: string }) {
+/** Lets hero copy drift up and dissolve as the visitor scrolls past its section. */
+export function ScrollFade({ children, className }: { children: ReactNode; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
 
   useGSAP(

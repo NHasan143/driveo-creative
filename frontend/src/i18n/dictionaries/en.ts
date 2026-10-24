@@ -204,6 +204,8 @@ export const en = {
       },
       eyebrow: "Services",
       title: "Four ways to travel. One fixed price.",
+      titleLead: "Four ways to travel.",
+      titleAccent: "One fixed price.",
       intro:
         "Every journey is planned and quoted personally. Choose the service that fits and we reply with one all-inclusive figure, in writing.",
       includedLabel: "Included",

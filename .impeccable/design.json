@@ -1,0 +1,322 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-24T12:59:40.260626+00:00",
+  "title": "Design System: Driveo Exclusive",
+  "extensions": {
+    "colorMeta": {
+      "background": {
+        "role": "neutral",
+        "displayName": "Warm Charcoal",
+        "tonalRamp": [
+          "oklch(15% 0.008 55)",
+          "oklch(25% 0.008 55)",
+          "oklch(35% 0.008 55)",
+          "oklch(45% 0.008 55)",
+          "oklch(55% 0.008 55)",
+          "oklch(65% 0.008 55)",
+          "oklch(80% 0.008 55)",
+          "oklch(95% 0.008 55)"
+        ]
+      },
+      "foreground": {
+        "role": "neutral",
+        "displayName": "Ivory",
+        "tonalRamp": [
+          "oklch(15% 0.019 78)",
+          "oklch(25% 0.019 78)",
+          "oklch(35% 0.019 78)",
+          "oklch(45% 0.019 78)",
+          "oklch(55% 0.019 78)",
+          "oklch(65% 0.019 78)",
+          "oklch(80% 0.019 78)",
+          "oklch(95% 0.019 78)"
+        ]
+      },
+      "primary": {
+        "role": "primary",
+        "displayName": "Copper Gold",
+        "tonalRamp": [
+          "oklch(15% 0.095 56)",
+          "oklch(25% 0.095 56)",
+          "oklch(35% 0.095 56)",
+          "oklch(45% 0.095 56)",
+          "oklch(55% 0.095 56)",
+          "oklch(65% 0.095 56)",
+          "oklch(80% 0.095 56)",
+          "oklch(95% 0.095 56)"
+        ]
+      },
+      "secondary": {
+        "role": "neutral",
+        "displayName": "Raised Charcoal",
+        "tonalRamp": [
+          "oklch(15% 0.011 55)",
+          "oklch(25% 0.011 55)",
+          "oklch(35% 0.011 55)",
+          "oklch(45% 0.011 55)",
+          "oklch(55% 0.011 55)",
+          "oklch(65% 0.011 55)",
+          "oklch(80% 0.011 55)",
+          "oklch(95% 0.011 55)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted Charcoal",
+        "tonalRamp": [
+          "oklch(15% 0.014 55)",
+          "oklch(25% 0.014 55)",
+          "oklch(35% 0.014 55)",
+          "oklch(45% 0.014 55)",
+          "oklch(55% 0.014 55)",
+          "oklch(65% 0.014 55)",
+          "oklch(80% 0.014 55)",
+          "oklch(95% 0.014 55)"
+        ]
+      },
+      "muted-foreground": {
+        "role": "neutral",
+        "displayName": "Muted Warm Gray",
+        "tonalRamp": [
+          "oklch(15% 0.022 73)",
+          "oklch(25% 0.022 73)",
+          "oklch(35% 0.022 73)",
+          "oklch(45% 0.022 73)",
+          "oklch(55% 0.022 73)",
+          "oklch(65% 0.022 73)",
+          "oklch(80% 0.022 73)",
+          "oklch(95% 0.022 73)"
+        ]
+      },
+      "destructive": {
+        "role": "error",
+        "displayName": "Destructive",
+        "tonalRamp": [
+          "oklch(15% 0.2 25)",
+          "oklch(25% 0.2 25)",
+          "oklch(35% 0.2 25)",
+          "oklch(45% 0.2 25)",
+          "oklch(55% 0.2 25)",
+          "oklch(65% 0.2 25)",
+          "oklch(80% 0.2 25)",
+          "oklch(95% 0.2 25)"
+        ]
+      },
+      "destructive-foreground": {
+        "role": "neutral",
+        "displayName": "Destructive Foreground",
+        "tonalRamp": [
+          "oklch(15% 0 0)",
+          "oklch(25% 0 0)",
+          "oklch(35% 0 0)",
+          "oklch(45% 0 0)",
+          "oklch(55% 0 0)",
+          "oklch(65% 0 0)",
+          "oklch(80% 0 0)",
+          "oklch(95% 0 0)"
+        ]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Ivory Border",
+        "tonalRamp": [
+          "oklch(15% 0.019 78 / 0.12)",
+          "oklch(25% 0.019 78 / 0.12)",
+          "oklch(35% 0.019 78 / 0.12)",
+          "oklch(45% 0.019 78 / 0.12)",
+          "oklch(55% 0.019 78 / 0.12)",
+          "oklch(65% 0.019 78 / 0.12)",
+          "oklch(80% 0.019 78 / 0.12)",
+          "oklch(95% 0.019 78 / 0.12)"
+        ]
+      },
+      "input": {
+        "role": "neutral",
+        "displayName": "Ivory Input Stroke",
+        "tonalRamp": [
+          "oklch(15% 0.019 78 / 0.18)",
+          "oklch(25% 0.019 78 / 0.18)",
+          "oklch(35% 0.019 78 / 0.18)",
+          "oklch(45% 0.019 78 / 0.18)",
+          "oklch(55% 0.019 78 / 0.18)",
+          "oklch(65% 0.019 78 / 0.18)",
+          "oklch(80% 0.019 78 / 0.18)",
+          "oklch(95% 0.019 78 / 0.18)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Shared Section Headline",
+        "purpose": "Global section title; scoped hero and quote headings retain their own sizes."
+      },
+      "title": {
+        "displayName": "Shared Card Title",
+        "purpose": "Global card headings."
+      },
+      "body-muted": {
+        "displayName": "Muted Body Copy",
+        "purpose": "Shared secondary-copy treatment, not a universal body override."
+      },
+      "label": {
+        "displayName": "Mono Label",
+        "purpose": "Uppercase navigation and supporting labels."
+      },
+      "button-label": {
+        "displayName": "Button Label",
+        "purpose": "Bold uppercase monospaced shared actions."
+      }
+    },
+    "shadows": [
+      {
+        "name": "quote-card",
+        "value": "0 45px 100px color-mix(in oklab, var(--background) 25%, transparent), inset 0 1px color-mix(in oklab, var(--foreground) 70%, transparent)",
+        "purpose": "Existing shared enquiry card on the inverted quote band."
+      },
+      {
+        "name": "quote-field-focus",
+        "value": "0 1px var(--primary)",
+        "purpose": "Underline emphasis on focused quote fields."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-soft",
+        "value": "cubic-bezier(0.2, 0.8, 0.2, 1)",
+        "purpose": "Existing shared rise animations and scoped services image/disclosure motion."
+      },
+      {
+        "name": "button-transition",
+        "value": "transform 0.25s, background 0.25s, border-color 0.25s, color 0.25s",
+        "purpose": "Shared action states; hover translates by -2px."
+      },
+      {
+        "name": "services-image-transition",
+        "value": "transform 0.8s var(--ease-out-soft)",
+        "purpose": "Scoped service image crop: scale(1.035) on hover/focus; disabled for reduced motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "phone-shell-and-controls",
+        "value": "639px",
+        "purpose": "Inclusive maximum for shared phone gutters and compact control sizing."
+      },
+      {
+        "name": "quote-fields",
+        "value": "768px",
+        "purpose": "Minimum for two-column quote fields."
+      },
+      {
+        "name": "quote-layout",
+        "value": "1024px",
+        "purpose": "Minimum for two-column quote layout and card perspective."
+      },
+      {
+        "name": "header-inline-navigation",
+        "value": "1280px",
+        "purpose": "Minimum for navigation in the main header row."
+      }
+    ],
+    "tonalRampNote": "Tonal ramps are synthesized preview strips in OKLCH, preserving source hue, chroma and alpha. They are not application tokens or approved additions to the palette.",
+    "servicesSurface": {
+      "scope": "/services only; these measurements do not define shared tokens.",
+      "sources": [
+        "frontend/src/features/services/services-page.module.css",
+        "frontend/src/features/services/services-gallery.tsx",
+        "frontend/src/features/services/services-hero.tsx",
+        "frontend/src/features/services/service-details.tsx",
+        "frontend/src/config/services.ts"
+      ],
+      "hero": "Asymmetric two-line headline on the left and filled quote action on the right; stacked below 1024px. The introduction sits beside the collection heading below the gallery, replacing its trailing rule.",
+      "gallery": {
+        "desktop": "One row of four equal portrait panels at widths from 1024px.",
+        "tablet": "Two columns from 640px through 1023px.",
+        "phone": "One column below 640px.",
+        "aspectRatio": "2 / 3",
+        "interaction": "Complete panels link to localized service detail pages; bottom-overlaid titles and details labels, upper logical end outlined arrow circles and dark lower gradients.",
+        "motion": "Image scale(1.035) on hover/focus, with transform 0.8s var(--ease-out-soft); reduced motion removes the image transition and transform."
+      },
+      "details": "Descriptive service rows below the gallery retain detail links, service-prefilled quote actions and native inclusion disclosures."
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Shared filled quote action; inherits the incumbent semantic variables.",
+      "html": "<button class=\"ds-button ds-primary\">Request a quote</button>",
+      "css": ".ds-button{display:inline-flex;align-items:center;justify-content:center;gap:0.65rem;min-height:2.7rem;padding:0.7rem 1.2rem;border-radius:999px;font-family:var(--font-space-mono), var(--font-mono-cyrillic), var(--font-arabic), ui-monospace, monospace;font-size:0.65rem;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;white-space:nowrap;cursor:pointer;transition:transform 0.25s,background 0.25s,border-color 0.25s,color 0.25s}.ds-button:hover{transform:translateY(-2px)}.ds-button:focus-visible{outline:1px solid var(--ring);outline-offset:3px;}.ds-button:disabled{cursor:not-allowed;opacity:0.6;transform:none}.ds-primary{border:1px solid var(--primary);background:var(--primary);color:var(--primary-foreground)}.ds-primary:hover{border-color:var(--accent);background:var(--accent);color:var(--accent-foreground)}@media(prefers-reduced-motion:reduce){.ds-button,.ds-social{transition-duration:0.01ms}.ds-button:hover,.ds-social:hover{transform:none}}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Shared outlined action with translucent dark fill and accent hover.",
+      "html": "<button class=\"ds-button ds-secondary\">Quote this service</button>",
+      "css": ".ds-button{display:inline-flex;align-items:center;justify-content:center;gap:0.65rem;min-height:2.7rem;padding:0.7rem 1.2rem;border-radius:999px;font-family:var(--font-space-mono), var(--font-mono-cyrillic), var(--font-arabic), ui-monospace, monospace;font-size:0.65rem;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;white-space:nowrap;cursor:pointer;transition:transform 0.25s,background 0.25s,border-color 0.25s,color 0.25s}.ds-button:hover{transform:translateY(-2px)}.ds-button:focus-visible{outline:1px solid var(--ring);outline-offset:3px;}.ds-button:disabled{cursor:not-allowed;opacity:0.6;transform:none}.ds-secondary{border:1px solid color-mix(in oklab,var(--foreground) 25%,transparent);background:color-mix(in oklab,var(--background) 65%,transparent);color:var(--foreground);backdrop-filter:blur(10px)}.ds-secondary:hover{border-color:var(--accent);background:var(--accent);color:var(--accent-foreground)}@media(prefers-reduced-motion:reduce){.ds-button,.ds-social{transition-duration:0.01ms}.ds-button:hover,.ds-social:hover{transform:none}}"
+    },
+    {
+      "name": "Quote Text Field",
+      "kind": "input",
+      "description": "Inverted quote-form field with a bottom border and accent focus underline.",
+      "html": "<div class=\"ds-field-surface\"><label class=\"ds-field\"><span class=\"ds-field-label\">First name</span><input class=\"ds-input\" placeholder=\"Your first name\" autocomplete=\"given-name\"></label></div>",
+      "css": ".ds-field-surface{padding:1.4rem;background:var(--foreground);color:var(--background)}.ds-field{display:grid;gap:0.55rem}.ds-field-label{font-family:var(--font-space-mono), var(--font-mono-cyrillic), var(--font-arabic), ui-monospace, monospace;font-size:0.61rem;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:color-mix(in oklab,var(--background) 64%,transparent)}.ds-input{width:100%;min-height:3.15rem;border:0;border-bottom:1px solid color-mix(in oklab,var(--background) 18%,transparent);border-radius:0;outline:none;background:transparent;color:var(--background);font-family:var(--font-manrope), var(--font-arabic), system-ui, sans-serif;font-size:0.875rem}.ds-input:focus{border-color:var(--primary);box-shadow:0 1px var(--primary)}.ds-input::placeholder{color:color-mix(in oklab,var(--background) 38%,transparent)}"
+    },
+    {
+      "name": "Quote Card",
+      "kind": "card",
+      "refersTo": "quote-card",
+      "description": "Shared softly rounded enquiry container on the ivory quote band.",
+      "html": "<div class=\"ds-quote-band\"><section class=\"ds-quote-card\"><h3 class=\"ds-quote-title\">Request a fixed quote</h3><p class=\"ds-quote-copy\">Share the essentials.</p></section></div>",
+      "css": ".ds-quote-band{padding:2rem;background:var(--foreground)}.ds-quote-card{position:relative;padding:clamp(1.4rem,4vw,3rem);border:1px solid color-mix(in oklab,var(--background) 16%,transparent);border-radius:0.5rem;background:color-mix(in oklab,var(--foreground) 94%,transparent);color:var(--background);box-shadow:0 45px 100px color-mix(in oklab,var(--background) 25%,transparent),inset 0 1px color-mix(in oklab,var(--foreground) 70%,transparent)}.ds-quote-title{font-family:var(--font-fraunces), var(--font-arabic), Georgia, serif;font-size:1.8rem;font-weight:500}.ds-quote-copy{font-family:var(--font-manrope), var(--font-arabic), system-ui, sans-serif;font-size:0.9rem;line-height:1.7;color:color-mix(in oklab,var(--background) 65%,transparent)}@media(min-width:1024px){.ds-quote-card{transform:perspective(1200px) rotateY(-2deg) translateZ(0)}:host([dir=\"rtl\"]) .ds-quote-card,[dir=\"rtl\"] .ds-quote-card{transform:perspective(1200px) rotateY(2deg) translateZ(0)}}"
+    },
+    {
+      "name": "Main Navigation",
+      "kind": "nav",
+      "description": "Shared mono navigation with current-page and hover accent treatment; this sample shows the links rather than the interactive services menu.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Main navigation\"><a class=\"ds-nav-link\" href=\"#services\" aria-current=\"page\">Services</a><a class=\"ds-nav-link\" href=\"#fleet\">Fleet</a><a class=\"ds-nav-link\" href=\"#cities\">Cities</a></nav>",
+      "css": ".ds-nav{display:flex;flex-wrap:wrap;align-items:center;gap:2rem;background:var(--background)}.ds-nav-link{position:relative;display:inline-flex;align-items:center;min-height:2.75rem;font-family:var(--font-space-mono), var(--font-mono-cyrillic), var(--font-arabic), ui-monospace, monospace;font-size:0.65rem;letter-spacing:0.2em;text-transform:uppercase;text-decoration:none;color:var(--muted-foreground);transition:color 0.3s}.ds-nav-link:hover,.ds-nav-link[aria-current=\"page\"]{color:var(--accent)}.ds-nav-link:focus-visible{outline:1px solid var(--ring);outline-offset:3px;}@media(prefers-reduced-motion:reduce){.ds-nav-link{transition-duration:0.01ms}}"
+    },
+    {
+      "name": "Social Icon Link",
+      "kind": "custom",
+      "description": "Shared circular accent link; the sample uses an inline SVG contact icon.",
+      "html": "<a class=\"ds-social\" href=\"#quote\" aria-label=\"Contact Driveo\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" aria-hidden=\"true\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"14\" rx=\"2\"/><path d=\"m3 6 9 7 9-7\"/></svg></a>",
+      "css": ".ds-social{display:inline-grid;flex:0 0 2.65rem;place-items:center;width:2.65rem;height:2.65rem;padding:0;border:1px solid color-mix(in oklab,var(--primary) 48%,transparent);border-radius:50%;color:var(--primary);background:color-mix(in oklab,var(--background) 72%,transparent);transition:color 0.25s,background 0.25s,border-color 0.25s,transform 0.25s}.ds-social svg{width:1.15rem;height:1.15rem}.ds-social:hover{color:var(--primary-foreground);background:var(--primary);border-color:var(--primary);transform:translateY(-3px)}.ds-social:focus-visible{outline:1px solid var(--ring);outline-offset:3px;}@media(prefers-reduced-motion:reduce){.ds-button,.ds-social{transition-duration:0.01ms}.ds-button:hover,.ds-social:hover{transform:none}}"
+    }
+  ],
+  "narrative": {
+    "overview": "This documents the existing application identity preserved by the services redesign. The user requires the same theme, colors and typography, with a modern and elite presentation. No replacement visual identity or named creative metaphor has been established.\n\nWarm charcoal surfaces, ivory text and restrained copper-gold accents support large serif headings, readable sans-serif copy and compact monospaced controls. Photography carries the chauffeur and destination context. The shared quote section reverses the light and dark roles to make the enquiry workflow distinct.",
+    "keyCharacteristics": [
+      "Warm dark surfaces with fine, low-contrast rules.",
+      "Fraunces headings, Manrope copy and Space Mono controls, with existing multilingual fallbacks.",
+      "Pill-shaped actions, rectangular photography and a softly rounded enquiry card.",
+      "Shared navigation and quote behavior across localized pages."
+    ],
+    "rules": [
+      {
+        "name": "The Existing Palette Rule",
+        "body": "Preserve the source OKLCH values and semantic aliases; compose localized styles from these variables.",
+        "section": "colors"
+      },
+      {
+        "name": "The Existing Type Rule",
+        "body": "Retain the established font stacks and language fallbacks when adding or adapting surfaces.",
+        "section": "typography"
+      }
+    ],
+    "dos": [
+      "Do preserve the existing semantic colors, exact font stacks and multilingual fallbacks.",
+      "Do reuse shared buttons, navigation, footer and quote components.",
+      "Do keep feature-specific measurements scoped to their feature styles.",
+      "Do retain keyboard focus, reduced-motion behavior and logical right-to-left layout."
+    ],
+    "donts": [
+      "Don't introduce replacement colors or typefaces for the services redesign.",
+      "Don't promote the services collection's grid or spacing into global tokens.",
+      "Don't change service identifiers, locale links or quote preselection while adapting presentation."
+    ]
+  }
+}

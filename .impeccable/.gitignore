@@ -1,0 +1,5 @@
+# Local design references and verification output.
+/build/
+/mocks/
+/review/
+/services-options.json

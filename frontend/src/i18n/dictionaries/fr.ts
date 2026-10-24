@@ -208,6 +208,8 @@ export const fr: Dictionary = {
       },
       eyebrow: "Services",
       title: "Quatre façons de voyager. Un seul prix fixe.",
+      titleLead: "Quatre façons de voyager.",
+      titleAccent: "Un seul prix fixe.",
       intro:
         "Chaque trajet est organisé et chiffré personnellement. Choisissez le service qui vous convient et nous répondons avec un prix unique tout compris, par écrit.",
       includedLabel: "Inclus",

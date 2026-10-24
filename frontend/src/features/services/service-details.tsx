@@ -1,4 +1,4 @@
-import { Reveal } from "@/components/motion/reveal";
+import { Plus } from "lucide-react";
 import { ArrowLink } from "@/components/ui/arrow-link";
 import { CheckList } from "@/components/ui/check-list";
 import { servicePath } from "@/config/services";
@@ -6,6 +6,7 @@ import { SERVICE_TYPES } from "@/domain/booking";
 import { RequestQuoteButton } from "@/features/quote";
 import { localePath, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/get-dictionary";
+import styles from "./services-page.module.css";
 
 interface ServiceDetailsProps {
   locale: Locale;
@@ -14,39 +15,41 @@ interface ServiceDetailsProps {
   viewDetails: string;
 }
 
-/** One row per service: name on one side, description, inclusions and actions on the other. */
+/** Factual service details and booking actions follow the photographic gallery. */
 export function ServiceDetails({ locale, services, page, viewDetails }: ServiceDetailsProps) {
   return (
-    <section className="section-band bg-background">
-      <div className="site-shell">
-        {SERVICE_TYPES.map((type, index) => {
+    <section className={styles.collection} aria-labelledby="service-collection-title">
+      <div className={styles.collectionInner}>
+        <div className={styles.collectionHeading}>
+          <h2 id="service-collection-title">{services.title}</h2>
+          <p className={styles.intro}>{page.intro}</p>
+        </div>
+        {SERVICE_TYPES.map((type) => {
           const item = services.items[type];
           return (
-            <Reveal
+            <article
               key={type}
-              as="article"
               id={type}
-              className="grid gap-8 border-t border-border py-14 first:border-t-0 first:pt-0 last:pb-0 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16"
+              className={styles.service}
+              aria-labelledby={`${type}-title`}
             >
+              <h3 id={`${type}-title`} className={styles.serviceTitle}>{item.title}</h3>
               <div>
-                <p className="mono-label">
-                  {String(index + 1).padStart(2, "0")} · {item.label}
-                </p>
-                <h2 className="mt-4 font-display text-[clamp(2.3rem,4.5vw,3.6rem)] leading-none font-medium">
-                  {item.title}
-                </h2>
-              </div>
-
-              <div>
-                <p className="max-w-xl text-lg leading-8 text-muted-foreground">{item.copy}</p>
-                <p className="mono-label mt-8 mb-4">{page.includedLabel}</p>
-                <CheckList items={page.included[type]} className="sm:grid-cols-2 sm:gap-x-8" />
-                <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
-                  <RequestQuoteButton preset={{ service: type }}>{page.quoteCta}</RequestQuoteButton>
-                  <ArrowLink href={localePath(locale, servicePath(type))}>{viewDetails}</ArrowLink>
+                <p className={styles.copy}>{item.copy}</p>
+                <div className={styles.actions}>
+                <ArrowLink href={localePath(locale, servicePath(type))} className={styles.detailsLink}>
+                  {viewDetails}
+                </ArrowLink>
+                <RequestQuoteButton preset={{ service: type }} variant="secondary">
+                  {page.quoteCta}
+                </RequestQuoteButton>
+                <details className={styles.inclusions}>
+                  <summary>{page.includedLabel}<Plus aria-hidden="true" /></summary>
+                  <CheckList items={page.included[type]} className={styles.includedList} />
+                </details>
                 </div>
               </div>
-            </Reveal>
+            </article>
           );
         })}
       </div>

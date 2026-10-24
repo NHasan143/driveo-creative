@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
-import { PageHero } from "@/components/page/page-hero";
-import { AssuranceSection } from "@/features/home/assurance-section";
 import { QuoteSection } from "@/features/quote";
 import { ServiceDetails } from "@/features/services/service-details";
+import { ServicesHero } from "@/features/services/services-hero";
+import { ServicesGallery } from "@/features/services/services-gallery";
+import { ServicesStandard } from "@/features/services/services-standard";
+import styles from "@/features/services/services-page.module.css";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
@@ -20,26 +22,23 @@ export default async function ServicesPage() {
   const page = t.pages.services;
 
   return (
-    <main className="min-h-screen overflow-hidden bg-background text-foreground">
-      <PageHero
+    <main className={styles.page}>
+      <ServicesHero
         locale={locale}
-        crumbs={{ home: t.pages.breadcrumbHome, trail: [{ label: t.nav.services }] }}
-        eyebrow={page.eyebrow}
-        title={page.title}
-        intro={page.intro}
-        image={{ src: "/media/london-thames-night.jpg", alt: "" }}
+        page={page}
+        home={t.pages.breadcrumbHome}
         cta={t.hero.cta}
-        whatsappLabel={t.hero.whatsapp}
       />
+      <ServicesGallery locale={locale} services={t.services} viewDetails={t.pages.serviceDetail.viewDetails} />
       <ServiceDetails
         locale={locale}
         services={t.services}
         page={page}
         viewDetails={t.pages.serviceDetail.viewDetails}
       />
-      <AssuranceSection
+      <ServicesStandard
         items={t.assurance}
-        heading={{ eyebrow: page.standardEyebrow, title: page.standardTitle }}
+        title={page.standardTitle}
       />
       <QuoteSection locale={locale} quote={t.quote} cityNames={t.cities.names} />
     </main>

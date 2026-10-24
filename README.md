@@ -74,7 +74,7 @@ Legend: 🟢 done · 🟡 in progress · ⚪ not started · 🔒 frozen
 driveexclusive/
 ├── README.md            ← you are here (platform overview, living document)
 ├── project_context.md   ← goals, plan, objectives, progress, risks (read first)
-├── .github/             ← GitHub Actions workflows (CI/CD) and Dependabot
+├── .github/             ← GitHub Actions workflows (CI/CD)
 ├── frontend/            ← Next.js website: see frontend/README.md
 ├── driveo-creative/     ← Lovable prototype (design + copy reference, own git repo)
 ├── backend/             ← (planned) Django API, admin dashboard, Celery workers
@@ -270,7 +270,6 @@ docker run -p 3000:3000 driveo-frontend
 | --- | --- | --- |
 | [`frontend-ci.yml`](.github/workflows/frontend-ci.yml) | PRs touching `frontend/`, manual, or called by deploy | `npm ci` → lint → typecheck → production build. On PRs it also checks that the Docker image builds |
 | [`frontend-deploy.yml`](.github/workflows/frontend-deploy.yml) | Push to `main` touching `frontend/`, or manual (choose environment) | Runs CI → builds and pushes `ghcr.io/<owner>/driveo-frontend` (tags `sha-<commit>` and `<environment>`) → SSH to the VPS → `docker compose pull/up frontend` → smoke test |
-| [`dependabot.yml`](.github/dependabot.yml) | Weekly / monthly | Grouped update PRs for npm packages, the Docker base image and the GitHub Actions used |
 
 ```mermaid
 flowchart LR
@@ -320,7 +319,11 @@ flowchart LR
    The full compose stack (Nginx, Django, PostgreSQL, Redis) will live in `infra/`.
 
 **Convention for new apps:** add `<app>-ci.yml` (PR checks, reusable via `workflow_call`) and
-`<app>-deploy.yml`, filter both on the app's folder with `paths`, and add the app to `dependabot.yml`.
+`<app>-deploy.yml`, and filter both on the app's folder with `paths`.
+
+**Dependency updates are manual.** Dependabot was removed on 2026-10-24. Check for updates about once a
+month with `npm outdated` in `frontend/`. Update deliberately, then run lint, typecheck and build before
+merging. Even-numbered Node LTS releases are the only ones to adopt.
 
 ---
 
@@ -343,6 +346,7 @@ Record decisions that would surprise a newcomer. Add new entries at the top.
 | --- | --- | --- |
 | 2026-10-22 | CI/CD on GitHub Actions: images in GHCR, deploy over SSH with `docker compose` | No extra services to pay for; matches the Docker/VPS plan; the pipeline refuses mock-mode deploys |
 | 2026-10-22 | Website rebuilt in Next.js instead of extending the Lovable (TanStack Start) code | Matches the agreed stack; better SEO and long-term maintainability |
+| 2026-10-24 | Removed Dependabot; dependency updates are manual | Too many automated PRs for the team's size, some unsuitable (non-LTS Node, unsupported TypeScript major) |
 | 2026-10-23 | Language is a query parameter (`/?lang=en`) in public URLs, replacing `/en` paths | Client preference. Each language is still prerendered (the proxy rewrites internally) and indexable via hreflang/canonical. Old `/en` links redirect |
 | 2026-10-22 | Language in the URL instead of a client-side switch only (first as `/en` paths) | Each language can be indexed by search engines, with hreflang |
 | 2026-10-22 | API values are stable snake_case ids; labels live in dictionaries | Renaming or translating labels never breaks stored data |
@@ -365,6 +369,11 @@ Record decisions that would surprise a newcomer. Add new entries at the top.
 ## Changelog
 
 Newest first. Follow [Keep a Changelog](https://keepachangelog.com/) headings: Added / Changed / Fixed / Removed.
+
+### 2026-10-24
+
+**Removed**
+- Dependabot (`.github/dependabot.yml`). Dependency updates are now checked manually (see [CI/CD](#cicd-github-actions)).
 
 ### 2026-10-23
 

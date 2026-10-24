@@ -213,7 +213,7 @@ Each objective has a definition of done (DoD). Tick it when it's done, and updat
 
 - [ ] **W4.1 Compose stack.** DoD: `docker-compose.yml` with frontend, backend, worker, PostgreSQL, Redis and Nginx, plus health checks.
 - [ ] **W4.2 Edge.** DoD: Cloudflare DNS, HTTPS, security headers, and caching for static media.
-- [x] **W4.3a CI/CD workflows (frontend).** DoD: `frontend-ci.yml` runs lint, typecheck, build and a Docker build check on PRs. `frontend-deploy.yml` verifies `main`, publishes the image to GHCR and deploys over SSH with a smoke test. It refuses mock-mode deploys. Dependabot is configured. _Validated with actionlint; it has not run on GitHub yet, because there is no repository._
+- [x] **W4.3a CI/CD workflows (frontend).** DoD: `frontend-ci.yml` runs lint, typecheck, build and a Docker build check on PRs. `frontend-deploy.yml` verifies `main`, publishes the image to GHCR and deploys over SSH with a smoke test. It refuses mock-mode deploys. _Validated with actionlint._ (Dependabot was added here and removed on 2026-10-24.)
 - [ ] **W4.3b CI/CD activation.** DoD: repository pushed to GitHub, `production` environment variables and secrets set, branch protection requires "Frontend CI / Lint, typecheck & build", and the first green deploy is done.
 - [ ] **W4.3c CI for backend and mobile.** DoD: `backend-ci.yml`/`mobile-ci.yml` following the same pattern, with tests.
 - [ ] **W4.4 Backups.** DoD: automated daily PostgreSQL backups stored off the server, and a restore tested and documented.
@@ -300,6 +300,7 @@ _Snapshot as of 2026-10-22._
 
 ### Known issues and technical debt
 
+- **No automated dependency updates** since Dependabot was removed. Run `npm outdated` monthly and update deliberately. Pending: align `@types/node` (now `^20`) with the Node 24 runtime, and plan the move to Node 26 LTS.
 - **Large hero videos** (≈ 3.4 MB and ≈ 9.9 MB MP4): slow on mobile data. Fix in W1.9.
 - **Client-side throttling only** (30 s cooldown, 5 submissions per visit): needs server-side rate limiting (W2.3).
 - **Placeholder copy:** the testimonial is the design's sample quote. Replace it with a real, approved client quote.
@@ -318,6 +319,7 @@ Newest first. The README has the same log for developers. Keep the two in sync.
 | 2026-10-22 | CI/CD on GitHub Actions: GHCR images, SSH + `docker compose` deploy, mock-mode deploys blocked | No paid CI/CD or registry services; fits the Docker/VPS plan; protects against launching without a backend | Self-hosted runner on the VPS; a PaaS (e.g. Vercel) for the website |
 | 2026-10-22 | `driveo-creative/` kept as a read-only reference and git-ignored | Separate repository and stack; avoids accidental commits | Git submodule (unnecessary for a reference) |
 | 2026-10-22 | Website rebuilt in Next.js, not extended from Lovable | Matches the agreed stack; better SEO and maintainability | Keep TanStack Start + Supabase |
+| 2026-10-24 | Removed Dependabot; dependencies are updated manually | Automated PRs were noisy, and some were unsuitable (EOL Node 25, TypeScript 7 unsupported by the linter) | Keep it in a quieter mode (monthly, minor/patch only); security-only updates |
 | 2026-10-23 | Public language URLs use a query parameter (`/?lang=en`) instead of `/en` paths | Client preference. Pages stay prerendered (proxy rewrite) and indexable via canonical/hreflang. Old `/en` links redirect | Keep `/en` path URLs (Google's general recommendation) |
 | 2026-10-22 | Language in the URL with a cookie to remember the choice | Each language can be indexed by search engines; shareable links | Client-only language switch (prototype approach) |
 | 2026-10-22 | API uses stable snake_case ids; labels live in translations | Labels can change or be translated without breaking data | Sending display text (prototype approach) |

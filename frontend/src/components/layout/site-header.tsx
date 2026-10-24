@@ -20,14 +20,22 @@ export function SiteHeader({ locale, nav, services, allServices }: SiteHeaderPro
       <div className="site-shell flex h-20 items-center justify-between gap-3">
         <Link href={localePath(locale)} className="flex min-w-0 items-center gap-3" aria-label={nav.home}>
           <BrandMark priority />
-          <span className="max-w-[8.5rem] font-mono text-[0.58rem] leading-tight font-bold tracking-[0.1em] uppercase sm:max-w-64 sm:text-[0.68rem] sm:tracking-[0.18em]">
+          {/* Phones show the logo alone; the buttons need the room and the link has an aria-label. */}
+          <span className="hidden max-w-64 font-mono text-[0.68rem] leading-tight font-bold tracking-[0.18em] uppercase sm:line-clamp-2">
             {siteConfig.legalName}
           </span>
         </Link>
 
-        <MainNav locale={locale} nav={nav} services={services} allServices={allServices} className="hidden items-center gap-8 lg:flex" />
+        <MainNav
+          locale={locale}
+          nav={nav}
+          services={services}
+          allServices={allServices}
+          className="hidden shrink-0 items-center gap-8 xl:flex"
+        />
 
-        <div className="flex items-center gap-2">
+        {/* The language switcher and quote button share one size so they read as a pair. */}
+        <div className="flex shrink-0 items-center gap-2">
           <LanguageSwitcher locale={locale} label={nav.language} />
           {/* Every page ends with the quote form, so this anchor always resolves. */}
           <ButtonLink href="#quote" size="compact">
@@ -36,14 +44,20 @@ export function SiteHeader({ locale, nav, services, allServices }: SiteHeaderPro
         </div>
       </div>
 
-      {/* Below lg the page links move to a slim second row instead of a hamburger menu. */}
+      {/*
+        Below xl (1280px) the page links move to a slim second row instead of a hamburger menu;
+        between 1024 and 1279px there isn't room for them beside the buttons in French or Bulgarian.
+        It must stay a single line: the hero padding assumes this header height, and the
+        row can't scroll sideways because that would clip the Services dropdown. On phones
+        the type and spacing scale with the viewport so even Bulgarian fits at 320px.
+      */}
       <MainNav
         locale={locale}
         nav={nav}
         services={services}
         allServices={allServices}
-        className="site-shell flex min-h-11 flex-wrap items-center gap-x-6 border-t border-border/60 lg:hidden"
-        linkClassName="shrink-0 text-[0.6rem]"
+        className="site-shell flex min-h-11 flex-nowrap items-center justify-between gap-x-2 border-t border-border/60 sm:justify-start sm:gap-x-6 xl:hidden"
+        linkClassName="shrink-0 whitespace-nowrap text-[clamp(0.55rem,2.6vw,0.6rem)] tracking-[0.08em] sm:tracking-[0.2em]"
       />
     </header>
   );

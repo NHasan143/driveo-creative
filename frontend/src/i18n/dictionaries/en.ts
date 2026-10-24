@@ -311,6 +311,132 @@ export const en = {
       commitmentsEyebrow: "Our commitments",
       commitmentsTitle: "What you can count on",
     },
+    serviceDetail: {
+      atAGlance: "At a glance",
+      factsEyebrow: "Key facts",
+      overviewEyebrow: "The service",
+      stepsEyebrow: "How it works",
+      stepsTitle: "From request to arrival",
+      fleetEyebrow: "Recommended vehicles",
+      fleetTitle: "Choose your car",
+      otherEyebrow: "Explore more",
+      otherTitle: "Other services",
+      viewDetails: "View details",
+      items: {
+        airport_transfer: {
+          meta: {
+            title: "Airport transfer | Driveo Exclusive",
+            description:
+              "Flight-tracked airport transfers in London, Paris, Bulgaria and Dubai, with meet and greet inside the terminal and 60 minutes of complimentary waiting.",
+          },
+          title: "Airport transfers, timed to your flight.",
+          facts: [
+            { value: "60 min", label: "Complimentary waiting" },
+            { value: "Live", label: "Flight tracking" },
+            { value: "4", label: "Cities served" },
+            { value: "1", label: "Fixed price, in writing" },
+          ],
+          overviewTitle: "Landed, met and on your way.",
+          overviewBody:
+            "We track your flight from wheels-up and adjust the pickup if it lands early or late. Your chauffeur waits inside the terminal and walks you to the car, so the journey starts the moment you arrive.",
+          features: [
+            { title: "Flight tracking", copy: "We follow your flight in real time, so a delay never leaves you waiting." },
+            { title: "Meet and greet", copy: "Your chauffeur meets you inside the terminal and walks you to the car." },
+            { title: "60 minutes included", copy: "Complimentary waiting time for passport control and baggage reclaim." },
+            { title: "Fixed price", copy: "One all-inclusive figure, agreed in writing before you fly." },
+          ],
+          steps: [
+            { title: "Share your flight", copy: "Send the flight number, terminal and destination on the quote form." },
+            { title: "Receive your fixed price", copy: "A concierge replies with one all-inclusive figure, in writing." },
+            { title: "Meet your chauffeur", copy: "We track the flight and meet you inside the terminal when you land." },
+          ],
+        },
+        point_to_point: {
+          meta: {
+            title: "Point-to-point | Driveo Exclusive",
+            description:
+              "Fixed-price point-to-point journeys with a vetted, suited chauffeur, from boardroom to residence or city to coast.",
+          },
+          title: "Point-to-point, at one fixed price.",
+          facts: [
+            { value: "1", label: "Price, agreed before you travel" },
+            { value: "0", label: "Surge or meter charges" },
+            { value: "3", label: "Vehicle classes" },
+            { value: "4", label: "Cities served" },
+          ],
+          overviewTitle: "Any journey, priced before you leave.",
+          overviewBody:
+            "Boardroom to residence, restaurant to hotel, or city to coast: tell us where you are going and we agree one price before you travel. No surge, no meter, and a vetted chauffeur in suit and tie.",
+          features: [
+            { title: "Agreed in advance", copy: "The price is fixed in writing before the journey starts." },
+            { title: "Any distance", copy: "Short city hops or long journeys to the coast." },
+            { title: "Vetted chauffeurs", copy: "Licensed, background-checked and in suit and tie." },
+            { title: "Total discretion", copy: "Your journeys, guests and addresses stay private." },
+          ],
+          steps: [
+            { title: "Send the route", copy: "Pickup, destination, date and time, in about sixty seconds." },
+            { title: "Approve the price", copy: "We reply with one fixed figure, in writing." },
+            { title: "Travel in calm", copy: "Your chauffeur arrives early and drives you door to door." },
+          ],
+        },
+        hourly_hire: {
+          meta: {
+            title: "Hourly hire | Driveo Exclusive",
+            description:
+              "Hire a chauffeur by the hour, from 2 to 16 hours, for meetings, viewings and events. 15 miles per hour included within Greater London.",
+          },
+          title: "A chauffeur at your side, by the hour.",
+          facts: [
+            { value: "2–16", label: "Hours per booking" },
+            { value: "15 mi", label: "Included per hour in Greater London" },
+            { value: "1", label: "Dedicated chauffeur" },
+            { value: "3", label: "Vehicle classes" },
+          ],
+          overviewTitle: "Every stop, one chauffeur.",
+          overviewBody:
+            "Book a chauffeur for as long as your day needs. They stay with you between meetings, viewings and events, waiting quietly at every stop. Each hour includes 15 miles within Greater London; journeys outside this area may be charged differently.",
+          features: [
+            { title: "From 2 to 16 hours", copy: "Choose the hours that fit your schedule." },
+            { title: "Waits at every stop", copy: "No need to book a new car between appointments." },
+            { title: "Mileage included", copy: "15 miles per hour within Greater London." },
+            { title: "One price for the day", copy: "Quoted in writing before you book." },
+          ],
+          steps: [
+            { title: "Plan your day", copy: "Choose the city, start time and number of hours." },
+            { title: "Receive your fixed price", copy: "A concierge confirms the figure in writing." },
+            { title: "Go at your pace", copy: "Your chauffeur stays with you until the last stop." },
+          ],
+        },
+        private_event: {
+          meta: {
+            title: "Private events | Driveo Exclusive",
+            description:
+              "Chauffeur service for weddings, premieres and long road journeys, planned personally and quoted in writing.",
+          },
+          title: "Private events, planned personally.",
+          facts: [
+            { value: "3", label: "Vehicle classes" },
+            { value: "7", label: "Passengers in the Business Van" },
+            { value: "4", label: "Cities served" },
+            { value: "1", label: "Written quote, before you commit" },
+          ],
+          overviewTitle: "The day matters. So does the arrival.",
+          overviewBody:
+            "Weddings, premieres and long road journeys are planned with you personally, then quoted in writing. Tell us about your guests and we will advise the right vehicles, with chauffeurs who keep every detail private.",
+          features: [
+            { title: "Planned with you", copy: "Timings, stops and guests agreed in advance." },
+            { title: "The right vehicles", copy: "From the S-Class to the seven-seat Business Van." },
+            { title: "Quoted in writing", copy: "One fixed price before you commit." },
+            { title: "Total discretion", copy: "For you and every one of your guests." },
+          ],
+          steps: [
+            { title: "Tell us about the occasion", copy: "Date, city, guests and stops, with any details in the notes." },
+            { title: "Plan it together", copy: "A concierge advises vehicles and timings, then sends a fixed quote." },
+            { title: "Arrive in silence", copy: "Chauffeurs arrive early and keep to the plan." },
+          ],
+        },
+      },
+    },
   },
   notFound: {
     eyebrow: "Error 404",

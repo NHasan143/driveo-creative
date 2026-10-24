@@ -320,6 +320,132 @@ export const fr: Dictionary = {
       commitmentsEyebrow: "Nos engagements",
       commitmentsTitle: "Ce sur quoi vous pouvez compter",
     },
+    serviceDetail: {
+      atAGlance: "En bref",
+      factsEyebrow: "L’essentiel",
+      overviewEyebrow: "Le service",
+      stepsEyebrow: "Comment ça marche",
+      stepsTitle: "De la demande à l’arrivée",
+      fleetEyebrow: "Véhicules recommandés",
+      fleetTitle: "Choisissez votre voiture",
+      otherEyebrow: "Découvrir aussi",
+      otherTitle: "Nos autres services",
+      viewDetails: "Voir le détail",
+      items: {
+        airport_transfer: {
+          meta: {
+            title: "Transfert aéroport | Driveo Exclusive",
+            description:
+              "Transferts aéroport avec suivi du vol à Londres, Paris, en Bulgarie et à Dubaï, accueil dans le terminal et 60 minutes d’attente offertes.",
+          },
+          title: "Des transferts aéroport calés sur votre vol.",
+          facts: [
+            { value: "60 min", label: "D’attente offertes" },
+            { value: "Direct", label: "Suivi du vol" },
+            { value: "4", label: "Villes desservies" },
+            { value: "1", label: "Prix fixe, par écrit" },
+          ],
+          overviewTitle: "Atterri, accueilli, déjà en route.",
+          overviewBody:
+            "Nous suivons votre vol dès le décollage et ajustons la prise en charge s’il arrive en avance ou en retard. Votre chauffeur vous attend dans le terminal et vous accompagne jusqu’à la voiture : le trajet commence dès votre arrivée.",
+          features: [
+            { title: "Suivi du vol", copy: "Nous suivons votre vol en temps réel : un retard ne vous fait jamais attendre." },
+            { title: "Accueil personnalisé", copy: "Votre chauffeur vous accueille dans le terminal et vous accompagne jusqu’à la voiture." },
+            { title: "60 minutes incluses", copy: "Temps d’attente offert pour le contrôle des passeports et les bagages." },
+            { title: "Prix fixe", copy: "Un prix unique tout compris, confirmé par écrit avant votre vol." },
+          ],
+          steps: [
+            { title: "Indiquez votre vol", copy: "Numéro de vol, terminal et destination sur le formulaire." },
+            { title: "Recevez votre prix fixe", copy: "Un concierge répond avec un prix unique tout compris, par écrit." },
+            { title: "Retrouvez votre chauffeur", copy: "Nous suivons le vol et vous accueillons dans le terminal à l’atterrissage." },
+          ],
+        },
+        point_to_point: {
+          meta: {
+            title: "Point à point | Driveo Exclusive",
+            description:
+              "Trajets point à point à prix fixe avec un chauffeur vérifié en costume, du bureau à la résidence ou de la ville à la côte.",
+          },
+          title: "Point à point, à un seul prix fixe.",
+          facts: [
+            { value: "1", label: "Prix, convenu avant le départ" },
+            { value: "0", label: "Majoration ou compteur" },
+            { value: "3", label: "Classes de véhicules" },
+            { value: "4", label: "Villes desservies" },
+          ],
+          overviewTitle: "Chaque trajet, chiffré avant le départ.",
+          overviewBody:
+            "Du bureau à la résidence, du restaurant à l’hôtel ou de la ville à la côte : indiquez votre destination et nous convenons d’un prix unique avant le départ. Pas de majoration, pas de compteur, et un chauffeur vérifié en costume et cravate.",
+          features: [
+            { title: "Convenu à l’avance", copy: "Le prix est fixé par écrit avant le départ." },
+            { title: "Toutes distances", copy: "Courts trajets en ville ou longs trajets vers la côte." },
+            { title: "Chauffeurs vérifiés", copy: "Licenciés, contrôlés, en costume et cravate." },
+            { title: "Discrétion totale", copy: "Vos trajets, vos invités et vos adresses restent privés." },
+          ],
+          steps: [
+            { title: "Envoyez l’itinéraire", copy: "Prise en charge, destination, date et heure, en soixante secondes environ." },
+            { title: "Validez le prix", copy: "Nous répondons avec un prix fixe unique, par écrit." },
+            { title: "Voyagez au calme", copy: "Votre chauffeur arrive en avance et vous conduit de porte à porte." },
+          ],
+        },
+        hourly_hire: {
+          meta: {
+            title: "Location horaire | Driveo Exclusive",
+            description:
+              "Un chauffeur à l’heure, de 2 à 16 heures, pour vos réunions, visites et événements. 15 miles par heure inclus dans le Grand Londres.",
+          },
+          title: "Un chauffeur à vos côtés, à l’heure.",
+          facts: [
+            { value: "2–16", label: "Heures par réservation" },
+            { value: "15 mi", label: "Inclus par heure dans le Grand Londres" },
+            { value: "1", label: "Chauffeur dédié" },
+            { value: "3", label: "Classes de véhicules" },
+          ],
+          overviewTitle: "Chaque arrêt, un seul chauffeur.",
+          overviewBody:
+            "Réservez un chauffeur aussi longtemps que votre journée l’exige. Il reste avec vous entre réunions, visites et événements, et attend discrètement à chaque arrêt. Chaque heure inclut 15 miles dans le Grand Londres ; les trajets hors de cette zone peuvent être facturés différemment.",
+          features: [
+            { title: "De 2 à 16 heures", copy: "Choisissez les heures adaptées à votre agenda." },
+            { title: "Attente à chaque arrêt", copy: "Inutile de réserver une nouvelle voiture entre deux rendez-vous." },
+            { title: "Kilométrage inclus", copy: "15 miles par heure dans le Grand Londres." },
+            { title: "Un prix pour la journée", copy: "Chiffré par écrit avant la réservation." },
+          ],
+          steps: [
+            { title: "Planifiez votre journée", copy: "Choisissez la ville, l’heure de début et le nombre d’heures." },
+            { title: "Recevez votre prix fixe", copy: "Un concierge confirme le montant par écrit." },
+            { title: "Avancez à votre rythme", copy: "Votre chauffeur reste avec vous jusqu’au dernier arrêt." },
+          ],
+        },
+        private_event: {
+          meta: {
+            title: "Événements privés | Driveo Exclusive",
+            description:
+              "Chauffeurs pour mariages, avant-premières et longs trajets, organisés personnellement et chiffrés par écrit.",
+          },
+          title: "Des événements privés, organisés personnellement.",
+          facts: [
+            { value: "3", label: "Classes de véhicules" },
+            { value: "7", label: "Passagers dans le Business Van" },
+            { value: "4", label: "Villes desservies" },
+            { value: "1", label: "Devis écrit, avant tout engagement" },
+          ],
+          overviewTitle: "Le jour compte. L’arrivée aussi.",
+          overviewBody:
+            "Mariages, avant-premières et longs trajets sont organisés personnellement avec vous, puis chiffrés par écrit. Parlez-nous de vos invités et nous vous conseillerons les bons véhicules, avec des chauffeurs qui préservent chaque détail.",
+          features: [
+            { title: "Organisé avec vous", copy: "Horaires, arrêts et invités convenus à l’avance." },
+            { title: "Les bons véhicules", copy: "De la Classe S au Business Van sept places." },
+            { title: "Chiffré par écrit", copy: "Un prix fixe unique avant tout engagement." },
+            { title: "Discrétion totale", copy: "Pour vous et chacun de vos invités." },
+          ],
+          steps: [
+            { title: "Décrivez l’occasion", copy: "Date, ville, invités et arrêts, avec tout détail utile dans les notes." },
+            { title: "Organisons-le ensemble", copy: "Un concierge conseille véhicules et horaires, puis envoie un devis fixe." },
+            { title: "Arrivez en silence", copy: "Les chauffeurs arrivent en avance et respectent le programme." },
+          ],
+        },
+      },
+    },
   },
   notFound: {
     eyebrow: "Erreur 404",

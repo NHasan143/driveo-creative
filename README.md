@@ -55,6 +55,7 @@ Legend: 🟢 done · 🟡 in progress · ⚪ not started · 🔒 frozen
 - [x] Design ported from Lovable: hero, assurance, services, fleet, cities, process, quote, testimonial, footer
 - [x] Four languages (EN, FR, BG, AR) at `/?lang=xx` URLs, with right-to-left Arabic
 - [x] Inner pages: Services, Fleet, Cities, Process (same design system, each ending in the quote form)
+- [x] Service detail pages (4 services × 4 languages)
 - [x] SEO: metadata, hreflang, sitemap, robots, JSON-LD, web app manifest
 - [x] Quote form with client validation and a typed API client (mock mode)
 - [x] "Add to Home Screen" (PWA install prompt)
@@ -74,7 +75,7 @@ Legend: 🟢 done · 🟡 in progress · ⚪ not started · 🔒 frozen
 driveexclusive/
 ├── README.md            ← you are here (platform overview, living document)
 ├── project_context.md   ← goals, plan, objectives, progress, risks (read first)
-├── .github/             ← GitHub Actions workflows (CI/CD) and Dependabot
+├── .github/             ← GitHub Actions workflows (CI/CD)
 ├── frontend/            ← Next.js website: see frontend/README.md
 ├── driveo-creative/     ← Lovable prototype (design + copy reference, own git repo)
 ├── backend/             ← (planned) Django API, admin dashboard, Celery workers
@@ -270,7 +271,6 @@ docker run -p 3000:3000 driveo-frontend
 | --- | --- | --- |
 | [`frontend-ci.yml`](.github/workflows/frontend-ci.yml) | PRs touching `frontend/`, manual, or called by deploy | `npm ci` → lint → typecheck → production build. On PRs it also checks that the Docker image builds |
 | [`frontend-deploy.yml`](.github/workflows/frontend-deploy.yml) | Push to `main` touching `frontend/`, or manual (choose environment) | Runs CI → builds and pushes `ghcr.io/<owner>/driveo-frontend` (tags `sha-<commit>` and `<environment>`) → SSH to the VPS → `docker compose pull/up frontend` → smoke test |
-| [`dependabot.yml`](.github/dependabot.yml) | Weekly / monthly | Grouped update PRs for npm packages, the Docker base image and the GitHub Actions used |
 
 ```mermaid
 flowchart LR
@@ -320,7 +320,11 @@ flowchart LR
    The full compose stack (Nginx, Django, PostgreSQL, Redis) will live in `infra/`.
 
 **Convention for new apps:** add `<app>-ci.yml` (PR checks, reusable via `workflow_call`) and
-`<app>-deploy.yml`, filter both on the app's folder with `paths`, and add the app to `dependabot.yml`.
+`<app>-deploy.yml`, and filter both on the app's folder with `paths`.
+
+**Dependency updates are manual.** Dependabot was removed on 2026-10-24. Check for updates about once a
+month with `npm outdated` in `frontend/`. Update deliberately, then run lint, typecheck and build before
+merging. Even-numbered Node LTS releases are the only ones to adopt.
 
 ---
 
@@ -343,6 +347,7 @@ Record decisions that would surprise a newcomer. Add new entries at the top.
 | --- | --- | --- |
 | 2026-10-22 | CI/CD on GitHub Actions: images in GHCR, deploy over SSH with `docker compose` | No extra services to pay for; matches the Docker/VPS plan; the pipeline refuses mock-mode deploys |
 | 2026-10-22 | Website rebuilt in Next.js instead of extending the Lovable (TanStack Start) code | Matches the agreed stack; better SEO and long-term maintainability |
+| 2026-10-24 | Removed Dependabot; dependency updates are manual | Too many automated PRs for the team's size, some unsuitable (non-LTS Node, unsupported TypeScript major) |
 | 2026-10-23 | Language is a query parameter (`/?lang=en`) in public URLs, replacing `/en` paths | Client preference. Each language is still prerendered (the proxy rewrites internally) and indexable via hreflang/canonical. Old `/en` links redirect |
 | 2026-10-22 | Language in the URL instead of a client-side switch only (first as `/en` paths) | Each language can be indexed by search engines, with hreflang |
 | 2026-10-22 | API values are stable snake_case ids; labels live in dictionaries | Renaming or translating labels never breaks stored data |
@@ -365,6 +370,39 @@ Record decisions that would surprise a newcomer. Add new entries at the top.
 ## Changelog
 
 Newest first. Follow [Keep a Changelog](https://keepachangelog.com/) headings: Added / Changed / Fixed / Removed.
+
+### 2026-10-24
+
+**Added**
+- `frontend`: service detail pages for Airport transfer, Point-to-point, Hourly hire and Private events
+  (`/services/<slug>?lang=xx`), in all four languages. Their sections are:
+  - a hero with an "At a glance" card;
+  - a key-facts strip;
+  - an overview with features and a photo;
+  - service-specific steps;
+  - recommended vehicles (pre-filling service and car);
+  - the testimonial, links to the other services, and the quote form, pre-filled with the service.
+
+  The header dropdown, the Services page and the homepage cards link to them, and the sitemap now has 36 URLs.
+- `frontend`: Services dropdown in the header. It lists the four services with icons, each deep-linking
+  to its row on the Services page, plus an "All services" link. It opens on hover with a mouse and on
+  tap or keyboard otherwise.
+
+**Fixed**
+- `frontend`: on phones the second row of nav links wrapped onto two lines in Bulgarian (and in French at 320px).
+  That made the header taller, and on the homepage it covered the logo by 10px. The row now always stays on one
+  line: type and spacing scale with the screen width. Verified at 320–1000px in all four languages
+  (header 126px, hero content ≥ 34px below it).
+- `frontend`: header buttons and layout.
+  - The language switcher and "Request quote" are now the same height and style.
+  - At 1024–1279px the nav links stay on the second row. In Bulgarian the company name had wrapped
+    and overlapped the nav.
+  - Phones show the logo without the name text, which was being squeezed to a few letters.
+  - Bulgarian mono labels use IBM Plex Mono instead of a heavy system font.
+  - Verified at 320–1440px in all four languages: equal 39px buttons and no overlaps.
+
+**Removed**
+- Dependabot (`.github/dependabot.yml`). Dependency updates are now checked manually (see [CI/CD](#cicd-github-actions)).
 
 ### 2026-10-23
 

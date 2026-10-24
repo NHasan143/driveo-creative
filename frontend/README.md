@@ -49,6 +49,7 @@ src/
 │   │   │   ├── layout.tsx    # SiteHeader + SiteFooter + QuotePresetProvider
 │   │   │   ├── page.tsx      # Home  → /?lang=xx
 │   │   │   ├── services/     # /services?lang=xx
+│   │   │   │   └── [service]/  # /services/airport-transfer?lang=xx … (4 detail pages)
 │   │   │   ├── fleet/        # /fleet?lang=xx
 │   │   │   ├── cities/       # /cities?lang=xx
 │   │   │   └── process/      # /process?lang=xx
@@ -65,7 +66,7 @@ src/
 │   └── motion/               # GSAP setup, <Reveal>, <ScrollFade>, <ParallaxSurface>
 ├── features/                 # Self-contained product areas
 │   ├── home/                 # Hero, assurance, services, cities, process, testimonial
-│   ├── services/             # Services page: per-service details
+│   ├── services/             # Services page rows + detail/ (hero card, facts, overview, steps, fleet, cross-links)
 │   ├── fleet/                # Fleet cards, showcase, comparison table, media config
 │   ├── cities/               # Cities page: city directory
 │   ├── process/              # Process page: timeline, request checklist
@@ -74,7 +75,7 @@ src/
 ├── domain/booking.ts         # Cities, services, vehicles, capacity rules (stable API ids)
 ├── i18n/                     # Locale config + typed dictionaries
 ├── lib/                      # http client, SEO helpers, cn()
-├── config/                   # env, site constants, navigation (page list)
+├── config/                   # env, site constants, navigation (page list), services (slugs, media)
 └── styles/globals.css        # Design tokens, base styles, shared primitives
 ```
 
@@ -113,8 +114,25 @@ src/
   2. Add its copy under `pages.<key>` in every dictionary. The compiler flags missing keys.
   3. Export `generateMetadata` using `buildPageMetadata(locale, meta, "/<segment>")`.
   4. Add it to `SITE_PAGES` in `config/navigation.ts`. The header, footer and sitemap pick it up from there.
+- **Service detail pages:** `services/[service]` is prerendered for every slug in `config/services.ts`
+  (`SERVICE_SLUGS`), which also sets each page's hero and overview photo and vehicle order. The copy lives in
+  `pages.serviceDetail.items.<service>` in each dictionary. Facts must be real: the site states nothing it
+  can't back up (no invented statistics, testimonials or prices). The page exports `instant = false` on purpose.
+  Wrapping it in `<Suspense>` to satisfy the instant-navigation check would replace the static HTML with a
+  placeholder that only fills in after JavaScript runs.
 - **Active page:** navigation reads `useSelectedLayoutSegment()`, not the URL, because the `?lang=`
   rewrite makes `usePathname()` unreliable.
+- **Header layout:**
+  - **Second nav row (below `xl`, 1280px):** the page links sit in a second header row that must stay
+    **one line**. Between 1024 and 1279px they don't fit beside the buttons in French or Bulgarian. The
+    heroes' top padding assumes the resulting 126px header. The row can't scroll sideways either, because
+    that would clip the Services dropdown. Its text size is `clamp(0.55rem, 2.6vw, 0.6rem)` with tight
+    tracking so Bulgarian fits at 320px.
+  - **Buttons:** the language switcher and the header quote button (`size="compact"`) share the same height,
+    type size and tracking. Change them together.
+  - **Phones:** below 640px only the logo shows; the company name appears from `sm`.
+  - **Fonts:** mono labels fall back to IBM Plex Mono for Cyrillic, because Space Mono has none.
+  - If you add a nav item or a longer translation, re-check 320px, 1024px and 1280px in every language.
 - **Quote pre-fill:** `<RequestQuoteButton preset={{ vehicle | city | service }}>` fills the form and
   scrolls to it. Next.js keeps recently visited pages mounted but hidden (React `<Activity>`), so
   there can be several `#quote` sections; the scroll targets the visible one.

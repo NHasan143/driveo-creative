@@ -47,7 +47,7 @@
 
   --font-sans: var(--font-manrope), var(--font-arabic), system-ui, sans-serif;
   --font-display: var(--font-fraunces), var(--font-arabic), Georgia, serif;
-  --font-mono: var(--font-space-mono), var(--font-arabic), ui-monospace, monospace;
+  --font-mono: var(--font-space-mono), var(--font-mono-cyrillic), var(--font-arabic), ui-monospace, monospace;
 }
 
 /* ------------------------------------------------------------------ */

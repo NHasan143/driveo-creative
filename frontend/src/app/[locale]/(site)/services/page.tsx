@@ -23,7 +23,7 @@ export default async function ServicesPage() {
     <main className="min-h-screen overflow-hidden bg-background text-foreground">
       <PageHero
         locale={locale}
-        crumbs={{ home: t.pages.breadcrumbHome, current: t.nav.services }}
+        crumbs={{ home: t.pages.breadcrumbHome, trail: [{ label: t.nav.services }] }}
         eyebrow={page.eyebrow}
         title={page.title}
         intro={page.intro}
@@ -31,7 +31,12 @@ export default async function ServicesPage() {
         cta={t.hero.cta}
         whatsappLabel={t.hero.whatsapp}
       />
-      <ServiceDetails services={t.services} page={page} />
+      <ServiceDetails
+        locale={locale}
+        services={t.services}
+        page={page}
+        viewDetails={t.pages.serviceDetail.viewDetails}
+      />
       <AssuranceSection
         items={t.assurance}
         heading={{ eyebrow: page.standardEyebrow, title: page.standardTitle }}

@@ -24,7 +24,7 @@ export default async function ProcessPage() {
     <main className="min-h-screen overflow-hidden bg-background text-foreground">
       <PageHero
         locale={locale}
-        crumbs={{ home: t.pages.breadcrumbHome, current: t.nav.process }}
+        crumbs={{ home: t.pages.breadcrumbHome, trail: [{ label: t.nav.process }] }}
         eyebrow={page.eyebrow}
         title={page.title}
         intro={page.intro}

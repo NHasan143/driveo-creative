@@ -38,12 +38,12 @@ This repository holds the platform that will replace the Lovable prototype. It h
 
 ## Project status
 
-_Last updated: 2026-10-22_
+_Last updated: 2026-10-24_
 
 | Component | Directory | Stack | Status |
 | --- | --- | --- | --- |
 | Website | [`frontend/`](frontend/) | Next.js · React · TypeScript · Tailwind · GSAP | 🟡 In progress: home page complete, quote form on mock API |
-| Shared API + admin | `backend/` _(planned)_ | Python · Django · DRF · PostgreSQL · Redis · Celery | ⚪ Not started |
+| Shared API + admin | [`backend/`](backend/) | Python · Django · DRF · Lakebase Postgres (Neon) · Neon Object Storage · Redis · Celery | 🟡 Started: Django 6.1 project wired to Neon Postgres and Object Storage, health endpoint. No business endpoints yet |
 | Mobile apps | `mobile/` _(planned)_ | React · Vite · TypeScript · Capacitor | ⚪ Not started |
 | Infrastructure | `.github/`, `infra/` _(planned)_ | Docker Compose · Nginx · Cloudflare · GitHub Actions | 🟡 Started: frontend Dockerfile and CI/CD workflows. Server and compose stack pending |
 | Design reference | [`driveo-creative/`](driveo-creative/) | Lovable (TanStack Start · Supabase) | 🔒 Reference only, do not develop here |
@@ -78,7 +78,10 @@ driveexclusive/
 ├── .github/             ← GitHub Actions workflows (CI/CD)
 ├── frontend/            ← Next.js website: see frontend/README.md
 ├── driveo-creative/     ← Lovable prototype (design + copy reference, own git repo)
-├── backend/             ← (planned) Django API, admin dashboard, Celery workers
+├── backend/             ← Django API and admin (Celery workers planned)
+│   ├── neon.ts          ← Neon services for each branch (Postgres, `assets` bucket)
+│   ├── package.json     ← Neon config tooling only (`@neon/config`, `@neon/env`)
+│   └── .env.local       ← backend secrets (gitignored; template `.env.example`)
 ├── mobile/              ← (planned) React + Capacitor Android/iOS apps
 └── infra/               ← (planned) docker-compose, Nginx, deployment scripts
 ```
@@ -112,7 +115,8 @@ flowchart LR
     Web["Website<br/>Next.js"] --> API
     App["Android / iOS<br/>React + Capacitor"] --> API
     Admin["Admin dashboard<br/>Django"] --> API
-    API["Shared Django REST API<br/>/api/v1"] --> DB[("PostgreSQL")]
+    API["Shared Django REST API<br/>/api/v1"] --> DB[("Lakebase Postgres<br/>Neon")]
+    API --> Files[("Object Storage<br/>Neon")]
     API --> Queue["Celery + Redis<br/>background jobs"]
     Queue --> Email["Transactional email"]
     Queue --> WA["Twilio WhatsApp"]
@@ -126,12 +130,13 @@ flowchart LR
     subgraph VPS["Linux VPS · Docker Compose"]
       Nginx --> Web["frontend<br/>Next.js :3000"]
       Nginx --> Django["backend<br/>Django :8000"]
-      Django --> PG[("PostgreSQL")]
       Django --> Redis[("Redis")]
       Worker["Celery worker"] --> Redis
     end
+    Django --> Neon[("Neon<br/>Postgres · Object Storage")]
 ```
 
+The database and uploaded files live on Neon (managed, branchable), not on the VPS.
 This single-server setup is meant for launch; it is not a high-availability setup. Every part runs
 in its own container, so the database, workers or web servers can move to separate infrastructure
 later without a rewrite.
@@ -145,7 +150,7 @@ later without a rewrite.
 | Website | Next.js 16, React 19, TypeScript, Tailwind CSS 4, GSAP | Fast, search-friendly, premium motion; type safety |
 | Mobile | React, Vite, TypeScript, Capacitor | One codebase for Android and iOS, same API contracts as the website |
 | API and admin | Python, Django, Django REST Framework | Secure, proven foundation for business rules, permissions and admin |
-| Data and jobs | PostgreSQL, Redis, Celery | Reliable storage; notifications and retries run outside requests |
+| Data and jobs | Lakebase Postgres and Object Storage on Neon, Redis, Celery | Managed storage that branches per environment; notifications and retries run outside requests |
 | Notifications | Transactional email provider, Twilio WhatsApp API | Owner alerts with delivery-failure logging |
 | Hosting | Docker, Docker Compose, Linux VPS, Nginx, Cloudflare | Portable, consistent deployments with HTTPS |
 | Workflow | Git, GitHub, GitHub Actions | Version control, automated tests and deployment |
@@ -161,7 +166,8 @@ Source: _Technology Stack & Deployment Architecture_ proposal (v1.0).
 
 - Node.js **24+** and npm (website)
 - Docker 24+ (container builds)
-- Python 3.12+ (backend, once it exists)
+- Python 3.12+ and [uv](https://docs.astral.sh/uv/) (backend)
+- Neon CLI: `npm i -g neon` (backend env vars)
 
 ### Website
 
@@ -175,9 +181,39 @@ npm run dev            # http://localhost:3000 → redirects to /?lang=en
 Useful scripts: `npm run build`, `npm run lint`, `npm run typecheck`.
 The frontend has its own [README](frontend/README.md) covering code structure, conventions and the full API payload.
 
-### Backend and mobile
+### Backend
 
-_To be added when these projects are created._
+All backend secrets live in one file, `backend/.env.local`. Its template is [`backend/.env.example`](backend/.env.example).
+The Neon CLI fills in the Neon section and leaves the Django lines alone. `settings.py` contains no secrets
+and won't start without `DJANGO_SECRET_KEY`.
+`backend/` is linked to the Neon project `driveexclusive` (`backend/neon.ts`, `backend/.neon`), branch `production`.
+Run every `neon` command from `backend/`, so the CLI finds the link and writes `backend/.env.local`.
+
+```bash
+cd backend
+cp .env.example .env.local
+neon env pull                                        # fills in the Neon variables
+# set DJANGO_SECRET_KEY in .env.local (the template shows how to generate one)
+uv venv --python 3.12 .venv
+uv pip install --python .venv -r requirements.txt
+.venv/Scripts/python manage.py migrate --database direct   # macOS/Linux: .venv/bin/python
+.venv/Scripts/python manage.py runserver             # http://localhost:8000/api/v1/health/
+```
+
+- **Database:** `default` uses the pooled `DATABASE_URL` (PgBouncer) for app traffic. Run migrations
+  with `--database direct`, which uses `DATABASE_URL_UNPOOLED`, because session-level work does not
+  survive transaction pooling.
+- **Files:** `default_storage` is the private Neon bucket `assets` (S3-compatible, via django-storages).
+  File URLs are presigned and expire after one hour.
+- **Neon services** are declared in [`backend/neon.ts`](backend/neon.ts). After changing it, run `neon deploy` from `backend/`.
+- **Agent tooling:** [`.mcp.json`](.mcp.json) registers the Neon MCP server, pinned to this project, with
+  OAuth. Claude Code asks you to approve it and sign in to Neon on first use. No key is stored in the repo.
+- **New feature branch:** `neon checkout <name> --create` gives you a copy-on-write database and bucket
+  and pulls their env vars. New non-default branches expire after 7 days.
+
+### Mobile
+
+_To be added when the project is created._
 
 ---
 
@@ -188,7 +224,7 @@ Each app owns its environment template. Never commit real secrets.
 | App | Template | Key variables |
 | --- | --- | --- |
 | Website | [`frontend/.env.example`](frontend/.env.example) | `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_API_MOCK` |
-| Backend | _planned_ `backend/.env.example` | database, Redis, email provider, Twilio, allowed origins |
+| Backend | [`backend/.env.example`](backend/.env.example) → `backend/.env.local` (Neon section filled in by `neon env pull`) | `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`; Neon: `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_ENDPOINT_URL_S3`, `AWS_REGION`. Planned: Redis, email provider, Twilio |
 
 With no API URL set, the website runs in **mock mode**: quote requests get a fake `DRV-XXXXXX` reference.
 This lets you work on the frontend without the backend.
@@ -222,6 +258,7 @@ Base URL: `{API_BASE_URL}/v1/`. JSON, snake_case. Every client sends `Accept-Lan
 
 | Endpoint | Method | Used by | Status |
 | --- | --- | --- | --- |
+| `/v1/health/` | `GET` | Uptime checks, deploys | Implemented: `200 {"database":"ok","storage":"ok"}`, or `503` if either fails |
 | `/v1/quote-requests/` | `POST` | Website quote form | Specified, not yet implemented |
 
 `POST /v1/quote-requests/` returns `201 { "reference": "DRV-XXXXXX" }`.
@@ -345,6 +382,7 @@ Record decisions that would surprise a newcomer. Add new entries at the top.
 
 | Date | Decision | Reason |
 | --- | --- | --- |
+| 2026-10-24 | Postgres and uploaded files on Neon (Lakebase Postgres + Object Storage) instead of containers on the VPS | Managed backups and scale-to-zero; database and files branch together for dev/preview; one fewer stateful service on the VPS |
 | 2026-10-22 | CI/CD on GitHub Actions: images in GHCR, deploy over SSH with `docker compose` | No extra services to pay for; matches the Docker/VPS plan; the pipeline refuses mock-mode deploys |
 | 2026-10-22 | Website rebuilt in Next.js instead of extending the Lovable (TanStack Start) code | Matches the agreed stack; better SEO and long-term maintainability |
 | 2026-10-24 | Removed Dependabot; dependency updates are manual | Too many automated PRs for the team's size, some unsuitable (non-LTS Node, unsupported TypeScript major) |
@@ -374,6 +412,14 @@ Newest first. Follow [Keep a Changelog](https://keepachangelog.com/) headings: A
 ### 2026-10-24
 
 **Added**
+- `backend`: Django 6.1 project connected to Neon. It uses Lakebase Postgres through psycopg 3
+  (pooled for app traffic, direct for migrations) and the private `assets` bucket as the default
+  file storage (django-storages S3). It also adds `GET /api/v1/health/` for both services, plus
+  `requirements.txt` and `.env.example`. All secrets, including `DJANGO_SECRET_KEY`, are read from
+  `backend/.env.local`; `settings.py` has no fallback secret key, and `DEBUG` defaults to off.
+- `infra`: `backend/` is linked to the Neon project `driveexclusive`. `backend/neon.ts` declares the services,
+  and `backend/package.json` holds the Neon config tooling.
+- `infra`: project-level Neon MCP server in `.mcp.json` (OAuth, pinned to `icy-block-59285110`).
 - `frontend`: service detail pages for Airport transfer, Point-to-point, Hourly hire and Private events
   (`/services/<slug>?lang=xx`), in all four languages. Their sections are:
   - a hero with an "At a glance" card;

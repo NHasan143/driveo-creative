@@ -4,9 +4,9 @@
 > why, how, where it stands, and what comes next. It is written for anyone joining the project:
 > developers, designers, the client, or an AI assistant picking up the work.
 >
-> - **Last updated:** 2026-10-23
-> - **Current phase:** Phase 1, Website frontend (≈ 85 % done)
-> - **Next milestone:** Start Phase 2 (Django API) and connect the quote form to it
+> - **Last updated:** 2026-10-24
+> - **Current phase:** Phase 1, Website frontend (≈ 85 % done), overlapping with Phase 2, Backend (started)
+> - **Next milestone:** Data model and the quote-request endpoint (W2.2–W2.3), then connect the quote form to it
 >
 > The [README](README.md) is the technical entry point (setup, commands, architecture).
 > This file is the narrative: goals, plan, progress, risks and decisions.
@@ -116,6 +116,7 @@ Bulgarian and Arabic** to match the markets served.
 - Notifications: transactional email and Twilio WhatsApp to the business owner, with logging and retries.
 - Android and iOS apps (React + Capacitor) for browsing services and requesting bookings or quotes.
 - Hosting: Docker Compose on a Linux VPS behind Nginx and Cloudflare, with CI/CD on GitHub Actions.
+  The database (Lakebase Postgres) and uploaded files (Object Storage) are managed services on Neon.
 - Operations: backups, logging and monitoring.
 
 ### Out of scope (v1), unless agreed later
@@ -124,7 +125,7 @@ Bulgarian and Arabic** to match the markets served.
 - Live driver tracking or a driver app.
 - Automatic instant pricing. v1 pricing is quoted by a person.
 - High-availability or multi-server infrastructure.
-- Third-party service fees (hosting, email, WhatsApp/Twilio, app store accounts), which are paid separately by the client.
+- Third-party service fees (hosting, Neon, email, WhatsApp/Twilio, app store accounts), which are paid separately by the client.
 
 ---
 
@@ -136,20 +137,21 @@ Bulgarian and Arabic** to match the markets served.
 | 2026-09-11 → 09-12 | Lovable prototype built (`driveo-creative-lab.lovable.app`): 3D quote experience, then email-only quotes and social links. Code in `driveo-creative/` |
 | — | Technical proposal agreed: *Technology Stack & Deployment Architecture* v1.0 (Next.js website, Capacitor apps, Django API, PostgreSQL/Redis/Celery, Docker on VPS) |
 | 2026-10-22 | `frontend/` created: Next.js rebuild of the Lovable design with the full architecture. README, `.gitignore` files and this context file added |
+| 2026-10-24 | `backend/` started: Django 6.1 + DRF project connected to Neon (Lakebase Postgres + Object Storage). The database moves off the VPS to Neon |
 
 ---
 
 ## 6. The solution at a glance
 
 ```
-Website (Next.js) ─┐
-Android/iOS apps ──┼──► Shared Django REST API ──► PostgreSQL
-Admin dashboard ───┘           │
-                               └──► Celery + Redis ──► Email · Twilio WhatsApp
+Website (Next.js) ─┐                           ┌──► Lakebase Postgres (Neon)
+Android/iOS apps ──┼──► Shared Django REST API ─┼──► Object Storage (Neon)
+Admin dashboard ───┘                           └──► Celery + Redis ──► Email · Twilio WhatsApp
 ```
 
-- **Hosting:** Cloudflare (DNS, CDN, TLS) → Nginx → containers (Next.js, Django, Celery, PostgreSQL, Redis) on one VPS.
-- **Repository layout:** `frontend/` (built) · `backend/`, `mobile/`, `infra/` (planned) · `driveo-creative/` (reference only, separate git repo, ignored).
+- **Hosting:** Cloudflare (DNS, CDN, TLS) → Nginx → containers (Next.js, Django, Celery, Redis) on one VPS.
+  The database and uploaded files live on Neon (project `driveexclusive`, branch `production`), not on the VPS.
+- **Repository layout:** `frontend/` (built) · `backend/` (started, includes `neon.ts` for the Neon services) · `mobile/`, `infra/` (planned) · `driveo-creative/` (reference only, separate git repo, ignored).
 - **Full stack table, diagrams and setup:** [README.md](README.md).
 
 ---
@@ -162,10 +164,10 @@ Dates are not set yet. Fill them in once scope, budget and resources are confirm
 | --- | --- | --- | --- | --- |
 | **0. Discovery and design** | Agree the brand, design and stack | Lovable prototype, technical proposal | — | 🟢 Done |
 | **1. Website frontend** | Production-quality website on mock data | `frontend/` Next.js app, i18n, SEO, Dockerfile | 0 | 🟡 ≈ 85 % |
-| **2. Backend API and admin** | Shared business logic and operations dashboard | Django project, data model, quote/booking API, admin, auth, OpenAPI schema | 0 | ⚪ Not started |
+| **2. Backend API and admin** | Shared business logic and operations dashboard | Django project, data model, quote/booking API, admin, auth, OpenAPI schema | 0 | 🟡 Started (≈ 10 %): project on Neon, health endpoint |
 | **3. Notifications** | Owner alerts that never lose a request | Celery tasks, email provider, Twilio WhatsApp, retry and failure logging | 2 | ⚪ Not started |
 | **4. Integration** | Website talks to the real API | Quote form live, CORS, error handling, end-to-end tests | 1, 2 | ⚪ Not started |
-| **5. Infrastructure and CI/CD** | Repeatable, secure deployments | `infra/` docker-compose, Nginx, Cloudflare, GitHub Actions, backups, monitoring | 1, 2 | ⚪ Not started (frontend Dockerfile ready) |
+| **5. Infrastructure and CI/CD** | Repeatable, secure deployments | `infra/` docker-compose, Nginx, Cloudflare, GitHub Actions, backups, monitoring | 1, 2 | ⚪ Not started (frontend Dockerfile ready; database provisioned on Neon) |
 | **6. Mobile apps** | Android and iOS apps | `mobile/` React + Vite + Capacitor app, store listings | 2 | ⚪ Not started |
 | **7. Launch and handover** | Go live and hand over safely | Production launch, legal pages, analytics, runbook, client training | 3, 4, 5 | ⚪ Not started |
 
@@ -196,11 +198,13 @@ Each objective has a definition of done (DoD). Tick it when it's done, and updat
 ### WS2: Backend API and admin (`backend/`)
 
 - [ ] **W2.1 Project setup.** DoD: Django + DRF project, settings per environment, `.env.example`, Dockerfile, linting (ruff), tests (pytest).
+  _Partly done (2026-10-24):_ Django 6.1 + DRF project; settings read from environment variables (all secrets in `backend/.env.local`, no fallback secret key, `DEBUG` off by default); `backend/.env.example`; `requirements.txt`; `GET /api/v1/health/`. Remaining: Dockerfile, ruff, pytest, production settings (CORS, secure cookies).
 - [ ] **W2.2 Data model.** DoD: models for City, Service, VehicleClass (with capacity), QuoteRequest/Booking (with status lifecycle and reference `DRV-XXXXXX`), Customer, PricingRule, Availability, NotificationLog.
 - [ ] **W2.3 Quote request endpoint.** DoD: `POST /api/v1/quote-requests/` matches the contract in `frontend/README.md`. It validates the capacity and hourly rules, rejects honeypot submissions silently, rate-limits, and returns `201 {reference}`.
 - [ ] **W2.4 Admin dashboard.** DoD: staff can list, filter and update requests and manage vehicles, pricing and availability. Roles and permissions are in place.
 - [ ] **W2.5 API documentation.** DoD: OpenAPI schema published (drf-spectacular) and linked from the README.
 - [ ] **W2.6 Security.** DoD: CORS limited to known origins, HTTPS-only cookies, admin protected, dependency audit clean.
+- [x] **W2.7 Database and file storage.** DoD: Neon project linked from `backend/` (`neon.ts`, `.neon`). Lakebase Postgres used through psycopg 3 (pooled connection for the app, direct connection for migrations). The private `assets` bucket is Django's default file storage. Both checked end to end: write, read and delete; signed links work and anonymous reads are refused. A project-level Neon MCP server in `.mcp.json` serves AI assistants.
 
 ### WS3: Notifications
 
@@ -211,14 +215,14 @@ Each objective has a definition of done (DoD). Tick it when it's done, and updat
 
 ### WS4: Infrastructure and DevOps (`infra/`)
 
-- [ ] **W4.1 Compose stack.** DoD: `docker-compose.yml` with frontend, backend, worker, PostgreSQL, Redis and Nginx, plus health checks.
+- [ ] **W4.1 Compose stack.** DoD: `docker-compose.yml` with frontend, backend, worker, Redis and Nginx, plus health checks (backend: `/api/v1/health/`). PostgreSQL is not a container: it runs on Neon.
 - [ ] **W4.2 Edge.** DoD: Cloudflare DNS, HTTPS, security headers, and caching for static media.
 - [x] **W4.3a CI/CD workflows (frontend).** DoD: `frontend-ci.yml` runs lint, typecheck, build and a Docker build check on PRs. `frontend-deploy.yml` verifies `main`, publishes the image to GHCR and deploys over SSH with a smoke test. It refuses mock-mode deploys. _Validated with actionlint._ (Dependabot was added here and removed on 2026-10-24.)
 - [ ] **W4.3b CI/CD activation.** DoD: repository pushed to GitHub, `production` environment variables and secrets set, branch protection requires "Frontend CI / Lint, typecheck & build", and the first green deploy is done.
 - [ ] **W4.3c CI for backend and mobile.** DoD: `backend-ci.yml`/`mobile-ci.yml` following the same pattern, with tests.
-- [ ] **W4.4 Backups.** DoD: automated daily PostgreSQL backups stored off the server, and a restore tested and documented.
+- [ ] **W4.4 Backups.** DoD: Neon history retention and a snapshot schedule configured for the `production` branch, and a restore (to a new branch) tested and documented.
 - [ ] **W4.5 Monitoring.** DoD: uptime checks, error tracking and central logs, with alerts sent to the owner or developer.
-- [ ] **W4.6 Staging environment.** DoD: a separate staging deployment for review before production.
+- [ ] **W4.6 Staging environment.** DoD: a separate staging deployment for review before production, using its own Neon branch (copy-on-write database and files).
 
 ### WS5: Mobile apps (`mobile/`)
 
@@ -238,14 +242,14 @@ Each objective has a definition of done (DoD). Tick it when it's done, and updat
 
 ## 9. Current progress
 
-_Snapshot as of 2026-10-22._
+_Snapshot as of 2026-10-24._
 
 ### Overall
 
 | Workstream | Progress | Notes |
 | --- | --- | --- |
 | WS1 Website | ███████████████░░░ ≈ 85 % | Feature-complete on mock data. Legal, consent, performance, tests and the accessibility audit remain |
-| WS2 Backend | ░░░░░░░░░░░░░░░░░░ 0 % | Contract for the first endpoint is specified |
+| WS2 Backend | ██░░░░░░░░░░░░░░░░ ≈ 10 % | Django project on Neon (Postgres + Object Storage), health endpoint. No business endpoints yet |
 | WS3 Notifications | ░░░░░░░░░░░░░░░░░░ 0 % | Recipient details to confirm (§12) |
 | WS4 Infrastructure | ████░░░░░░░░░░░░░░ ≈ 20 % | Frontend Dockerfile and CI/CD workflows written. Activation waits on git, GitHub and a server |
 | WS5 Mobile | ░░░░░░░░░░░░░░░░░░ 0 % | Waits for the API |
@@ -257,16 +261,20 @@ _Snapshot as of 2026-10-22._
 - Every page section, all four languages, the language switcher, the right-to-left Arabic layout, the localized 404, the sitemap, robots, manifest and JSON-LD.
 - Quote form: validation, fleet → form vehicle preselection, capacity limits, hourly-hire flow. Submission returns a mock reference (`DRV-XXXXXX`).
 - Verified in a browser: section heights match the original Lovable site at 1440 px, there is no horizontal overflow at 375 px, the console is clean, and 404 pages return status 404.
+- `backend/` runs locally against Neon (`runserver`). Migrations are applied on the `production` branch. `GET /api/v1/health/` returns `{"database":"ok","storage":"ok"}`, or `503` if either fails.
 
 ### What does not work yet
 
-- No real backend, so quote requests are **not** delivered to anyone yet. The site must not go live until Phase 4 is done.
+- The backend has no quote endpoint yet, so quote requests are **not** delivered to anyone. The site must not go live until Phase 4 is done.
+- The backend has no tests, Dockerfile or CI workflow yet, and no production settings (CORS, secure cookies, production secret key).
 - No automated tests. The CI/CD workflows exist but have never run on GitHub, and no server is configured.
 - The Docker image hasn't been built locally yet: Docker Desktop wasn't running. CI checks the build on every PR.
 - No git repository, so the workflows can't run until the project is pushed to GitHub.
 
 ### Recently completed
 
+- 2026-10-24: Backend started. Django 6.1 + DRF project connected to Neon: Lakebase Postgres and the private `assets` bucket, both tested end to end. All secrets moved to `backend/.env.local`.
+- 2026-10-24: Neon tooling for AI assistants: plugin and skills checked, plus a project-level MCP server (`.mcp.json`, OAuth, pinned to this project).
 - 2026-10-24: Service detail pages for all four services in four languages, with the form pre-filled per service and vehicle.
 - 2026-10-24: Services dropdown in the header (Naymul Hasan). Fixed the phone nav row wrapping in Bulgarian and French, which made the header cover the homepage logo.
 - 2026-10-23: Services, Fleet, Cities and Process pages (four languages, quote pre-fill per service, vehicle and city).
@@ -279,7 +287,7 @@ _Snapshot as of 2026-10-22._
 
 1. Activate CI/CD: `production` environment, secrets, branch protection on `main` (W4.3b, W6.4).
 2. Resolve the open questions in §12 that block the backend (notification recipients, email provider, accounts in v1).
-3. Start the backend: project setup, data model and the quote-request endpoint (W2.1–W2.3).
+3. Continue the backend: finish setup (pytest, ruff, Dockerfile), then the data model and the quote-request endpoint (W2.1–W2.3).
 4. Connect the website to the real endpoint, then add end-to-end tests (Phase 4, W1.10).
 5. Write the legal pages and consent banner (W1.7–W1.8), then do the performance pass (W1.9).
 
@@ -296,9 +304,11 @@ _Snapshot as of 2026-10-22._
 | Notification provider outage | Medium | Medium | Save first, notify later. Retries with backoff and failure logs visible in the admin |
 | Spam or abuse of the quote form | Medium | Medium | Honeypot and client throttle now. Server rate limiting and validation in W2.3. Add CAPTCHA only if needed |
 | Personal-data compliance (UK GDPR/GDPR) | High | Medium | Privacy policy, consent banner, data minimisation, retention policy, access restricted to staff |
-| Third-party costs not budgeted (hosting, Twilio, email, app stores) | Medium | Medium | Listed as client costs in scope (§4). Confirm budget before Phase 3, 5 and 6 |
+| Third-party costs not budgeted (hosting, Neon, Twilio, email, app stores) | Medium | Medium | Listed as client costs in scope (§4). Confirm budget before Phase 3, 5 and 6 |
 | Scope creep (payments, driver app, instant pricing) | Medium | Medium | Out of scope for v1 (§4). New requests go through a recorded decision |
 | Translations not reviewed by native speakers | Medium | Medium | Get FR, BG and AR copy reviewed by native speakers before launch |
+| Dependence on Neon (outage, pricing or plan limits) for the database and files | Medium | Low | It's standard Postgres and S3-compatible storage, so data can move with `pg_dump` and S3 tools. Confirm the plan and costs before launch (Q11) |
+| Leaked credentials (database, storage, Django secret key) | High | Low | Secrets live only in `.env.local` (gitignored) or the server's environment. `settings.py` contains none. Rotate the Neon credentials if exposed |
 
 ### Known issues and technical debt
 
@@ -308,6 +318,8 @@ _Snapshot as of 2026-10-22._
 - **Placeholder copy:** the testimonial is the design's sample quote. Replace it with a real, approved client quote.
 - **The hourly-hire note** mentions Greater London only. Confirm the rule for the other cities (§12).
 - **Copyright year** (`© 2026`) is fixed in the dictionaries. Make it dynamic or update it yearly.
+- **Neon accounts on the developer machine:** the Neon CLI must be signed in to the account in org `org-super-hill-79285047`. The user-level Neon MCP key belongs to another org (GlowHaat); the project's `.mcp.json` overrides it here.
+- **Backend Python environment:** run the backend from `backend/.venv` (Django 6.1). The global Anaconda Python has Django 4.2.
 - **Arabic typography:** Fraunces has no Arabic glyphs, so Arabic headings fall back to Noto Kufi Arabic. Get a designer to review.
 
 ---
@@ -318,6 +330,8 @@ Newest first. The README has the same log for developers. Keep the two in sync.
 
 | Date | Decision | Why | Alternatives considered |
 | --- | --- | --- | --- |
+| 2026-10-24 | All local backend secrets in one file, `backend/.env.local` (template: `backend/.env.example`), with the Neon link (`neon.ts`, `.neon`) in `backend/` too so the Neon CLI writes there. `settings.py` has no secrets and no fallback key | One place to manage them. `neon env pull` updates only its own variables there. The app fails fast if a secret is missing | A separate `backend/.env` for Django-only values |
+| 2026-10-24 | Database and uploaded files on Neon (Lakebase Postgres + Object Storage) instead of PostgreSQL in a container on the VPS. Supersedes that part of proposal v1.0 | Managed backups and point-in-time restore. The database and files branch together for staging and previews. One fewer stateful service on the VPS | PostgreSQL container on the VPS (proposal v1.0); AWS RDS + S3 |
 | 2026-10-22 | CI/CD on GitHub Actions: GHCR images, SSH + `docker compose` deploy, mock-mode deploys blocked | No paid CI/CD or registry services; fits the Docker/VPS plan; protects against launching without a backend | Self-hosted runner on the VPS; a PaaS (e.g. Vercel) for the website |
 | 2026-10-22 | `driveo-creative/` kept as a read-only reference and git-ignored | Separate repository and stack; avoids accidental commits | Git submodule (unnecessary for a reference) |
 | 2026-10-22 | Website rebuilt in Next.js, not extended from Lovable | Matches the agreed stack; better SEO and maintainability | Keep TanStack Start + Supabase |
@@ -345,6 +359,7 @@ Newest first. The README has the same log for developers. Keep the two in sync.
 | Q8 | Real client testimonial(s) approved for publication | Website copy | Client | Open |
 | Q9 | Budget and timeline per phase | §7 dates | Client | Open |
 | Q10 | Apple and Google developer accounts (owned by the business) | W5.3 | Client | Open |
+| Q11 | Neon account ownership and plan: should the org move to a business-owned account, and which paid plan does production need? | W4.4, launch | Client + dev | Open |
 
 ---
 
@@ -358,6 +373,9 @@ Newest first. The README has the same log for developers. Keep the two in sync.
 | Domain rules (cities, services, vehicles, capacity) | `frontend/src/domain/booking.ts` |
 | Translations | `frontend/src/i18n/dictionaries/{en,fr,bg,ar}.ts` |
 | Company contact, social links, media | `frontend/src/config/site.ts` |
+| Backend code and settings | `backend/` · settings: `backend/config/settings.py` |
+| Neon services (Postgres, `assets` bucket) | `backend/neon.ts` (run `neon` commands from `backend/`) · project `driveexclusive` (`icy-block-59285110`), branch `production` |
+| Local secrets | `backend/.env.local` (gitignored), template [`backend/.env.example`](backend/.env.example) |
 | Quote API contract (payload and response) | [`frontend/README.md#backend-contract`](frontend/README.md#backend-contract) |
 | Design reference code | `driveo-creative/` · live: https://driveo-creative-lab.lovable.app |
 | Original company site | https://driveo-elite-flow.base44.app |
@@ -377,6 +395,9 @@ Newest first. The README has the same log for developers. Keep the two in sync.
 | **Capacitor** | Tool that packages a web app as native Android and iOS apps |
 | **Celery / Redis** | Background job system and its message broker, used for notifications and retries |
 | **PWA** | Progressive Web App: the site can be "installed" to a phone's home screen |
+| **Neon** | Managed cloud provider for the database (Lakebase Postgres) and file storage |
+| **Neon branch** | An instant copy-on-write copy of the database and files, used for staging, previews and feature work |
+| **Pooled / direct connection** | Neon provides two database URLs: pooled (`DATABASE_URL`) for app traffic and direct (`DATABASE_URL_UNPOOLED`) for migrations |
 
 ### Working agreements
 

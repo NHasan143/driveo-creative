@@ -43,6 +43,8 @@ jobs:
 
   publish:
     name: Build & publish image
+    # Temporarily paused. Remove this condition to resume publishing and deployment.
+    if: ${{ false }}
     needs: ci
     runs-on: ubuntu-latest
     timeout-minutes: 20

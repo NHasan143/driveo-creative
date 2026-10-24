@@ -1,8 +1,10 @@
 "use client";
 
-import { ArrowUpRight, ChevronDown, Clock3, Plane, Route, Sparkles } from "lucide-react";
+import { ArrowUpRight, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import { serviceIcons } from "@/components/icons/service-icons";
+import { servicePath } from "@/config/services";
 import { SERVICE_TYPES } from "@/domain/booking";
 import { localePath, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/get-dictionary";
@@ -17,8 +19,6 @@ interface ServicesDropdownProps {
   current: boolean;
   className?: string;
 }
-
-const icons = { airport_transfer: Plane, point_to_point: Route, hourly_hire: Clock3, private_event: Sparkles };
 
 export function ServicesDropdown({ locale, label, items, allServices, current, className }: ServicesDropdownProps) {
   const [open, setOpen] = useState(false);
@@ -40,7 +40,8 @@ export function ServicesDropdown({ locale, label, items, allServices, current, c
       if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
     }
     // The header has separate desktop and mobile navigation instances.
-    const breakpoint = window.matchMedia("(min-width: 1024px)");
+    // Matches the header's xl breakpoint, where the nav moves into the top row.
+    const breakpoint = window.matchMedia("(min-width: 1280px)");
     function close() { setOpen(false); }
     document.addEventListener("pointerdown", dismiss);
     breakpoint.addEventListener("change", close);
@@ -111,12 +112,12 @@ export function ServicesDropdown({ locale, label, items, allServices, current, c
       <div id={panelId} hidden={!open} className={styles.panel}>
         <ul aria-labelledby={triggerId} className={styles.list}>
           {SERVICE_TYPES.map((type, index) => {
-            const Icon = icons[type];
+            const Icon = serviceIcons[type];
             return (
               <li key={type}>
                 <Link
                   ref={(element) => { linksRef.current[index] = element; }}
-                  href={`${localePath(locale, "/services")}#${type}`}
+                  href={localePath(locale, servicePath(type))}
                   className={styles.option}
                   onClick={() => setOpen(false)}
                 >

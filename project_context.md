@@ -267,6 +267,8 @@ _Snapshot as of 2026-10-22._
 
 ### Recently completed
 
+- 2026-10-24: Service detail pages for all four services in four languages, with the form pre-filled per service and vehicle.
+- 2026-10-24: Services dropdown in the header (Naymul Hasan). Fixed the phone nav row wrapping in Bulgarian and French, which made the header cover the homepage logo.
 - 2026-10-23: Services, Fleet, Cities and Process pages (four languages, quote pre-fill per service, vehicle and city).
 - 2026-10-23: Language dropdown (endonyms, matches the button, keyboard support, keeps scroll position). Public URLs switched to `/?lang=xx`.
 - 2026-10-23: Git repository set up on GitHub (`NHasan143/driveo-creative`); `main` now holds the new platform.

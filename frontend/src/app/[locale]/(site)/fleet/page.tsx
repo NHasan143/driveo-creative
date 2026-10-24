@@ -23,7 +23,7 @@ export default async function FleetPage() {
     <main className="min-h-screen overflow-hidden bg-background text-foreground">
       <PageHero
         locale={locale}
-        crumbs={{ home: t.pages.breadcrumbHome, current: t.nav.fleet }}
+        crumbs={{ home: t.pages.breadcrumbHome, trail: [{ label: t.nav.fleet }] }}
         eyebrow={page.eyebrow}
         title={page.title}
         intro={page.intro}

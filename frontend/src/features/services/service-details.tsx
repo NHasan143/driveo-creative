@@ -1,16 +1,21 @@
 import { Reveal } from "@/components/motion/reveal";
+import { ArrowLink } from "@/components/ui/arrow-link";
 import { CheckList } from "@/components/ui/check-list";
+import { servicePath } from "@/config/services";
 import { SERVICE_TYPES } from "@/domain/booking";
 import { RequestQuoteButton } from "@/features/quote";
+import { localePath, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/get-dictionary";
 
 interface ServiceDetailsProps {
+  locale: Locale;
   services: Dictionary["services"];
   page: Dictionary["pages"]["services"];
+  viewDetails: string;
 }
 
-/** One row per service: name on one side, description, inclusions and quote action on the other. */
-export function ServiceDetails({ services, page }: ServiceDetailsProps) {
+/** One row per service: name on one side, description, inclusions and actions on the other. */
+export function ServiceDetails({ locale, services, page, viewDetails }: ServiceDetailsProps) {
   return (
     <section className="section-band bg-background">
       <div className="site-shell">
@@ -36,9 +41,10 @@ export function ServiceDetails({ services, page }: ServiceDetailsProps) {
                 <p className="max-w-xl text-lg leading-8 text-muted-foreground">{item.copy}</p>
                 <p className="mono-label mt-8 mb-4">{page.includedLabel}</p>
                 <CheckList items={page.included[type]} className="sm:grid-cols-2 sm:gap-x-8" />
-                <RequestQuoteButton preset={{ service: type }} className="mt-9">
-                  {page.quoteCta}
-                </RequestQuoteButton>
+                <div className="mt-9 flex flex-wrap items-center gap-x-8 gap-y-4">
+                  <RequestQuoteButton preset={{ service: type }}>{page.quoteCta}</RequestQuoteButton>
+                  <ArrowLink href={localePath(locale, servicePath(type))}>{viewDetails}</ArrowLink>
+                </div>
               </div>
             </Reveal>
           );

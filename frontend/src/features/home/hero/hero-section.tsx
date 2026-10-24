@@ -32,7 +32,7 @@ export function HeroSection({ hero, cityNames }: HeroSectionProps) {
       </div>
       <div className={styles.shade} />
 
-      <div className="site-shell relative z-10 flex min-h-[92svh] items-center pt-40 pb-16 lg:pt-32">
+      <div className="site-shell relative z-10 flex min-h-[92svh] items-center pt-40 pb-16 xl:pt-32">
         <ScrollFade className="max-w-4xl">
           <BrandMark
             size="lg"

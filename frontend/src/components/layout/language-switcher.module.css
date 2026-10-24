@@ -130,6 +130,7 @@
   .trigger {
     min-width: 0;
     padding: 0.35rem 0.55rem;
+    font-size: 0.58rem;
     letter-spacing: 0.08em;
   }
 

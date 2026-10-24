@@ -61,11 +61,19 @@
   padding-inline: 1.65rem;
 }
 
+/* Header size: matches the language switcher's height, type and tracking exactly. */
+.compact {
+  gap: 0.5rem;
+  min-height: 2.45rem;
+  padding: 0.45rem 1rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+}
+
 @media (width <= 639px) {
   .compact {
-    min-height: 2.45rem;
     padding-inline: 0.8rem;
-    font-size: 0.55rem;
+    font-size: 0.58rem;
     letter-spacing: 0.08em;
   }
 }

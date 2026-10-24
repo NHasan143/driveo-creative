@@ -23,7 +23,7 @@ export default async function CitiesPage() {
     <main className="min-h-screen overflow-hidden bg-background text-foreground">
       <PageHero
         locale={locale}
-        crumbs={{ home: t.pages.breadcrumbHome, current: t.nav.cities }}
+        crumbs={{ home: t.pages.breadcrumbHome, trail: [{ label: t.nav.cities }] }}
         eyebrow={page.eyebrow}
         title={page.title}
         intro={page.intro}

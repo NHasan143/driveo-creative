@@ -26,7 +26,12 @@ export default async function HomePage() {
       <LocalBusinessJsonLd locale={locale} description={t.meta.description} cityNames={t.cities.names} />
       <HeroSection hero={t.hero} cityNames={t.cities.names} />
       <AssuranceSection items={t.assurance} />
-      <ServicesSection locale={locale} services={t.services} more={t.pages.links.services} />
+      <ServicesSection
+        locale={locale}
+        services={t.services}
+        more={t.pages.links.services}
+        viewDetails={t.pages.serviceDetail.viewDetails}
+      />
       <FleetSection locale={locale} fleet={t.fleet} more={t.pages.links.fleet} />
       <CitiesSection locale={locale} cities={t.cities} more={t.pages.links.cities} />
       <ProcessSection locale={locale} process={t.process} more={t.pages.links.process} />

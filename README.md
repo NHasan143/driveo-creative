@@ -55,6 +55,7 @@ Legend: 🟢 done · 🟡 in progress · ⚪ not started · 🔒 frozen
 - [x] Design ported from Lovable: hero, assurance, services, fleet, cities, process, quote, testimonial, footer
 - [x] Four languages (EN, FR, BG, AR) at `/?lang=xx` URLs, with right-to-left Arabic
 - [x] Inner pages: Services, Fleet, Cities, Process (same design system, each ending in the quote form)
+- [x] Service detail pages (4 services × 4 languages)
 - [x] SEO: metadata, hreflang, sitemap, robots, JSON-LD, web app manifest
 - [x] Quote form with client validation and a typed API client (mock mode)
 - [x] "Add to Home Screen" (PWA install prompt)
@@ -371,6 +372,34 @@ Record decisions that would surprise a newcomer. Add new entries at the top.
 Newest first. Follow [Keep a Changelog](https://keepachangelog.com/) headings: Added / Changed / Fixed / Removed.
 
 ### 2026-10-24
+
+**Added**
+- `frontend`: service detail pages for Airport transfer, Point-to-point, Hourly hire and Private events
+  (`/services/<slug>?lang=xx`), in all four languages. Their sections are:
+  - a hero with an "At a glance" card;
+  - a key-facts strip;
+  - an overview with features and a photo;
+  - service-specific steps;
+  - recommended vehicles (pre-filling service and car);
+  - the testimonial, links to the other services, and the quote form, pre-filled with the service.
+
+  The header dropdown, the Services page and the homepage cards link to them, and the sitemap now has 36 URLs.
+- `frontend`: Services dropdown in the header. It lists the four services with icons, each deep-linking
+  to its row on the Services page, plus an "All services" link. It opens on hover with a mouse and on
+  tap or keyboard otherwise.
+
+**Fixed**
+- `frontend`: on phones the second row of nav links wrapped onto two lines in Bulgarian (and in French at 320px).
+  That made the header taller, and on the homepage it covered the logo by 10px. The row now always stays on one
+  line: type and spacing scale with the screen width. Verified at 320–1000px in all four languages
+  (header 126px, hero content ≥ 34px below it).
+- `frontend`: header buttons and layout.
+  - The language switcher and "Request quote" are now the same height and style.
+  - At 1024–1279px the nav links stay on the second row. In Bulgarian the company name had wrapped
+    and overlapped the nav.
+  - Phones show the logo without the name text, which was being squeezed to a few letters.
+  - Bulgarian mono labels use IBM Plex Mono instead of a heavy system font.
+  - Verified at 320–1440px in all four languages: equal 39px buttons and no overlaps.
 
 **Removed**
 - Dependabot (`.github/dependabot.yml`). Dependency updates are now checked manually (see [CI/CD](#cicd-github-actions)).

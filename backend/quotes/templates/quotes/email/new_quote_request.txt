@@ -1,0 +1,19 @@
+{% autoescape off %}New quote request {{ reference }}
+
+Service:    {{ service }}
+When:       {{ when }}
+Route:      {{ route }}
+Vehicle:    {{ vehicle }}
+
+Customer:   {{ quote.full_name }}
+Phone:      {{ quote.phone }}
+Email:      {{ quote.email }}
+Language:   {{ quote.get_locale_display }}
+{% if quote.notes %}
+Notes:
+{{ quote.notes }}
+{% endif %}
+Open in the dashboard: {{ admin_url }}
+
+Reply to this email to answer the customer directly.
+{% endautoescape %}

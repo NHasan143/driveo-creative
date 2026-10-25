@@ -197,8 +197,20 @@ neon env pull                                        # fills in the Neon variabl
 uv venv --python 3.12 .venv
 uv pip install --python .venv -r requirements.txt
 .venv/Scripts/python manage.py migrate --database direct   # macOS/Linux: .venv/bin/python
+.venv/Scripts/python manage.py createsuperuser       # admin login at /admin/
 .venv/Scripts/python manage.py runserver             # http://localhost:8000/api/v1/health/
 ```
+
+Quote alerts run in a Celery worker, so start Redis and a worker next to the server:
+
+```bash
+redis-server                                          # or: docker run -p 6379:6379 redis:7
+.venv/Scripts/celery -A config worker -l info --pool=solo   # --pool=solo is needed on Windows only
+.venv/Scripts/celery -A config beat -l info           # optional locally: re-queues stuck alerts every 10 min
+.venv/Scripts/python manage.py test quotes core       # tests (they create and drop a test database on Neon)
+```
+
+To work without Redis, set `CELERY_TASK_ALWAYS_EAGER=true` in `.env.local`. Alerts then send inside the request.
 
 - **Database:** `default` uses the pooled `DATABASE_URL` (PgBouncer) for app traffic. Run migrations
   with `--database direct`, which uses `DATABASE_URL_UNPOOLED`, because session-level work does not
@@ -224,7 +236,7 @@ Each app owns its environment template. Never commit real secrets.
 | App | Template | Key variables |
 | --- | --- | --- |
 | Website | [`frontend/.env.example`](frontend/.env.example) | `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_API_MOCK` |
-| Backend | [`backend/.env.example`](backend/.env.example) → `backend/.env.local` (Neon section filled in by `neon env pull`) | `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`; Neon: `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_ENDPOINT_URL_S3`, `AWS_REGION`. Planned: Redis, email provider, Twilio |
+| Backend | [`backend/.env.example`](backend/.env.example) → `backend/.env.local` (Neon section filled in by `neon env pull`) | `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`; Neon: `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `AWS_*`; jobs: `REDIS_URL`; alerts: `QUOTE_ALERT_EMAILS`, `QUOTE_ALERT_WHATSAPP`, `SMTP_*`, `DEFAULT_FROM_EMAIL`, `TWILIO_*`, `BACKEND_BASE_URL` |
 
 With no API URL set, the website runs in **mock mode**: quote requests get a fake `DRV-XXXXXX` reference.
 This lets you work on the frontend without the backend.
@@ -259,11 +271,17 @@ Base URL: `{API_BASE_URL}/v1/`. JSON, snake_case. Every client sends `Accept-Lan
 | Endpoint | Method | Used by | Status |
 | --- | --- | --- | --- |
 | `/v1/health/` | `GET` | Uptime checks, deploys | Implemented: `200 {"database":"ok","storage":"ok"}`, or `503` if either fails |
-| `/v1/quote-requests/` | `POST` | Website quote form | Specified, not yet implemented |
+| `/v1/quote-requests/` | `POST` | Website quote form | Implemented (website not connected yet) |
 
 `POST /v1/quote-requests/` returns `201 { "reference": "DRV-XXXXXX" }`.
 The full request body, the validation rules and the honeypot (anti-spam) field are in the
-[frontend README](frontend/README.md#backend-contract).
+[frontend README](frontend/README.md#backend-contract). The API enforces the same rules. It also
+rejects journey dates more than one day in the past.
+
+- **Errors:** `400` with DRF field errors, for example `{"passengers": ["This vehicle takes up to 4 passengers."]}`.
+- **Honeypot:** a filled honeypot gets a normal-looking `201` with a fake reference. Nothing is stored or sent.
+- **Rate limit:** `QUOTE_REQUESTS_RATE` per IP (default `10/hour`), then `429`.
+- **References:** `DRV-` plus 6 characters, without 0/O/1/I so they are easy to read out.
 
 > When the backend is created, publish its OpenAPI schema (for example, drf-spectacular at `/api/schema/`)
 > and link it here. That schema then becomes the source of truth for this table.
@@ -279,6 +297,44 @@ The full request body, the validation rules and the honeypot (anti-spam) field a
 
 Every request is **saved before any notification is sent**. If a provider is down, the failure is logged
 and the send is retried automatically. A saved booking is never lost because a message failed.
+
+### How it's built (quote requests, `backend/quotes/`)
+
+```mermaid
+flowchart LR
+    Form["POST /v1/quote-requests/"] --> Save[("QuoteRequest<br/>saved on Neon")]
+    Save -->|after commit| Rows["Notification row<br/>per recipient"]
+    Rows --> Redis[("Redis")] --> Worker["Celery worker"]
+    Worker --> Email["SMTP email"]
+    Worker --> WA["Twilio WhatsApp"]
+    Worker -->|status, attempts, error| Rows
+```
+
+- **One `Notification` row per recipient and channel**, shown inline on the request in the admin
+  (pending, sent, failed or skipped, with attempt count and last error).
+- **Retries:** after 1, 2, 4, 8 and 16 minutes for outages, timeouts and rate limits (Twilio 429/5xx,
+  SMTP connection errors). Permanent errors (an invalid number, rejected credentials) fail at once.
+- **Redis down when a request arrives:** the request is still saved and its rows stay pending. Celery beat
+  re-queues pending rows older than 45 minutes every 10 minutes.
+- **Missing configuration** (no recipients, no Twilio credentials) creates a `skipped` row with the reason,
+  never a silent gap.
+- **Admin:** staff can filter and search requests, set a status (new, contacted, quoted, closed), keep
+  staff notes, and use the **Resend failed alerts** action.
+- **Email** has a text and an HTML part, with `Reply-To` set to the customer and a link to the request in
+  the admin. Without `SMTP_HOST`, it is printed to the console.
+
+### WhatsApp (Twilio)
+
+1. **Testing:** use the [Twilio WhatsApp sandbox](https://www.twilio.com/docs/whatsapp/sandbox).
+   - Set `TWILIO_WHATSAPP_FROM=+14155238886` and leave `TWILIO_WHATSAPP_CONTENT_SID` empty.
+   - Each recipient joins the sandbox from their phone first.
+2. **Production:** WhatsApp only delivers free-form messages within 24 hours of the recipient's last message.
+   Business-initiated alerts need an **approved template**.
+   - Create one in Twilio Content Template Builder with six placeholders, in this order:
+     `{{1}}` reference, `{{2}}` service and city, `{{3}}` date and time, `{{4}}` route, `{{5}}` customer
+     name, phone and email, `{{6}}` dashboard link.
+   - Put its `HX...` SID in `TWILIO_WHATSAPP_CONTENT_SID`.
+   - Set `TWILIO_WHATSAPP_FROM` to the business's WhatsApp-enabled sender.
 
 ---
 
@@ -409,7 +465,16 @@ Record decisions that would surprise a newcomer. Add new entries at the top.
 
 Newest first. Follow [Keep a Changelog](https://keepachangelog.com/) headings: Added / Changed / Fixed / Removed.
 
-### 2026-10-24
+### 2026-10-25
+
+**Added**
+- `backend`: quote request system (`quotes` app).
+  - `POST /api/v1/quote-requests/` validates the website's rules, drops honeypot submissions silently,
+    rate-limits per IP and returns `201 {reference}`.
+  - Owner alerts by email (SMTP) and Twilio WhatsApp run through Celery + Redis, with retries,
+    a delivery log per recipient, and a periodic sweep for alerts that were never queued.
+  - Admin pages for requests and alerts, including a "Resend failed alerts" action.
+  - 27 tests. The website is not connected yet.
 
 **Added**
 - `backend`: Django 6.1 project connected to Neon. It uses Lakebase Postgres through psycopg 3

@@ -151,7 +151,7 @@ Admin dashboard ───┘                           └──► Celery + Red
 
 - **Hosting:** Cloudflare (DNS, CDN, TLS) → Nginx → containers (Next.js, Django, Celery, Redis) on one VPS.
   The database and uploaded files live on Neon (project `driveexclusive`, branch `production`), not on the VPS.
-- **Repository layout:** `frontend/` (built) · `backend/` (started, includes `neon.ts` for the Neon services) · `mobile/`, `infra/` (planned) · `driveo-creative/` (reference only, separate git repo, ignored).
+- **Repository layout:** `frontend/` (built; includes the content admin at `/admin`, demo mode) · `backend/` (started, includes `neon.ts` for the Neon services) · `mobile/`, `infra/` (planned) · `driveo-creative/` (reference only, separate git repo, ignored).
 - **Full stack table, diagrams and setup:** [README.md](README.md).
 
 ---
@@ -204,6 +204,18 @@ Each objective has a definition of done (DoD). Tick it when it's done, and updat
 - [x] **W2.3 Quote request endpoint.** DoD: `POST /api/v1/quote-requests/` matches the contract in `frontend/README.md`. It validates the capacity and hourly rules, rejects honeypot submissions silently, rate-limits, and returns `201 {reference}`. _Done 2026-10-25: also rejects past dates and cleans text the same way the website does. Rate limit: 10/hour per IP._
 - [ ] **W2.4 Admin dashboard.** DoD: staff can list, filter and update requests and manage vehicles, pricing and availability. Roles and permissions are in place.
   _Partly done:_ staff can list, filter, search and update quote requests, see each alert's delivery status, and resend failed alerts. Vehicles, pricing, availability and roles are still to do.
+- [ ] **W2.8 Content admin (`frontend/`, `/admin`).** DoD: staff sign in and manage the website's services, fleet, cities and site settings (contact, social links, testimonials) in four languages. Changes are saved through the API, and the website reads its content from the API.
+  _Partly done (2026-10-26):_ the admin frontend is complete in demo mode, inside the website app at `/admin`:
+  - create, edit, duplicate, publish, reorder and delete, with reference cleanup;
+  - per-language editing with completeness tracking, and right-to-left Arabic;
+  - image upload, SEO preview, a dashboard, light and dark themes, and a phone layout.
+
+  Content is stored in the browser, seeded from the website's dictionaries. Production builds hide `/admin` unless `ADMIN_ENABLED=true`. Remaining:
+  - Django content models and endpoints;
+  - `api-repository.ts`;
+  - staff sign-in;
+  - image upload to Neon storage;
+  - the website reading content from the API.
 - [ ] **W2.5 API documentation.** DoD: OpenAPI schema published (drf-spectacular) and linked from the README.
 - [ ] **W2.6 Security.** DoD: CORS limited to known origins, HTTPS-only cookies, admin protected, dependency audit clean.
 - [x] **W2.7 Database and file storage.** DoD: Neon project linked from `backend/` (`neon.ts`, `.neon`). Lakebase Postgres used through psycopg 3 (pooled connection for the app, direct connection for migrations). The private `assets` bucket is Django's default file storage. Both checked end to end: write, read and delete; signed links work and anonymous reads are refused. A project-level Neon MCP server in `.mcp.json` serves AI assistants.
@@ -254,6 +266,7 @@ _Snapshot as of 2026-10-25._
 | --- | --- | --- |
 | WS1 Website | ███████████████░░░ ≈ 85 % | Feature-complete on mock data. Legal, consent, performance, tests and the accessibility audit remain |
 | WS2 Backend | ██████░░░░░░░░░░░░ ≈ 35 % | Quote request API, admin and data model for requests and alerts. Foundation fixes (custom user model, CORS, settings split, CI) still pending |
+| WS2 Content admin | ███████████░░░░░░░ ≈ 60 % | Next.js admin frontend complete in demo mode (browser storage). API, sign-in and the website connection remain (W2.8) |
 | WS3 Notifications | ██████████████░░░░ ≈ 75 % | Email and WhatsApp pipeline built and tested. Needs real recipients, an SMTP provider and Twilio credentials (Q1, Q2) |
 | WS4 Infrastructure | ████░░░░░░░░░░░░░░ ≈ 20 % | Frontend Dockerfile and CI/CD workflows written. Activation waits on git, GitHub and a server |
 | WS5 Mobile | ░░░░░░░░░░░░░░░░░░ 0 % | Waits for the API |
@@ -265,11 +278,13 @@ _Snapshot as of 2026-10-25._
 - Every page section, all four languages, the language switcher, the right-to-left Arabic layout, the localized 404, the sitemap, robots, manifest and JSON-LD.
 - Quote form: validation, fleet → form vehicle preselection, capacity limits, hourly-hire flow. Submission returns a mock reference (`DRV-XXXXXX`).
 - Verified in a browser: section heights match the original Lovable site at 1440 px, there is no horizontal overflow at 375 px, the console is clean, and 404 pages return status 404.
+- The content admin runs at http://localhost:3000/admin with the website's dev server, and the website passes `lint`, `typecheck` and `build` with it included. Every content type can be created, edited, duplicated, reordered, published and deleted in four languages. This was checked in a browser at desktop and phone widths, in both themes.
 - `backend/` runs locally against Neon (`runserver`). Migrations are applied on the `production` branch. `GET /api/v1/health/` returns `{"database":"ok","storage":"ok"}`, or `503` if either fails.
 
 ### What does not work yet
 
 - The website isn't connected to the quote endpoint yet (still mock mode), and no real alert recipients, SMTP or Twilio credentials are configured. Quote requests from the website are **not** delivered to anyone yet. The site must not go live until Phase 4 is done.
+- The content admin saves only to the browser it runs in. It has no sign-in, and its edits don't reach the website. Production builds therefore answer 404 at `/admin`. Don't set `ADMIN_ENABLED=true` on a public server until it has the API and staff authentication (W2.8).
 - The backend has no tests, Dockerfile or CI workflow yet, and no production settings (CORS, secure cookies, production secret key).
 - No automated tests. The CI/CD workflows exist but have never run on GitHub, and no server is configured.
 - The Docker image hasn't been built locally yet: Docker Desktop wasn't running. CI checks the build on every PR.
@@ -277,6 +292,8 @@ _Snapshot as of 2026-10-25._
 
 ### Recently completed
 
+- 2026-10-26: Content admin moved into the website app at `/admin`, with its own root layout and a production gate (`ADMIN_ENABLED`). The separate `admin/` app is retired.
+- 2026-10-25: Content admin (Next.js) in demo mode. Services, fleet, cities and site settings get full create, update and delete in four languages, plus a dashboard, image upload, SEO preview and light and dark themes. Content is seeded from the website's dictionaries.
 - 2026-10-25: Quote request system in the backend: endpoint, validation, rate limit, admin, and owner alerts by email and Twilio WhatsApp through Celery + Redis, with retries and a delivery log. 27 tests pass, and the full flow was checked locally (request → Neon → Redis → worker → email).
 - 2026-10-24: Backend started. Django 6.1 + DRF project connected to Neon: Lakebase Postgres and the private `assets` bucket, both tested end to end. All secrets moved to `backend/.env.local`.
 - 2026-10-24: Neon tooling for AI assistants: plugin and skills checked, plus a project-level MCP server (`.mcp.json`, OAuth, pinned to this project).
@@ -294,7 +311,12 @@ _Snapshot as of 2026-10-25._
 2. Resolve the open questions in §12 that block the backend (notification recipients, email provider, accounts in v1).
 3. Backend foundation fixes: custom user model (while there are 0 users), a dev Neon branch, DRF defaults, CORS, settings split, pytest and ruff (W2.1, W2.6).
 4. Connect the website to the real endpoint (needs CORS), configure alert recipients, SMTP and Twilio, then add end-to-end tests (Phase 4, W1.10).
-5. Write the legal pages and consent banner (W1.7–W1.8), then do the performance pass (W1.9).
+5. Content API for the admin. Build these together:
+   - Django models and endpoints for services, vehicles, cities and settings, matching `frontend/src/admin/lib/content/types.ts`;
+   - staff authentication;
+   - `api-repository.ts` in the admin;
+   - the website reading that content (W2.8).
+6. Write the legal pages and consent banner (W1.7–W1.8), then do the performance pass (W1.9).
 
 ---
 
@@ -336,6 +358,8 @@ Newest first. The README has the same log for developers. Keep the two in sync.
 
 | Date | Decision | Why | Alternatives considered |
 | --- | --- | --- | --- |
+| 2026-10-26 | The content admin lives in the website app at `/admin` (a second root layout), hidden in production unless `ADMIN_ENABLED=true` | Client preference: one app to run and deploy. Admin code and CSS never load on website pages. The gate keeps an unauthenticated admin off the live site | A separate `admin/` Next.js app (built first, then retired) |
+| 2026-10-25 | The content admin was built first against browser storage, behind a `ContentRepository` interface | The client asked for the admin frontend first. Screens never touch storage directly, so connecting the Django API swaps one implementation. It matches the website's stack and design quality | Django's built-in admin for content (kept for quote requests); building the API first |
 | 2026-10-24 | All local backend secrets in one file, `backend/.env.local` (template: `backend/.env.example`), with the Neon link (`neon.ts`, `.neon`) in `backend/` too so the Neon CLI writes there. `settings.py` has no secrets and no fallback key | One place to manage them. `neon env pull` updates only its own variables there. The app fails fast if a secret is missing | A separate `backend/.env` for Django-only values |
 | 2026-10-24 | Database and uploaded files on Neon (Lakebase Postgres + Object Storage) instead of PostgreSQL in a container on the VPS. Supersedes that part of proposal v1.0 | Managed backups and point-in-time restore. The database and files branch together for staging and previews. One fewer stateful service on the VPS | PostgreSQL container on the VPS (proposal v1.0); AWS RDS + S3 |
 | 2026-10-22 | CI/CD on GitHub Actions: GHCR images, SSH + `docker compose` deploy, mock-mode deploys blocked | No paid CI/CD or registry services; fits the Docker/VPS plan; protects against launching without a backend | Self-hosted runner on the VPS; a PaaS (e.g. Vercel) for the website |
@@ -376,6 +400,7 @@ Newest first. The README has the same log for developers. Keep the two in sync.
 | What | Where |
 | --- | --- |
 | Website code | `frontend/` (guide: [`frontend/README.md`](frontend/README.md)) |
+| Content admin | `frontend/src/admin/` + routes in `frontend/src/app/admin/` (guide: [`frontend/README.md#content-admin-admin`](frontend/README.md#content-admin-admin)) · content model: `frontend/src/admin/lib/content/types.ts` |
 | Domain rules (cities, services, vehicles, capacity) | `frontend/src/domain/booking.ts` |
 | Translations | `frontend/src/i18n/dictionaries/{en,fr,bg,ar}.ts` |
 | Company contact, social links, media | `frontend/src/config/site.ts` |

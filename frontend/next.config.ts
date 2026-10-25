@@ -30,6 +30,9 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
+      // The content admin must never be indexed, even if a link to it leaks.
+      { source: "/admin/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
+      { source: "/admin", headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] },
       {
         source: "/media/:path*",
         headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],

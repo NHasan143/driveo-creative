@@ -8,6 +8,12 @@ import {
   type Locale,
 } from "@/i18n/config";
 
+/**
+ * The content admin (`/admin`) has no sign-in yet, so production builds hide it
+ * unless `ADMIN_ENABLED=true` is set on the server. It is always on in development.
+ */
+const adminEnabled = process.env.NODE_ENV !== "production" || process.env.ADMIN_ENABLED === "true";
+
 /** Picks the best supported locale: saved choice first, then Accept-Language. */
 function resolveLocale(request: NextRequest): Locale {
   const saved = request.cookies.get(LOCALE_COOKIE)?.value;
@@ -51,6 +57,11 @@ function rememberLocale(response: NextResponse, request: NextRequest, locale: Lo
 export function proxy(request: NextRequest) {
   const url = request.nextUrl;
   const [, firstSegment, ...rest] = url.pathname.split("/");
+
+  // The admin is a separate root layout with no languages: no `?lang=` redirect or rewrite.
+  if (firstSegment === "admin") {
+    return adminEnabled ? NextResponse.next() : new NextResponse("Not found", { status: 404 });
+  }
   const pathLocale = hasLocale(firstSegment) ? firstSegment : null;
   const subPath = (pathLocale ? rest : [firstSegment, ...rest]).filter(Boolean).join("/");
 

@@ -2,6 +2,7 @@
 
 Marketing and booking-request website for Driveo Exclusive's private chauffeur service.
 It is built from the approved Lovable design and talks to the shared Django REST API.
+The same app also serves the **content admin** at `/admin` (see [Content admin](#content-admin-admin)).
 
 **Stack:** Next.js 16 (App Router, Cache Components) · React 19 · TypeScript · Tailwind CSS 4 · GSAP · Zod
 
@@ -14,6 +15,7 @@ It is built from the approved Lovable design and talks to the shared Django REST
 cp .env.example .env.local   # then adjust values
 npm install
 npm run dev                  # http://localhost:3000 → redirects to /?lang=en
+                             # http://localhost:3000/admin → content admin
 ```
 
 | Script | Purpose |
@@ -36,6 +38,7 @@ npm run dev                  # http://localhost:3000 → redirects to /?lang=en
 | `NEXT_PUBLIC_SITE_URL` | Public origin. Used for canonical URLs, hreflang, sitemap and Open Graph. |
 | `NEXT_PUBLIC_API_BASE_URL` | Django API base, e.g. `https://api.example.com/api` |
 | `NEXT_PUBLIC_API_MOCK` | `true` answers API calls locally. This is also the default when no API URL is set. |
+| `ADMIN_ENABLED` | Server-side, read at runtime. `/admin` is always on in development. Production answers 404 there unless this is `true`. Keep it off until the admin has staff sign-in. |
 
 `NEXT_PUBLIC_*` values are inlined at build time, so rebuild the image after changing them.
 
@@ -55,9 +58,11 @@ src/
 │   │   │   └── process/      # /process?lang=xx
 │   │   ├── not-found.tsx     # Localized 404 (outside (site), no header)
 │   │   └── [...rest]/        # Sends unknown paths to the 404
+│   ├── admin/                # Content admin: its own root layout (no languages), /admin/...
 │   ├── fonts.ts              # next/font (self-hosted Google fonts)
 │   ├── manifest.ts · robots.ts · sitemap.ts
-├── proxy.ts                  # Language routing: "/?lang=fr" is served from app/[locale] (rewrite)
+├── proxy.ts                  # Language routing: "/?lang=fr" is served from app/[locale] (rewrite); /admin passes through
+├── admin/                    # Content admin code (components, features, lib, styles), see below
 ├── components/               # Shared, feature-agnostic building blocks
 │   ├── ui/                   # Button, Eyebrow, ArrowLink, CheckList …
 │   ├── layout/               # SiteHeader, MainNav, SiteFooter, LanguageSwitcher
@@ -78,6 +83,69 @@ src/
 ├── config/                   # env, site constants, navigation (page list), services (slugs, media)
 └── styles/globals.css        # Design tokens, base styles, shared primitives
 ```
+
+## Content admin (`/admin`)
+
+Editors create, update, publish and delete the website's **services** (cards and full service pages),
+**fleet** (vehicle classes with capacity, photo and features), **cities** (with the services offered) and
+**site settings** (company, contact, social links, testimonials). Every customer-facing text has
+EN, FR, BG and AR versions. English is required; the others fall back to English until translated.
+
+> **Status: demo mode.** Content is stored in the editor's browser (IndexedDB), starting from the
+> website's current copy. Edits never reach the live site yet, and there is no sign-in, so production
+> hides `/admin` unless `ADMIN_ENABLED=true` (see [Environment](#environment)).
+
+**How it fits into the website app**
+
+- `app/admin/layout.tsx` is a second root layout beside `app/[locale]`. Website pages never load admin
+  code or CSS, and the admin never loads website CSS. Moving between the two is a full page load.
+- `proxy.ts` lets `/admin` through without the `?lang=` redirect. It also enforces the production gate.
+- The admin has its own design system in `src/admin/styles/admin.css`, with light and dark themes.
+  Its Tailwind build scans only admin files, and `styles/globals.css` excludes them.
+- `/admin` is disallowed in `robots.txt`, sent with `X-Robots-Tag: noindex`, and absent from the sitemap.
+- Pages are client-rendered. The parts that read the URL (sidebar active link, `[id]` editors) sit
+  in `<Suspense>`, so Cache Components can prerender their shells.
+
+**Using it**
+
+- **Dashboard:** counts, translation progress per language, a "Needs attention" list (drafts,
+  missing translations, services without vehicles, cities without services), recent edits and shortcuts.
+- **Lists:** search, status filter, and reordering (arrows on desktop; "Move up/down" in the row menu on phones).
+  Row actions are Edit, Publish/Unpublish, Duplicate and Delete. Delete asks first and cleans up references,
+  for example removing a deleted vehicle from the services that recommend it.
+- **Editors:**
+  - The language tabs switch every text field at once and show how complete each language is.
+  - Non-English fields show the English text as a reference. Arabic fields are right-to-left.
+  - If a save fails validation, the editor jumps to the first problem, switching language if needed.
+  - Closing or reloading the tab with unsaved changes asks first. Moving to another admin page doesn't yet.
+- **Images:** upload or drag in a photo, which is resized to at most 1920px and saved as JPEG, or pick one from `public/media`.
+
+**Code**
+
+```
+src/admin/
+├── components/
+│   ├── ui/        # Button, Input, Field, Card, Badge, Switch, Menu, ConfirmDialog …
+│   ├── layout/    # App shell (sidebar, phone drawer, theme toggle), page header, nav items
+│   ├── form/      # EditorShell, LocalizedField, Repeater, ImageField, SlugField, pickers, SEO preview
+│   └── content/   # CollectionList (generic list screen), ItemLoader, TranslationDots
+├── features/      # dashboard/, services/, fleet/, cities/, settings/: zod schema, list, editor
+├── lib/content/   # Data layer (below)
+└── styles/admin.css
+```
+
+- **One interface for all data:** `ContentRepository` (`lib/content/repository.ts`), used through the
+  TanStack Query hooks in `hooks.ts`. Every write invalidates `["content"]`, so all screens stay in sync.
+- `local-repository.ts` is today's IndexedDB implementation. It enforces unique slugs and cleans up references.
+- `seed.ts` builds the starting content from the website's own dictionaries, `config/` and
+  `domain/booking.ts`, so it can't drift from the site.
+- `types.ts` is the content model. Ids are the stable domain ids (`airport_transfer`, `business_class`, `london` …).
+- **Connecting the API:**
+  1. Add Django content models and staff-only endpoints that match `types.ts`.
+  2. Write an `api-repository.ts` and switch the export in `lib/content/index.ts` (`IS_LOCAL_DEMO = false`).
+  3. Add staff sign-in.
+  4. Upload images to Neon storage.
+  5. Have the website read its content from the API.
 
 ### Conventions
 

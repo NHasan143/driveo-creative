@@ -38,11 +38,12 @@ This repository holds the platform that will replace the Lovable prototype. It h
 
 ## Project status
 
-_Last updated: 2026-10-24_
+_Last updated: 2026-10-25_
 
 | Component | Directory | Stack | Status |
 | --- | --- | --- | --- |
 | Website | [`frontend/`](frontend/) | Next.js · React · TypeScript · Tailwind · GSAP | 🟡 In progress: home page complete, quote form on mock API |
+| Content admin | [`frontend/`](frontend/) at `/admin` | Next.js · React · TypeScript · Tailwind · TanStack Query · react-hook-form · Zod | 🟡 Demo: full create/update/delete for services, fleet, cities and site settings in four languages, stored in the browser. Not connected to the API yet; hidden in production builds (`ADMIN_ENABLED`) |
 | Shared API + admin | [`backend/`](backend/) | Python · Django · DRF · Lakebase Postgres (Neon) · Neon Object Storage · Redis · Celery | 🟡 Started: Django 6.1 project wired to Neon Postgres and Object Storage, health endpoint. No business endpoints yet |
 | Mobile apps | `mobile/` _(planned)_ | React · Vite · TypeScript · Capacitor | ⚪ Not started |
 | Infrastructure | `.github/`, `infra/` _(planned)_ | Docker Compose · Nginx · Cloudflare · GitHub Actions | 🟡 Started: frontend Dockerfile and CI/CD workflows. Server and compose stack pending |
@@ -76,7 +77,7 @@ driveexclusive/
 ├── README.md            ← you are here (platform overview, living document)
 ├── project_context.md   ← goals, plan, objectives, progress, risks (read first)
 ├── .github/             ← GitHub Actions workflows (CI/CD)
-├── frontend/            ← Next.js website: see frontend/README.md
+├── frontend/            ← Next.js website, plus the content admin at /admin: see frontend/README.md
 ├── driveo-creative/     ← Lovable prototype (design + copy reference, own git repo)
 ├── backend/             ← Django API and admin (Celery workers planned)
 │   ├── neon.ts          ← Neon services for each branch (Postgres, `assets` bucket)
@@ -114,7 +115,7 @@ pricing, availability, permissions and notifications.
 flowchart LR
     Web["Website<br/>Next.js"] --> API
     App["Android / iOS<br/>React + Capacitor"] --> API
-    Admin["Admin dashboard<br/>Django"] --> API
+    Admin["Content admin<br/>Next.js /admin"] -.->|planned| API
     API["Shared Django REST API<br/>/api/v1"] --> DB[("Lakebase Postgres<br/>Neon")]
     API --> Files[("Object Storage<br/>Neon")]
     API --> Queue["Celery + Redis<br/>background jobs"]
@@ -181,6 +182,11 @@ npm run dev            # http://localhost:3000 → redirects to /?lang=en
 Useful scripts: `npm run build`, `npm run lint`, `npm run typecheck`.
 The frontend has its own [README](frontend/README.md) covering code structure, conventions and the full API payload.
 
+### Content admin
+
+It is part of the website app: with `npm run dev` running in `frontend/`, open http://localhost:3000/admin.
+Demo content is stored in your browser. See [Content admin in the frontend README](frontend/README.md#content-admin-admin).
+
 ### Backend
 
 All backend secrets live in one file, `backend/.env.local`. Its template is [`backend/.env.example`](backend/.env.example).
@@ -235,7 +241,7 @@ Each app owns its environment template. Never commit real secrets.
 
 | App | Template | Key variables |
 | --- | --- | --- |
-| Website | [`frontend/.env.example`](frontend/.env.example) | `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_API_MOCK` |
+| Website + content admin | [`frontend/.env.example`](frontend/.env.example) | `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_API_MOCK`, `ADMIN_ENABLED` (production gate for `/admin`) |
 | Backend | [`backend/.env.example`](backend/.env.example) → `backend/.env.local` (Neon section filled in by `neon env pull`) | `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`; Neon: `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `AWS_*`; jobs: `REDIS_URL`; alerts: `QUOTE_ALERT_EMAILS`, `QUOTE_ALERT_WHATSAPP`, `SMTP_*`, `DEFAULT_FROM_EMAIL`, `TWILIO_*`, `BACKEND_BASE_URL` |
 
 With no API URL set, the website runs in **mock mode**: quote requests get a fake `DRV-XXXXXX` reference.
@@ -438,6 +444,8 @@ Record decisions that would surprise a newcomer. Add new entries at the top.
 
 | Date | Decision | Reason |
 | --- | --- | --- |
+| 2026-10-26 | Content admin lives in the website app at `/admin` (its own root layout), not a separate app. Production hides it unless `ADMIN_ENABLED=true` | Client preference: one app to run and deploy. A second root layout keeps admin code and CSS off website pages. The gate stops an unauthenticated admin from going live with the site |
+| 2026-10-25 | Content admin built first against a browser-local store behind a `ContentRepository` interface | The client asked for the admin frontend first. Screens never touch storage directly, so connecting the Django API means swapping one implementation. Django's built-in admin stays for staff operations (quote requests) |
 | 2026-10-24 | Postgres and uploaded files on Neon (Lakebase Postgres + Object Storage) instead of containers on the VPS | Managed backups and scale-to-zero; database and files branch together for dev/preview; one fewer stateful service on the VPS |
 | 2026-10-22 | CI/CD on GitHub Actions: images in GHCR, deploy over SSH with `docker compose` | No extra services to pay for; matches the Docker/VPS plan; the pipeline refuses mock-mode deploys |
 | 2026-10-22 | Website rebuilt in Next.js instead of extending the Lovable (TanStack Start) code | Matches the agreed stack; better SEO and long-term maintainability |
@@ -466,6 +474,22 @@ Record decisions that would surprise a newcomer. Add new entries at the top.
 Newest first. Follow [Keep a Changelog](https://keepachangelog.com/) headings: Added / Changed / Fixed / Removed.
 
 ### 2026-10-25
+
+**Added**
+- `frontend`: content admin at `/admin` for the website's services, fleet, cities and site settings
+  (contact details, social links, testimonials).
+  - Create, edit, duplicate, publish/unpublish, reorder and delete, with confirmation and reference cleanup.
+  - Every text field has EN, FR, BG and AR versions. A language switcher shows completeness per language,
+    and Arabic fields are right-to-left.
+  - Validation messages that jump to the problem field.
+  - Image upload with compression, or a pick from the photo library.
+  - A Google-style SEO preview.
+  - A dashboard with counts, translation progress and a "Needs attention" list.
+  - Light and dark themes, and a phone layout with a slide-out menu.
+  - Demo mode: content lives in the browser (IndexedDB), seeded from the website's dictionaries by
+    the website's own dictionaries. It is not connected to the API or the website yet.
+  - It lives in the website app with its own root layout. Production builds answer 404 at `/admin`
+    unless `ADMIN_ENABLED=true`.
 
 **Added**
 - `backend`: quote request system (`quotes` app).

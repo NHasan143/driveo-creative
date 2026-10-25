@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+/* The admin (/admin) has its own stylesheet; keep its classes out of the website CSS. */
+@source not "../admin";
+@source not "../app/admin";
+
 /* ------------------------------------------------------------------ */
 /* Design tokens                                                       */
 /* ------------------------------------------------------------------ */

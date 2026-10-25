@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 
 import dj_database_url
@@ -40,6 +41,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "storages",
     "core",
+    "quotes",
 ]
 
 MIDDLEWARE = [
@@ -92,6 +94,14 @@ DATABASES = {
         "TEST": {"MIRROR": "default"},
     },
 }
+
+# `manage.py test` creates and drops a test database, and the pooler keeps
+# server connections open that block the drop. Tests use the direct URL.
+if sys.argv[1:2] == ["test"]:
+    DATABASES["default"] = {
+        **dj_database_url.parse(os.environ["DATABASE_URL_UNPOOLED"]),
+        "DISABLE_SERVER_SIDE_CURSORS": True,
+    }
 
 
 # Uploaded files go to the Neon Object Storage bucket declared in neon.ts.
@@ -155,11 +165,93 @@ USE_TZ = True
 STATIC_URL = "static/"
 
 
+def env_list(name):
+    return [item.strip() for item in os.environ.get(name, "").split(",") if item.strip()]
+
+
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
+# With SMTP_HOST set, mail goes out over SMTP (any provider: Postmark, SES,
+# Resend, Gmail...). Without it, emails are printed to the console.
 
-MAILERS = {
-    "default": {
-        "BACKEND": "django.core.mail.backends.console.EmailBackend",
+if os.environ.get("SMTP_HOST"):
+    MAILERS = {
+        "default": {
+            "BACKEND": "django.core.mail.backends.smtp.EmailBackend",
+            "OPTIONS": {
+                "host": os.environ["SMTP_HOST"],
+                "port": int(os.environ.get("SMTP_PORT") or 587),
+                "username": os.environ.get("SMTP_USERNAME", ""),
+                "password": os.environ.get("SMTP_PASSWORD", ""),
+                "use_tls": (os.environ.get("SMTP_USE_TLS") or "true").lower() == "true",
+                "timeout": 20,
+            },
+        },
+    }
+else:
+    MAILERS = {
+        "default": {
+            "BACKEND": "django.core.mail.backends.console.EmailBackend",
+        },
+    }
+
+DEFAULT_FROM_EMAIL = (
+    os.environ.get("DEFAULT_FROM_EMAIL") or "Driveo Exclusive <no-reply@driveoexclusive.com>"
+)
+
+
+# Celery (background jobs). Redis is the broker; results are not stored.
+# CELERY_TASK_ALWAYS_EAGER=true runs tasks inside the request instead, for
+# local work without Redis. Never use it in production.
+
+CELERY_BROKER_URL = os.environ.get("REDIS_URL") or "redis://localhost:6379/0"
+CELERY_TASK_ALWAYS_EAGER = os.environ.get("CELERY_TASK_ALWAYS_EAGER", "false").lower() == "true"
+CELERY_TASK_IGNORE_RESULT = True
+CELERY_TASK_ACKS_LATE = True
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+# A failed publish (Redis down) fails fast; the quote is already saved.
+CELERY_BROKER_TRANSPORT_OPTIONS = {"max_retries": 1, "socket_connect_timeout": 2}
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_BEAT_SCHEDULE = {
+    "requeue-stale-notifications": {
+        "task": "quotes.tasks.requeue_stale_notifications_task",
+        "schedule": 600.0,
+    },
+}
+
+
+# DRF
+
+REST_FRAMEWORK = {
+    "DEFAULT_THROTTLE_RATES": {
+        "quote_requests": os.environ.get("QUOTE_REQUESTS_RATE") or "10/hour",
+    },
+}
+
+
+# Quote request alerts (quotes app)
+
+# Comma-separated lists. An empty list skips that channel (logged in the admin).
+QUOTE_ALERT_EMAILS = env_list("QUOTE_ALERT_EMAILS")
+QUOTE_ALERT_WHATSAPP = env_list("QUOTE_ALERT_WHATSAPP")  # E.164, e.g. +447700900123
+
+TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "")
+TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "")
+TWILIO_WHATSAPP_FROM = os.environ.get("TWILIO_WHATSAPP_FROM", "")
+# Approved WhatsApp template; without it a free-form body is sent, which
+# WhatsApp only delivers inside a 24-hour customer-service window.
+TWILIO_WHATSAPP_CONTENT_SID = os.environ.get("TWILIO_WHATSAPP_CONTENT_SID", "")
+
+# Used to build dashboard links in alerts.
+BACKEND_BASE_URL = os.environ.get("BACKEND_BASE_URL") or "http://localhost:8000"
+
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "loggers": {
+        "quotes": {"handlers": ["console"], "level": "INFO"},
     },
 }

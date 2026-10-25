@@ -4,9 +4,9 @@
 > why, how, where it stands, and what comes next. It is written for anyone joining the project:
 > developers, designers, the client, or an AI assistant picking up the work.
 >
-> - **Last updated:** 2026-10-24
+> - **Last updated:** 2026-10-25
 > - **Current phase:** Phase 1, Website frontend (≈ 85 % done), overlapping with Phase 2, Backend (started)
-> - **Next milestone:** Data model and the quote-request endpoint (W2.2–W2.3), then connect the quote form to it
+> - **Next milestone:** Connect the website's quote form to the live endpoint (Phase 4) and configure real alert recipients, SMTP and Twilio
 >
 > The [README](README.md) is the technical entry point (setup, commands, architecture).
 > This file is the narrative: goals, plan, progress, risks and decisions.
@@ -164,8 +164,8 @@ Dates are not set yet. Fill them in once scope, budget and resources are confirm
 | --- | --- | --- | --- | --- |
 | **0. Discovery and design** | Agree the brand, design and stack | Lovable prototype, technical proposal | — | 🟢 Done |
 | **1. Website frontend** | Production-quality website on mock data | `frontend/` Next.js app, i18n, SEO, Dockerfile | 0 | 🟡 ≈ 85 % |
-| **2. Backend API and admin** | Shared business logic and operations dashboard | Django project, data model, quote/booking API, admin, auth, OpenAPI schema | 0 | 🟡 Started (≈ 10 %): project on Neon, health endpoint |
-| **3. Notifications** | Owner alerts that never lose a request | Celery tasks, email provider, Twilio WhatsApp, retry and failure logging | 2 | ⚪ Not started |
+| **2. Backend API and admin** | Shared business logic and operations dashboard | Django project, data model, quote/booking API, admin, auth, OpenAPI schema | 0 | 🟡 ≈ 35 %: project on Neon, quote request API and admin |
+| **3. Notifications** | Owner alerts that never lose a request | Celery tasks, email provider, Twilio WhatsApp, retry and failure logging | 2 | 🟡 Built and tested; waits on real recipients, an email provider and Twilio credentials (Q1, Q2) |
 | **4. Integration** | Website talks to the real API | Quote form live, CORS, error handling, end-to-end tests | 1, 2 | ⚪ Not started |
 | **5. Infrastructure and CI/CD** | Repeatable, secure deployments | `infra/` docker-compose, Nginx, Cloudflare, GitHub Actions, backups, monitoring | 1, 2 | ⚪ Not started (frontend Dockerfile ready; database provisioned on Neon) |
 | **6. Mobile apps** | Android and iOS apps | `mobile/` React + Vite + Capacitor app, store listings | 2 | ⚪ Not started |
@@ -200,18 +200,22 @@ Each objective has a definition of done (DoD). Tick it when it's done, and updat
 - [ ] **W2.1 Project setup.** DoD: Django + DRF project, settings per environment, `.env.example`, Dockerfile, linting (ruff), tests (pytest).
   _Partly done (2026-10-24):_ Django 6.1 + DRF project; settings read from environment variables (all secrets in `backend/.env.local`, no fallback secret key, `DEBUG` off by default); `backend/.env.example`; `requirements.txt`; `GET /api/v1/health/`. Remaining: Dockerfile, ruff, pytest, production settings (CORS, secure cookies).
 - [ ] **W2.2 Data model.** DoD: models for City, Service, VehicleClass (with capacity), QuoteRequest/Booking (with status lifecycle and reference `DRV-XXXXXX`), Customer, PricingRule, Availability, NotificationLog.
-- [ ] **W2.3 Quote request endpoint.** DoD: `POST /api/v1/quote-requests/` matches the contract in `frontend/README.md`. It validates the capacity and hourly rules, rejects honeypot submissions silently, rate-limits, and returns `201 {reference}`.
+  _Partly done (2026-10-25):_ `QuoteRequest` (statuses new / contacted / quoted / closed, `DRV-XXXXXX` reference, staff notes) and `Notification` (the NotificationLog). City, service and vehicle are code-level choices for now. Customer, PricingRule and Availability wait on Q3 and Q5.
+- [x] **W2.3 Quote request endpoint.** DoD: `POST /api/v1/quote-requests/` matches the contract in `frontend/README.md`. It validates the capacity and hourly rules, rejects honeypot submissions silently, rate-limits, and returns `201 {reference}`. _Done 2026-10-25: also rejects past dates and cleans text the same way the website does. Rate limit: 10/hour per IP._
 - [ ] **W2.4 Admin dashboard.** DoD: staff can list, filter and update requests and manage vehicles, pricing and availability. Roles and permissions are in place.
+  _Partly done:_ staff can list, filter, search and update quote requests, see each alert's delivery status, and resend failed alerts. Vehicles, pricing, availability and roles are still to do.
 - [ ] **W2.5 API documentation.** DoD: OpenAPI schema published (drf-spectacular) and linked from the README.
 - [ ] **W2.6 Security.** DoD: CORS limited to known origins, HTTPS-only cookies, admin protected, dependency audit clean.
 - [x] **W2.7 Database and file storage.** DoD: Neon project linked from `backend/` (`neon.ts`, `.neon`). Lakebase Postgres used through psycopg 3 (pooled connection for the app, direct connection for migrations). The private `assets` bucket is Django's default file storage. Both checked end to end: write, read and delete; signed links work and anonymous reads are refused. A project-level Neon MCP server in `.mcp.json` serves AI assistants.
 
 ### WS3: Notifications
 
-- [ ] **W3.1 Async pipeline.** DoD: saving a request queues a Celery task. The customer response never waits on providers.
+- [x] **W3.1 Async pipeline.** DoD: saving a request queues a Celery task. The customer response never waits on providers.
 - [ ] **W3.2 Email.** DoD: the owner receives a formatted request email from a verified sender domain.
+  _Built:_ text + HTML email over any SMTP provider, with Reply-To set to the customer and a dashboard link. Remaining: choose the provider and verify the sender domain (Q2).
 - [ ] **W3.3 WhatsApp.** DoD: the owner receives a Twilio WhatsApp alert.
-- [ ] **W3.4 Reliability.** DoD: failures are logged in NotificationLog, retried with backoff, and staff can see them in the admin.
+  _Built:_ free-form text for the sandbox and approved-template support for production. Remaining: a Twilio account, a WhatsApp sender, an approved template and the owner's number (Q1).
+- [x] **W3.4 Reliability.** DoD: failures are logged in NotificationLog, retried with backoff, and staff can see them in the admin. _Done 2026-10-25: retries after 1/2/4/8/16 min, a sweep every 10 min for alerts that were never queued, and a resend action in the admin._
 
 ### WS4: Infrastructure and DevOps (`infra/`)
 
@@ -242,15 +246,15 @@ Each objective has a definition of done (DoD). Tick it when it's done, and updat
 
 ## 9. Current progress
 
-_Snapshot as of 2026-10-24._
+_Snapshot as of 2026-10-25._
 
 ### Overall
 
 | Workstream | Progress | Notes |
 | --- | --- | --- |
 | WS1 Website | ███████████████░░░ ≈ 85 % | Feature-complete on mock data. Legal, consent, performance, tests and the accessibility audit remain |
-| WS2 Backend | ██░░░░░░░░░░░░░░░░ ≈ 10 % | Django project on Neon (Postgres + Object Storage), health endpoint. No business endpoints yet |
-| WS3 Notifications | ░░░░░░░░░░░░░░░░░░ 0 % | Recipient details to confirm (§12) |
+| WS2 Backend | ██████░░░░░░░░░░░░ ≈ 35 % | Quote request API, admin and data model for requests and alerts. Foundation fixes (custom user model, CORS, settings split, CI) still pending |
+| WS3 Notifications | ██████████████░░░░ ≈ 75 % | Email and WhatsApp pipeline built and tested. Needs real recipients, an SMTP provider and Twilio credentials (Q1, Q2) |
 | WS4 Infrastructure | ████░░░░░░░░░░░░░░ ≈ 20 % | Frontend Dockerfile and CI/CD workflows written. Activation waits on git, GitHub and a server |
 | WS5 Mobile | ░░░░░░░░░░░░░░░░░░ 0 % | Waits for the API |
 | WS6 Docs and PM | ██████████░░░░░░░░ ≈ 60 % | README, context file and ignore rules done. Git not initialised |
@@ -265,7 +269,7 @@ _Snapshot as of 2026-10-24._
 
 ### What does not work yet
 
-- The backend has no quote endpoint yet, so quote requests are **not** delivered to anyone. The site must not go live until Phase 4 is done.
+- The website isn't connected to the quote endpoint yet (still mock mode), and no real alert recipients, SMTP or Twilio credentials are configured. Quote requests from the website are **not** delivered to anyone yet. The site must not go live until Phase 4 is done.
 - The backend has no tests, Dockerfile or CI workflow yet, and no production settings (CORS, secure cookies, production secret key).
 - No automated tests. The CI/CD workflows exist but have never run on GitHub, and no server is configured.
 - The Docker image hasn't been built locally yet: Docker Desktop wasn't running. CI checks the build on every PR.
@@ -273,6 +277,7 @@ _Snapshot as of 2026-10-24._
 
 ### Recently completed
 
+- 2026-10-25: Quote request system in the backend: endpoint, validation, rate limit, admin, and owner alerts by email and Twilio WhatsApp through Celery + Redis, with retries and a delivery log. 27 tests pass, and the full flow was checked locally (request → Neon → Redis → worker → email).
 - 2026-10-24: Backend started. Django 6.1 + DRF project connected to Neon: Lakebase Postgres and the private `assets` bucket, both tested end to end. All secrets moved to `backend/.env.local`.
 - 2026-10-24: Neon tooling for AI assistants: plugin and skills checked, plus a project-level MCP server (`.mcp.json`, OAuth, pinned to this project).
 - 2026-10-24: Service detail pages for all four services in four languages, with the form pre-filled per service and vehicle.
@@ -287,8 +292,8 @@ _Snapshot as of 2026-10-24._
 
 1. Activate CI/CD: `production` environment, secrets, branch protection on `main` (W4.3b, W6.4).
 2. Resolve the open questions in §12 that block the backend (notification recipients, email provider, accounts in v1).
-3. Continue the backend: finish setup (pytest, ruff, Dockerfile), then the data model and the quote-request endpoint (W2.1–W2.3).
-4. Connect the website to the real endpoint, then add end-to-end tests (Phase 4, W1.10).
+3. Backend foundation fixes: custom user model (while there are 0 users), a dev Neon branch, DRF defaults, CORS, settings split, pytest and ruff (W2.1, W2.6).
+4. Connect the website to the real endpoint (needs CORS), configure alert recipients, SMTP and Twilio, then add end-to-end tests (Phase 4, W1.10).
 5. Write the legal pages and consent banner (W1.7–W1.8), then do the performance pass (W1.9).
 
 ---
@@ -302,7 +307,7 @@ _Snapshot as of 2026-10-24._
 | Website launched before the backend is live, so leads are lost | High | Low | Mock mode is for development only. The deploy pipeline refuses mock-mode builds unless `ALLOW_MOCK_DEPLOY=true` (preview only). The launch checklist also requires a working end-to-end test |
 | Single-VPS hosting has no high availability | Medium | Low–Medium | Accepted for launch (per proposal). Containers make it easy to move to bigger or separate hosts. Backups and monitoring are required |
 | Notification provider outage | Medium | Medium | Save first, notify later. Retries with backoff and failure logs visible in the admin |
-| Spam or abuse of the quote form | Medium | Medium | Honeypot and client throttle now. Server rate limiting and validation in W2.3. Add CAPTCHA only if needed |
+| Spam or abuse of the quote form | Medium | Medium | Honeypot, client throttle, server validation and a 10/hour per-IP rate limit (W2.3). Add CAPTCHA only if needed |
 | Personal-data compliance (UK GDPR/GDPR) | High | Medium | Privacy policy, consent banner, data minimisation, retention policy, access restricted to staff |
 | Third-party costs not budgeted (hosting, Neon, Twilio, email, app stores) | Medium | Medium | Listed as client costs in scope (§4). Confirm budget before Phase 3, 5 and 6 |
 | Scope creep (payments, driver app, instant pricing) | Medium | Medium | Out of scope for v1 (§4). New requests go through a recorded decision |
@@ -314,7 +319,8 @@ _Snapshot as of 2026-10-24._
 
 - **No automated dependency updates** since Dependabot was removed. Run `npm outdated` monthly and update deliberately. Pending: align `@types/node` (now `^20`) with the Node 24 runtime, and plan the move to Node 26 LTS.
 - **Large hero videos** (≈ 3.4 MB and ≈ 9.9 MB MP4): slow on mobile data. Fix in W1.9.
-- **Client-side throttling only** (30 s cooldown, 5 submissions per visit): needs server-side rate limiting (W2.3).
+- **Rate limit behind a proxy:** the server rate limit uses the connecting IP and a per-process cache. Behind Nginx/Cloudflare it needs the real client IP (`NUM_PROXIES` / forwarded headers) and a shared Redis cache before launch. The stored `ip_address` has the same limitation.
+- **WhatsApp templates:** production alerts need a Meta-approved template; free-form messages only work in the sandbox or within 24 hours of the owner's last message.
 - **Placeholder copy:** the testimonial is the design's sample quote. Replace it with a real, approved client quote.
 - **The hourly-hire note** mentions Greater London only. Confirm the rule for the other cities (§12).
 - **Copyright year** (`© 2026`) is fixed in the dictionaries. Make it dynamic or update it yearly.

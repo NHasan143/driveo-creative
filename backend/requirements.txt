@@ -4,3 +4,5 @@ psycopg[binary]>=3.2
 dj-database-url>=3.0
 django-storages[s3]>=1.14
 python-dotenv>=1.1
+celery[redis]>=5.5
+twilio>=9.0

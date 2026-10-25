@@ -1,0 +1,9 @@
+{% autoescape off %}*New quote request {{ reference }}*
+{{ service }}
+{{ when }}
+{{ route }}
+{{ vehicle }}
+
+{{ customer }}
+
+Open: {{ admin_url }}{% endautoescape %}

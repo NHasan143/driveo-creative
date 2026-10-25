@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <body style="margin:0;padding:24px;background:#f4f4f2;font-family:Arial,Helvetica,sans-serif;color:#111;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#fff;border:1px solid #e2e2de;">
+      <tr>
+        <td style="padding:20px 24px;background:#0b0b0b;color:#fff;">
+          <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#c9a96e;">New quote request</div>
+          <div style="font-size:22px;margin-top:4px;">{{ reference }}</div>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:20px 24px;">
+          <table role="presentation" width="100%" cellpadding="6" cellspacing="0" style="font-size:14px;">
+            <tr><td style="color:#666;width:110px;">Service</td><td>{{ service }}</td></tr>
+            <tr><td style="color:#666;">When</td><td>{{ when }}</td></tr>
+            <tr><td style="color:#666;">Route</td><td>{{ route }}</td></tr>
+            <tr><td style="color:#666;">Vehicle</td><td>{{ vehicle }}</td></tr>
+            <tr><td colspan="2" style="border-top:1px solid #eee;padding:0;height:8px;"></td></tr>
+            <tr><td style="color:#666;">Customer</td><td>{{ quote.full_name }}</td></tr>
+            <tr><td style="color:#666;">Phone</td><td><a href="tel:{{ quote.phone }}" style="color:#111;">{{ quote.phone }}</a></td></tr>
+            <tr><td style="color:#666;">Email</td><td><a href="mailto:{{ quote.email }}" style="color:#111;">{{ quote.email }}</a></td></tr>
+            <tr><td style="color:#666;">Language</td><td>{{ quote.get_locale_display }}</td></tr>
+            {% if quote.notes %}<tr><td style="color:#666;vertical-align:top;">Notes</td><td>{{ quote.notes|linebreaksbr }}</td></tr>{% endif %}
+          </table>
+          <p style="margin:24px 0 8px;">
+            <a href="{{ admin_url }}" style="display:inline-block;padding:10px 18px;background:#0b0b0b;color:#fff;text-decoration:none;">Open in the dashboard</a>
+          </p>
+          <p style="font-size:12px;color:#888;margin:16px 0 0;">Reply to this email to answer the customer directly.</p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

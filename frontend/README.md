@@ -88,9 +88,9 @@ src/
 ## Content admin (`/admin`)
 
 Editors create, update, publish and delete the website's **services** (cards and full service pages),
-**fleet** (vehicle classes with capacity, photo and features), **cities** (with the services offered) and
-**site settings** (company, contact, social links, testimonials). Every customer-facing text has
-EN, FR, BG and AR versions. English is required; the others fall back to English until translated.
+**fleet** (vehicle classes with capacity, photo and features) and **cities** (with the services offered).
+Company information, contact details, social links and testimonials are fixed in the frontend;
+the admin has no Site settings screen. Every editable customer-facing text has EN, FR, BG and AR versions. English is required; the others fall back to English until translated.
 
 > **Two modes** (`NEXT_PUBLIC_ADMIN_CONTENT_SOURCE`, see [Environment](#environment)):
 >
@@ -99,7 +99,7 @@ EN, FR, BG and AR versions. English is required; the others fall back to English
 > - **`local`** (default): demo mode. Content is stored in the editor's browser (IndexedDB), starting
 >   from the website's current copy, with no sign-in.
 >
-> Either way, the website doesn't read this content yet. Production hides `/admin` unless `ADMIN_ENABLED=true`.
+> The website reads published services in API mode; fleet and cities still use built-in copy. Production hides `/admin` unless `ADMIN_ENABLED=true`.
 
 **How it fits into the website app**
 
@@ -116,6 +116,7 @@ EN, FR, BG and AR versions. English is required; the others fall back to English
 
 - **Dashboard:** counts, translation progress per language, a "Needs attention" list (drafts,
   missing translations, services without vehicles, cities without services), recent edits and shortcuts.
+  The complete fleet appears in Business Class, First Class, Business Van order independently of the six-item recent-edit feed.
 - **Lists:** search, status filter, and reordering (arrows on desktop; "Move up/down" in the row menu on phones).
   Row actions are Edit, Publish/Unpublish, Duplicate and Delete. Delete asks first and cleans up references,
   for example removing a deleted vehicle from the services that recommend it.
@@ -128,9 +129,6 @@ EN, FR, BG and AR versions. English is required; the others fall back to English
   In `api` mode the photo is uploaded to the Neon `assets` bucket when the record is saved.
 - **Sign-in (`api` mode):** `components/auth/auth-gate.tsx` shows a sign-in screen until a staff member is
   signed in, and a Sign out button in the header. An expired session brings the sign-in screen back.
-- **Original content:** Settings has a button that loads the website's built-in copy (`seed.ts`). In demo mode
-  it resets the browser store; in `api` mode it replaces all content in the database (superusers only), which
-  is how a new database gets its first content.
 
 **Code**
 
@@ -141,7 +139,7 @@ src/admin/
 │   ├── layout/    # App shell (sidebar, phone drawer, theme toggle), page header, nav items
 │   ├── form/      # EditorShell, LocalizedField, Repeater, ImageField, SlugField, pickers, SEO preview
 │   └── content/   # CollectionList (generic list screen), ItemLoader, TranslationDots
-├── features/      # dashboard/, services/, fleet/, cities/, settings/: zod schema, list, editor
+├── features/      # dashboard/, services/, fleet/, cities/: schemas, lists, editors
 ├── lib/content/   # Data layer (below)
 └── styles/admin.css
 ```
@@ -165,7 +163,8 @@ src/admin/
     public API URL.
   - Built-in services keep their booking id (`airport_transfer`, …), so their quote buttons pre-select
     the service. Services added in the admin open the form with none selected.
-  - **Still to do:** fleet, cities and site settings still render from the dictionaries.
+  - **Still to do:** connect fleet and cities to their published API records.
+  - Fixed site information continues to render from the frontend dictionaries and configuration.
 
   The endpoints are listed in the [root README](../README.md#content-api-backendcontent).
 

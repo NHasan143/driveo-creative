@@ -1,4 +1,4 @@
-import type { City, ContentSnapshot, Service, SiteSettings, Vehicle } from "./types";
+import type { City, ContentSnapshot, Service, Vehicle } from "./types";
 
 export type CollectionName = "services" | "vehicles" | "cities";
 
@@ -34,9 +34,5 @@ export interface ContentRepository {
   remove(collection: CollectionName, id: string): Promise<void>;
   /** Persists a new display order; `ids` lists every item in the collection. */
   reorder(collection: CollectionName, ids: string[]): Promise<void>;
-  getSettings(): Promise<SiteSettings>;
-  saveSettings(settings: Omit<SiteSettings, "updatedAt">): Promise<SiteSettings>;
-  /** Discards local edits and restores the website's original content. */
-  reset(): Promise<void>;
   snapshot(): Promise<ContentSnapshot>;
 }

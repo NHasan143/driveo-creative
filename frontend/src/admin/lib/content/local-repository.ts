@@ -1,4 +1,4 @@
-import { del, get, set } from "idb-keyval";
+import { get, set } from "idb-keyval";
 import {
   ContentValidationError,
   type CollectionItem,
@@ -7,7 +7,7 @@ import {
   type Draft,
 } from "./repository";
 import { seed } from "./seed";
-import type { ContentSnapshot, SiteSettings } from "./types";
+import type { ContentSnapshot } from "./types";
 
 /**
  * Browser-only implementation, used until the Django API exists. Content lives
@@ -120,26 +120,6 @@ export const localRepository: ContentRepository = {
       itemsOf(content, collection).map((item) => ({ ...item, order: position.get(item.id) ?? item.order })),
     );
     await persist(content);
-  },
-
-  async getSettings() {
-    await wait();
-    return clone((await load()).settings);
-  },
-
-  async saveSettings(settings) {
-    await wait();
-    const content = clone(await load());
-    const saved: SiteSettings = { ...settings, updatedAt: new Date().toISOString() };
-    content.settings = saved;
-    await persist(content);
-    return clone(saved);
-  },
-
-  async reset() {
-    await wait();
-    cache = null;
-    await del(STORAGE_KEY);
   },
 
   async snapshot() {

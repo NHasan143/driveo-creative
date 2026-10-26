@@ -4,13 +4,14 @@ import { ButtonLink } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
 import { localePath, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/get-dictionary";
+import type { NavService } from "@/lib/content/site-services";
 import { LanguageSwitcher } from "./language-switcher";
 import { MainNav } from "./main-nav";
 
 interface SiteHeaderProps {
   locale: Locale;
   nav: Dictionary["nav"];
-  services: Dictionary["services"]["items"];
+  services: NavService[];
   allServices: string;
 }
 

@@ -42,9 +42,9 @@ _Last updated: 2026-10-25_
 
 | Component | Directory | Stack | Status |
 | --- | --- | --- | --- |
-| Website | [`frontend/`](frontend/) | Next.js · React · TypeScript · Tailwind · GSAP | 🟡 In progress: home page complete, quote form on mock API |
-| Content admin | [`frontend/`](frontend/) at `/admin` | Next.js · React · TypeScript · Tailwind · TanStack Query · react-hook-form · Zod | 🟡 Demo: full create/update/delete for services, fleet, cities and site settings in four languages, stored in the browser. Not connected to the API yet; hidden in production builds (`ADMIN_ENABLED`) |
-| Shared API + admin | [`backend/`](backend/) | Python · Django · DRF · Lakebase Postgres (Neon) · Neon Object Storage · Redis · Celery | 🟡 Started: Django 6.1 project wired to Neon Postgres and Object Storage, health endpoint. No business endpoints yet |
+| Website | [`frontend/`](frontend/) | Next.js · React · TypeScript · Tailwind · GSAP | 🟡 In progress: pages complete, quote form connected to the Django API |
+| Content admin | [`frontend/`](frontend/) at `/admin` | Next.js · React · TypeScript · Tailwind · TanStack Query · react-hook-form · Zod | 🟡 Full create/update/delete/reorder for services, fleet, cities and site settings in four languages. Saves to the Django API with staff sign-in when `NEXT_PUBLIC_ADMIN_CONTENT_SOURCE=api`, otherwise a browser-only demo. The website shows the published **services** (fleet, cities and settings still use built-in copy); hidden in production builds (`ADMIN_ENABLED`) |
+| Shared API + admin | [`backend/`](backend/) | Python · Django · DRF · Lakebase Postgres (Neon) · Neon Object Storage · Redis · Celery | 🟡 Quote requests (with email/WhatsApp alerts), website content API with staff sign-in, health endpoint. Not deployed yet |
 | Mobile apps | `mobile/` _(planned)_ | React · Vite · TypeScript · Capacitor | ⚪ Not started |
 | Infrastructure | `.github/`, `infra/` _(planned)_ | Docker Compose · Nginx · Cloudflare · GitHub Actions | 🟡 Started: frontend Dockerfile and CI/CD workflows. Server and compose stack pending |
 | Design reference | [`driveo-creative/`](driveo-creative/) | Lovable (TanStack Start · Supabase) | 🔒 Reference only, do not develop here |
@@ -59,9 +59,9 @@ Legend: 🟢 done · 🟡 in progress · ⚪ not started · 🔒 frozen
 - [x] Service detail pages (4 services × 4 languages)
 - [x] SEO: metadata, hreflang, sitemap, robots, JSON-LD, web app manifest
 - [x] Quote form with client validation and a typed API client (mock mode)
+- [x] Quote form connected to the live Django endpoint (locally; production needs the deploy)
 - [x] "Add to Home Screen" (PWA install prompt)
 - [x] Production Dockerfile (standalone Next.js)
-- [ ] Connect quote form to the live Django endpoint
 - [ ] Legal pages (privacy policy, terms, cookies)
 - [ ] Analytics and consent banner
 - [x] CI/CD workflows (lint, typecheck, build, Docker image to GHCR, SSH deploy)
@@ -115,7 +115,7 @@ pricing, availability, permissions and notifications.
 flowchart LR
     Web["Website<br/>Next.js"] --> API
     App["Android / iOS<br/>React + Capacitor"] --> API
-    Admin["Content admin<br/>Next.js /admin"] -.->|planned| API
+    Admin["Content admin<br/>Next.js /admin"] -->|staff session| API
     API["Shared Django REST API<br/>/api/v1"] --> DB[("Lakebase Postgres<br/>Neon")]
     API --> Files[("Object Storage<br/>Neon")]
     API --> Queue["Celery + Redis<br/>background jobs"]
@@ -185,7 +185,25 @@ The frontend has its own [README](frontend/README.md) covering code structure, c
 ### Content admin
 
 It is part of the website app: with `npm run dev` running in `frontend/`, open http://localhost:3000/admin.
-Demo content is stored in your browser. See [Content admin in the frontend README](frontend/README.md#content-admin-admin).
+By default it runs in demo mode and stores content in your browser.
+
+To save content in Postgres instead, run the backend (below) and set `NEXT_PUBLIC_ADMIN_CONTENT_SOURCE=api` in
+`frontend/.env.local`, then restart `npm run dev`. The admin asks for a sign-in: use a Django **staff** account
+(`createsuperuser`, or tick "Staff status" for a user at http://localhost:8000/admin/). On an empty database,
+a superuser can load the website's built-in copy from **Settings → Load the website's original content**.
+Use `localhost` for both apps (not `127.0.0.1` for one of them), so the browser treats them as the same site and
+sends the session cookie. See [Content admin in the frontend README](frontend/README.md#content-admin-admin).
+
+**What the website shows.** The website's **services** come from the admin: the header's Services menu,
+the home page section, the Services page, every service detail page (`/services/<slug>`) and the sitemap
+read the published services from `GET /api/v1/content/published/`.
+- Changes appear within about a minute; pages are cached and refresh in the background.
+- A new service gets its own page on its first visit.
+- If the API is unreachable, or in mock mode, the website shows its built-in copy instead.
+- Fleet, cities, site settings and page headings ("Four ways to travel") still come from the website's
+  built-in copy.
+- A service added in the admin is not a choice in the quote form, whose four services drive the booking
+  rules. Its quote buttons open the form with no service selected.
 
 ### Backend
 
@@ -213,7 +231,7 @@ Quote alerts run in a Celery worker, so start Redis and a worker next to the ser
 redis-server                                          # or: docker run -p 6379:6379 redis:7
 .venv/Scripts/celery -A config worker -l info --pool=solo   # --pool=solo is needed on Windows only
 .venv/Scripts/celery -A config beat -l info           # optional locally: re-queues stuck alerts every 10 min
-.venv/Scripts/python manage.py test quotes core       # tests (they create and drop a test database on Neon)
+.venv/Scripts/python manage.py test                  # all tests (they create and drop a test database on Neon, ~8 min)
 ```
 
 To work without Redis, set `CELERY_TASK_ALWAYS_EAGER=true` in `.env.local`. Alerts then send inside the request.
@@ -227,7 +245,8 @@ To work without Redis, set `CELERY_TASK_ALWAYS_EAGER=true` in `.env.local`. Aler
 - **Agent tooling:** [`.mcp.json`](.mcp.json) registers the Neon MCP server, pinned to this project, with
   OAuth. Claude Code asks you to approve it and sign in to Neon on first use. No key is stored in the repo.
 - **New feature branch:** `neon checkout <name> --create` gives you a copy-on-write database and bucket
-  and pulls their env vars. New non-default branches expire after 7 days.
+  and pulls their env vars. New non-default branches expire after 7 days. Prefer a branch such as `dev`
+  for local work and migrations; `neon checkout production` switches `.env.local` back.
 
 ### Mobile
 
@@ -241,8 +260,8 @@ Each app owns its environment template. Never commit real secrets.
 
 | App | Template | Key variables |
 | --- | --- | --- |
-| Website + content admin | [`frontend/.env.example`](frontend/.env.example) | `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_API_MOCK`, `ADMIN_ENABLED` (production gate for `/admin`) |
-| Backend | [`backend/.env.example`](backend/.env.example) → `backend/.env.local` (Neon section filled in by `neon env pull`) | `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`; Neon: `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `AWS_*`; jobs: `REDIS_URL`; alerts: `QUOTE_ALERT_EMAILS`, `QUOTE_ALERT_WHATSAPP`, `SMTP_*`, `DEFAULT_FROM_EMAIL`, `TWILIO_*`, `BACKEND_BASE_URL` |
+| Website + content admin | [`frontend/.env.example`](frontend/.env.example) | `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_API_MOCK`, `NEXT_PUBLIC_ADMIN_CONTENT_SOURCE` (`local` demo or `api`), `ADMIN_ENABLED` (production gate for `/admin`) |
+| Backend | [`backend/.env.example`](backend/.env.example) → `backend/.env.local` (Neon section filled in by `neon env pull`) | `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`; Neon: `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `AWS_*`; jobs: `REDIS_URL`; alerts: `QUOTE_ALERT_EMAILS`, `QUOTE_ALERT_WHATSAPP`, `SMTP_*`, `DEFAULT_FROM_EMAIL`, `TWILIO_*`, `BACKEND_BASE_URL` (also the base of content photo URLs); browser access: `CORS_ALLOWED_ORIGINS`, `CSRF_TRUSTED_ORIGINS`, `SESSION_COOKIE_SAMESITE`, `STAFF_SIGN_IN_RATE` |
 
 With no API URL set, the website runs in **mock mode**: quote requests get a fake `DRV-XXXXXX` reference.
 This lets you work on the frontend without the backend.
@@ -277,7 +296,7 @@ Base URL: `{API_BASE_URL}/v1/`. JSON, snake_case. Every client sends `Accept-Lan
 | Endpoint | Method | Used by | Status |
 | --- | --- | --- | --- |
 | `/v1/health/` | `GET` | Uptime checks, deploys | Implemented: `200 {"database":"ok","storage":"ok"}`, or `503` if either fails |
-| `/v1/quote-requests/` | `POST` | Website quote form | Implemented (website not connected yet) |
+| `/v1/quote-requests/` | `POST` | Website quote form | Implemented and used by the website |
 
 `POST /v1/quote-requests/` returns `201 { "reference": "DRV-XXXXXX" }`.
 The full request body, the validation rules and the honeypot (anti-spam) field are in the
@@ -288,6 +307,39 @@ rejects journey dates more than one day in the past.
 - **Honeypot:** a filled honeypot gets a normal-looking `201` with a fake reference. Nothing is stored or sent.
 - **Rate limit:** `QUOTE_REQUESTS_RATE` per IP (default `10/hour`), then `429`.
 - **References:** `DRV-` plus 6 characters, without 0/O/1/I so they are easy to read out.
+
+### Content API (`backend/content/`)
+
+Backs the content admin at `/admin`. Unlike the booking API, its JSON is **camelCase** and matches the
+admin's types one to one ([`types.ts`](frontend/src/admin/lib/content/types.ts)), so records go to the
+forms without mapping. Every endpoint is staff-only unless marked public.
+
+| Endpoint | Method | Purpose |
+| --- | --- | --- |
+| `/v1/auth/csrf/` | `GET` | Public. `{"csrfToken"}` plus the `csrftoken` cookie |
+| `/v1/auth/session/` | `GET` · `POST` · `DELETE` | Who is signed in (`403` if nobody) · sign in `{"username", "password"}` (username or email; staff only; `STAFF_SIGN_IN_RATE`) · sign out |
+| `/v1/content/{services,vehicles,cities}/` | `GET` · `POST` | List (drafts included, by `order`) · create (goes last) |
+| `/v1/content/{collection}/{id}/` | `GET` · `PUT` · `DELETE` | Read · replace · delete (references to it are removed) |
+| `/v1/content/{collection}/reorder/` | `POST` | `{"ids": [...]}` in display order → `204` |
+| `/v1/content/settings/` | `GET` · `PUT` | Site settings (company, contacts, social links, testimonials) |
+| `/v1/content/snapshot/` | `GET` | Everything: `{services, vehicles, cities, settings}` |
+| `/v1/content/import/` | `POST` | Superusers only. Replaces all content with a snapshot, keeping ids (the admin's "Load the website's original content") |
+| `/v1/content/images/` | `POST` | Multipart `file` (JPG, PNG or WebP, ≤ 12 MB) → `201 {"url"}` |
+| `/v1/content/images/{name}` | `GET` | Public. Redirects to a fresh presigned link in the `assets` bucket |
+| `/v1/content/published/` | `GET` | Public. Published records only. The website reads its services from it |
+
+- **Sign-in:** Django session cookie (HttpOnly) plus CSRF token, the same as Django's admin. The admin calls
+  with `credentials: "include"`, reads the CSRF token from JSON (it can't read the API's cookies) and sends it
+  as `X-CSRFToken`. The website's origin must be in `CORS_ALLOWED_ORIGINS` (and so in `CSRF_TRUSTED_ORIGINS`).
+  The website and API must share a site (for example `driveoexclusive.com` and `api.driveoexclusive.com`, or
+  the API under `/api` on the same domain) for the cookie to be sent.
+- **Errors:** `400` with field errors keyed by the form's field paths, for example
+  `{"slug": ["The URL slug \"london\" is already used by another entry."]}` or
+  `{"facts": {"0": {"value": {"en": ["Keep this under 16 characters."]}}}}`. Limits match the admin's Zod schemas.
+- **Translations:** each text field is `{"en", "fr", "bg", "ar"}`; English is required except for SEO fields.
+- **Slugs** are unique per collection. **Ids** are strings; imported records keep theirs (`airport_transfer`).
+- **Photos:** a record stores a website path (`/media/…`) or the bucket key of an upload, and the API returns
+  the key as a stable `/v1/content/images/…` URL. Data URLs are refused; the admin uploads photos before saving.
 
 > When the backend is created, publish its OpenAPI schema (for example, drf-spectacular at `/api/schema/`)
 > and link it here. That schema then becomes the source of truth for this table.
@@ -326,8 +378,23 @@ flowchart LR
   never a silent gap.
 - **Admin:** staff can filter and search requests, set a status (new, contacted, quoted, closed), keep
   staff notes, and use the **Resend failed alerts** action.
-- **Email** has a text and an HTML part, with `Reply-To` set to the customer and a link to the request in
-  the admin. Without `SMTP_HOST`, it is printed to the console.
+- **Email** has a text and an HTML part and a link to the request in the admin. Without `SMTP_HOST`,
+  it is printed to the console.
+
+### Replies are manual
+
+The customer gets no automatic message. The website shows their reference and says a concierge will
+be in touch. The owner replies personally, and every alert is built for that:
+
+- **Email alert:**
+  - The sender shows as "Ada Lovelace via Driveo Exclusive", and `Reply-To` is the customer, so
+    pressing Reply answers them directly.
+  - It has **Reply by email**, **Reply on WhatsApp** (a `wa.me` chat link) and **Call** buttons.
+- **WhatsApp alert:** it ends with the customer's `wa.me` link and email. Replying in the alert chat
+  itself goes to the Twilio number, not the customer, and the message says so.
+- **Admin:** each request has the same reply links. Set the status to *Contacted* after replying.
+- **WhatsApp links need an international number** (starting with `+` or `00`). A local number such as
+  `020 7946 0000` gets email and phone options only.
 
 ### WhatsApp (Twilio)
 
@@ -336,9 +403,9 @@ flowchart LR
    - Each recipient joins the sandbox from their phone first.
 2. **Production:** WhatsApp only delivers free-form messages within 24 hours of the recipient's last message.
    Business-initiated alerts need an **approved template**.
-   - Create one in Twilio Content Template Builder with six placeholders, in this order:
+   - Create one in Twilio Content Template Builder with seven placeholders, in this order:
      `{{1}}` reference, `{{2}}` service and city, `{{3}}` date and time, `{{4}}` route, `{{5}}` customer
-     name, phone and email, `{{6}}` dashboard link.
+     name, phone and email, `{{6}}` dashboard link, `{{7}}` the customer's WhatsApp link (or phone number).
    - Put its `HX...` SID in `TWILIO_WHATSAPP_CONTENT_SID`.
    - Set `TWILIO_WHATSAPP_FROM` to the business's WhatsApp-enabled sender.
 
@@ -444,6 +511,9 @@ Record decisions that would surprise a newcomer. Add new entries at the top.
 
 | Date | Decision | Reason |
 | --- | --- | --- |
+| 2026-10-26 | Content admin signs staff in with Django's session cookie + CSRF token, not an API token | The cookie is HttpOnly, so no script on the page (or XSS) can steal a credential; sign-out and deactivating a user take effect at once; it reuses Django's users, `is_staff` and password hashing. Cost: the website and API must share a site, and the CSRF token travels in JSON. DRF now denies by default (`IsAdminUser`); public views opt out |
+| 2026-10-26 | Translated content stored as one JSON object per field (`{"en","fr","bg","ar"}`), not a column per language | Matches the admin's types; repeatable parts (facts, features, steps) are lists of translated objects that columns can't express; adding a language needs no migration. Serializers validate keys and lengths |
+| 2026-10-26 | Content photos stored as references (website path or bucket key) served through a redirect endpoint | The bucket is private and presigned links expire after an hour, so they can't be saved in records. One stable URL per photo works in the admin and, later, on the website |
 | 2026-10-26 | Content admin lives in the website app at `/admin` (its own root layout), not a separate app. Production hides it unless `ADMIN_ENABLED=true` | Client preference: one app to run and deploy. A second root layout keeps admin code and CSS off website pages. The gate stops an unauthenticated admin from going live with the site |
 | 2026-10-25 | Content admin built first against a browser-local store behind a `ContentRepository` interface | The client asked for the admin frontend first. Screens never touch storage directly, so connecting the Django API means swapping one implementation. Django's built-in admin stays for staff operations (quote requests) |
 | 2026-10-24 | Postgres and uploaded files on Neon (Lakebase Postgres + Object Storage) instead of containers on the VPS | Managed backups and scale-to-zero; database and files branch together for dev/preview; one fewer stateful service on the VPS |
@@ -498,7 +568,46 @@ Newest first. Follow [Keep a Changelog](https://keepachangelog.com/) headings: A
   - Owner alerts by email (SMTP) and Twilio WhatsApp run through Celery + Redis, with retries,
     a delivery log per recipient, and a periodic sweep for alerts that were never queued.
   - Admin pages for requests and alerts, including a "Resend failed alerts" action.
-  - 27 tests. The website is not connected yet.
+  - 27 tests at the time.
+
+### 2026-10-27
+
+**Fixed**
+- A service added in the content admin was saved only in the browser and never reached the website.
+  - Locally the admin now saves through the API (`NEXT_PUBLIC_ADMIN_CONTENT_SOURCE=api` in `frontend/.env.local`).
+  - The website's services menu, home section, Services page, detail pages and sitemap read the published
+    services from the API (`frontend/src/lib/content/site-services.ts`), cached for about a minute, with the
+    built-in copy as fallback. New services get detail pages without a rebuild.
+  - Uploaded photos are shown as-is.
+  - The Services gallery fits up to five services in one row.
+
+### 2026-10-26
+
+**Added**
+- `backend` + `frontend`: the content admin saves to Postgres through a new Django `content` app.
+  - Models for services, vehicles, cities and site settings, with translations as JSON per field, `order`,
+    `published`, slugs unique per collection, and ordered vehicle links per service.
+  - DRF endpoints under `/api/v1/content/` for every admin operation (list, get, create, update, delete,
+    reorder, settings, snapshot, import) plus photo upload to the Neon `assets` bucket and a public
+    `published/` endpoint for the website. `400` errors point at the form field.
+  - Staff sign-in (`/api/v1/auth/`): session cookie + CSRF token, rate limited, staff accounts only.
+    DRF now requires staff by default; the quote form and health check stay public.
+  - `frontend/src/admin/lib/content/api-repository.ts`, switched on with `NEXT_PUBLIC_ADMIN_CONTENT_SOURCE=api`.
+    The admin then shows a sign-in screen and a Sign out button; demo mode is unchanged.
+  - 40 new backend tests (69 in total).
+- `frontend` + `backend`: the website's quote form talks to the Django API (`NEXT_PUBLIC_API_MOCK=false`).
+  The backend allows the website's origin with django-cors-headers (`CORS_ALLOWED_ORIGINS`).
+- `frontend`: clearer form errors in all four languages:
+  - which fields the API rejected;
+  - a "too many requests" message for the API's 429 and for the form's own 30-second cooldown, which
+    used to ignore the click silently.
+- `backend`: alerts are built for manual replies. The email shows the customer's name as the sender
+  and has Reply by email, Reply on WhatsApp and Call buttons. The WhatsApp alert has the customer's
+  `wa.me` link. The admin shows the same reply links. Two new tests (29).
+
+**Changed**
+- `frontend/.env.example` now defaults to the real API. Set `NEXT_PUBLIC_API_MOCK=true` to work without the backend.
+- The WhatsApp template has a seventh placeholder: the customer's WhatsApp link.
 
 **Added**
 - `backend`: Django 6.1 project connected to Neon. It uses Lakebase Postgres through psycopg 3

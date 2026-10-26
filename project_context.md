@@ -4,9 +4,9 @@
 > why, how, where it stands, and what comes next. It is written for anyone joining the project:
 > developers, designers, the client, or an AI assistant picking up the work.
 >
-> - **Last updated:** 2026-10-25
+> - **Last updated:** 2026-10-26
 > - **Current phase:** Phase 1, Website frontend (≈ 85 % done), overlapping with Phase 2, Backend (started)
-> - **Next milestone:** Connect the website's quote form to the live endpoint (Phase 4) and configure real alert recipients, SMTP and Twilio
+> - **Next milestone:** Configure real alert recipients, SMTP and Twilio (Q1, Q2), then the backend foundation fixes and deployment
 >
 > The [README](README.md) is the technical entry point (setup, commands, architecture).
 > This file is the narrative: goals, plan, progress, risks and decisions.
@@ -166,7 +166,7 @@ Dates are not set yet. Fill them in once scope, budget and resources are confirm
 | **1. Website frontend** | Production-quality website on mock data | `frontend/` Next.js app, i18n, SEO, Dockerfile | 0 | 🟡 ≈ 85 % |
 | **2. Backend API and admin** | Shared business logic and operations dashboard | Django project, data model, quote/booking API, admin, auth, OpenAPI schema | 0 | 🟡 ≈ 35 %: project on Neon, quote request API and admin |
 | **3. Notifications** | Owner alerts that never lose a request | Celery tasks, email provider, Twilio WhatsApp, retry and failure logging | 2 | 🟡 Built and tested; waits on real recipients, an email provider and Twilio credentials (Q1, Q2) |
-| **4. Integration** | Website talks to the real API | Quote form live, CORS, error handling, end-to-end tests | 1, 2 | ⚪ Not started |
+| **4. Integration** | Website talks to the real API | Quote form live, CORS, error handling, end-to-end tests | 1, 2 | 🟡 Quote form connected and checked in a browser locally; automated end-to-end tests pending |
 | **5. Infrastructure and CI/CD** | Repeatable, secure deployments | `infra/` docker-compose, Nginx, Cloudflare, GitHub Actions, backups, monitoring | 1, 2 | ⚪ Not started (frontend Dockerfile ready; database provisioned on Neon) |
 | **6. Mobile apps** | Android and iOS apps | `mobile/` React + Vite + Capacitor app, store listings | 2 | ⚪ Not started |
 | **7. Launch and handover** | Go live and hand over safely | Production launch, legal pages, analytics, runbook, client training | 3, 4, 5 | ⚪ Not started |
@@ -205,19 +205,19 @@ Each objective has a definition of done (DoD). Tick it when it's done, and updat
 - [ ] **W2.4 Admin dashboard.** DoD: staff can list, filter and update requests and manage vehicles, pricing and availability. Roles and permissions are in place.
   _Partly done:_ staff can list, filter, search and update quote requests, see each alert's delivery status, and resend failed alerts. Vehicles, pricing, availability and roles are still to do.
 - [ ] **W2.8 Content admin (`frontend/`, `/admin`).** DoD: staff sign in and manage the website's services, fleet, cities and site settings (contact, social links, testimonials) in four languages. Changes are saved through the API, and the website reads its content from the API.
-  _Partly done (2026-10-26):_ the admin frontend is complete in demo mode, inside the website app at `/admin`:
+  _Partly done (2026-10-26):_ the admin is inside the website app at `/admin`:
   - create, edit, duplicate, publish, reorder and delete, with reference cleanup;
   - per-language editing with completeness tracking, and right-to-left Arabic;
-  - image upload, SEO preview, a dashboard, light and dark themes, and a phone layout.
+  - image upload, SEO preview, a dashboard, light and dark themes, and a phone layout;
+  - saved in Postgres through the Django `content` app (`/api/v1/content/`) when `NEXT_PUBLIC_ADMIN_CONTENT_SOURCE=api`, with staff sign-in (session cookie + CSRF) and photos in the `assets` bucket. Demo mode (browser storage) stays the default.
 
-  Content is stored in the browser, seeded from the website's dictionaries. Production builds hide `/admin` unless `ADMIN_ENABLED=true`. Remaining:
-  - Django content models and endpoints;
-  - `api-repository.ts`;
-  - staff sign-in;
-  - image upload to Neon storage;
-  - the website reading content from the API.
+  Production builds hide `/admin` unless `ADMIN_ENABLED=true`. Remaining:
+  - the website reading fleet, cities and site settings from the API. **Services are done (2026-10-27):** the menu, home section, Services page, detail pages and sitemap show the published services within about a minute, and new services get their own page;
+  - deciding whether services added in the admin should be bookable in the quote form (today only the four built-in services are);
+  - loading the original content into the production database (Settings → "Load the website's original content", as a superuser) once the backend is deployed.
 - [ ] **W2.5 API documentation.** DoD: OpenAPI schema published (drf-spectacular) and linked from the README.
 - [ ] **W2.6 Security.** DoD: CORS limited to known origins, HTTPS-only cookies, admin protected, dependency audit clean.
+  _Partly done (2026-10-26):_ CORS limited to `CORS_ALLOWED_ORIGINS`; DRF denies by default (staff only) and only the quote form, health check and published content are public; session and CSRF cookies are Secure whenever `DEBUG` is off; staff sign-in is rate limited. Remaining: dependency audit, HTTPS settings for production (HSTS, `SECURE_PROXY_SSL_HEADER`).
 - [x] **W2.7 Database and file storage.** DoD: Neon project linked from `backend/` (`neon.ts`, `.neon`). Lakebase Postgres used through psycopg 3 (pooled connection for the app, direct connection for migrations). The private `assets` bucket is Django's default file storage. Both checked end to end: write, read and delete; signed links work and anonymous reads are refused. A project-level Neon MCP server in `.mcp.json` serves AI assistants.
 
 ### WS3: Notifications
@@ -265,8 +265,8 @@ _Snapshot as of 2026-10-25._
 | Workstream | Progress | Notes |
 | --- | --- | --- |
 | WS1 Website | ███████████████░░░ ≈ 85 % | Feature-complete on mock data. Legal, consent, performance, tests and the accessibility audit remain |
-| WS2 Backend | ██████░░░░░░░░░░░░ ≈ 35 % | Quote request API, admin and data model for requests and alerts. Foundation fixes (custom user model, CORS, settings split, CI) still pending |
-| WS2 Content admin | ███████████░░░░░░░ ≈ 60 % | Next.js admin frontend complete in demo mode (browser storage). API, sign-in and the website connection remain (W2.8) |
+| WS2 Backend | ████████░░░░░░░░░░ ≈ 45 % | Quote request API, content API with staff sign-in, admin and data model for requests and alerts. Foundation fixes (custom user model, settings split, CI) still pending |
+| WS2 Content admin | ███████████████░░░ ≈ 85 % | Admin saves to Postgres through the Django API with staff sign-in (or a browser-only demo). The website shows the published services; fleet, cities and settings remain (W2.8) |
 | WS3 Notifications | ██████████████░░░░ ≈ 75 % | Email and WhatsApp pipeline built and tested. Needs real recipients, an SMTP provider and Twilio credentials (Q1, Q2) |
 | WS4 Infrastructure | ████░░░░░░░░░░░░░░ ≈ 20 % | Frontend Dockerfile and CI/CD workflows written. Activation waits on git, GitHub and a server |
 | WS5 Mobile | ░░░░░░░░░░░░░░░░░░ 0 % | Waits for the API |
@@ -279,12 +279,13 @@ _Snapshot as of 2026-10-25._
 - Quote form: validation, fleet → form vehicle preselection, capacity limits, hourly-hire flow. Submission returns a mock reference (`DRV-XXXXXX`).
 - Verified in a browser: section heights match the original Lovable site at 1440 px, there is no horizontal overflow at 375 px, the console is clean, and 404 pages return status 404.
 - The content admin runs at http://localhost:3000/admin with the website's dev server, and the website passes `lint`, `typecheck` and `build` with it included. Every content type can be created, edited, duplicated, reordered, published and deleted in four languages. This was checked in a browser at desktop and phone widths, in both themes.
-- `backend/` runs locally against Neon (`runserver`). Migrations are applied on the `production` branch. `GET /api/v1/health/` returns `{"database":"ok","storage":"ok"}`, or `503` if either fails.
+- `backend/` runs locally against Neon (`runserver`). `backend/.env.local` now points at the Neon branch `dev` (created 2026-10-26, expires 2026-11-02 under the `neon.ts` policy); the `content` migration is applied there but **not yet on `production`**. `GET /api/v1/health/` returns `{"database":"ok","storage":"ok"}`, or `503` if either fails.
+- Content API: with `NEXT_PUBLIC_ADMIN_CONTENT_SOURCE=api`, the admin signs staff in and creates, edits, reorders and deletes services, vehicles, cities and settings in Postgres, with photos in the `assets` bucket. 69 backend tests pass (`manage.py test`).
 
 ### What does not work yet
 
-- The website isn't connected to the quote endpoint yet (still mock mode), and no real alert recipients, SMTP or Twilio credentials are configured. Quote requests from the website are **not** delivered to anyone yet. The site must not go live until Phase 4 is done.
-- The content admin saves only to the browser it runs in. It has no sign-in, and its edits don't reach the website. Production builds therefore answer 404 at `/admin`. Don't set `ADMIN_ENABLED=true` on a public server until it has the API and staff authentication (W2.8).
+- The website's quote form is connected to the API locally, but no real alert recipients, SMTP or Twilio credentials are configured, so nobody receives the alerts yet. Nothing is deployed. The site must not go live until alerts reach the owner in production.
+- Only **services** from the content admin reach the website so far. Fleet, cities and settings edits are saved but the website still shows its built-in copy (W2.8). In production, set `ADMIN_ENABLED=true` only together with `NEXT_PUBLIC_ADMIN_CONTENT_SOURCE=api`; demo mode has no sign-in.
 - The backend has no tests, Dockerfile or CI workflow yet, and no production settings (CORS, secure cookies, production secret key).
 - No automated tests. The CI/CD workflows exist but have never run on GitHub, and no server is configured.
 - The Docker image hasn't been built locally yet: Docker Desktop wasn't running. CI checks the build on every PR.
@@ -292,6 +293,8 @@ _Snapshot as of 2026-10-25._
 
 ### Recently completed
 
+- 2026-10-26: Content API for the admin. A Django `content` app (services, vehicles, cities, site settings; translations as JSON per field), DRF endpoints for every admin operation, photo upload to the `assets` bucket, staff sign-in with a session cookie and CSRF token, and DRF deny-by-default. The admin switches to it with `NEXT_PUBLIC_ADMIN_CONTENT_SOURCE=api` and gets a sign-in screen. 40 new tests (69 total). Development moved to the Neon branch `dev`.
+- 2026-10-26: Website quote form connected to the Django API (CORS, localized field and rate-limit errors). Alerts built for the client's manual replies: the customer's name as sender, Reply by email / WhatsApp / Call buttons, and the same links in the admin. Checked in a browser: two real submissions saved and emailed, and the rate-limit message shown.
 - 2026-10-26: Content admin moved into the website app at `/admin`, with its own root layout and a production gate (`ADMIN_ENABLED`). The separate `admin/` app is retired.
 - 2026-10-25: Content admin (Next.js) in demo mode. Services, fleet, cities and site settings get full create, update and delete in four languages, plus a dashboard, image upload, SEO preview and light and dark themes. Content is seeded from the website's dictionaries.
 - 2026-10-25: Quote request system in the backend: endpoint, validation, rate limit, admin, and owner alerts by email and Twilio WhatsApp through Celery + Redis, with retries and a delivery log. 27 tests pass, and the full flow was checked locally (request → Neon → Redis → worker → email).
@@ -309,13 +312,9 @@ _Snapshot as of 2026-10-25._
 
 1. Activate CI/CD: `production` environment, secrets, branch protection on `main` (W4.3b, W6.4).
 2. Resolve the open questions in §12 that block the backend (notification recipients, email provider, accounts in v1).
-3. Backend foundation fixes: custom user model (while there are 0 users), a dev Neon branch, DRF defaults, CORS, settings split, pytest and ruff (W2.1, W2.6).
-4. Connect the website to the real endpoint (needs CORS), configure alert recipients, SMTP and Twilio, then add end-to-end tests (Phase 4, W1.10).
-5. Content API for the admin. Build these together:
-   - Django models and endpoints for services, vehicles, cities and settings, matching `frontend/src/admin/lib/content/types.ts`;
-   - staff authentication;
-   - `api-repository.ts` in the admin;
-   - the website reading that content (W2.8).
+3. Backend foundation fixes: custom user model (do it before the first real user; the `dev` branch has one test superuser, `production` has none), settings split, pytest and ruff (W2.1, W2.6). Then apply the `content` migration on `production`.
+4. Configure alert recipients, SMTP and Twilio (Q1, Q2) and test a real email and WhatsApp alert, then add end-to-end tests (Phase 4, W1.10).
+5. The website reads its content from `GET /api/v1/content/published/` instead of its dictionaries, with uploaded photos allowed in `next/image` (W2.8).
 6. Write the legal pages and consent banner (W1.7–W1.8), then do the performance pass (W1.9).
 
 ---
@@ -348,6 +347,9 @@ _Snapshot as of 2026-10-25._
 - **Copyright year** (`© 2026`) is fixed in the dictionaries. Make it dynamic or update it yearly.
 - **Neon accounts on the developer machine:** the Neon CLI must be signed in to the account in org `org-super-hill-79285047`. The user-level Neon MCP key belongs to another org (GlowHaat); the project's `.mcp.json` overrides it here.
 - **Backend Python environment:** run the backend from `backend/.venv` (Django 6.1). The global Anaconda Python has Django 4.2.
+- **Content photos are never deleted** from the bucket when a record is deleted or its photo replaced. Add a cleanup job once storage use matters.
+- **Content permissions are all-or-nothing:** any staff account can edit all content; only superusers can replace everything (import). Use Django groups/permissions if editors need narrower rights.
+- **Sign-in cookies need one site:** the website and API must be on the same site (e.g. `driveoexclusive.com` + `api.driveoexclusive.com`, or `/api` on one domain) or browsers won't send the staff session cookie.
 - **Arabic typography:** Fraunces has no Arabic glyphs, so Arabic headings fall back to Noto Kufi Arabic. Get a designer to review.
 
 ---
@@ -358,6 +360,9 @@ Newest first. The README has the same log for developers. Keep the two in sync.
 
 | Date | Decision | Why | Alternatives considered |
 | --- | --- | --- | --- |
+| 2026-10-26 | Staff sign in to the content admin with Django's session cookie + CSRF token | HttpOnly cookie, so no page script (or XSS) can read a credential; sign-out and deactivation work at once; reuses Django users and `is_staff`. Needs the website and API on one site | DRF tokens or JWT kept in browser storage (readable by scripts, harder to revoke); Neon Auth (a second user store next to Django's) |
+| 2026-10-26 | Translated content stored as JSON per field (`{"en","fr","bg","ar"}`); the content API speaks camelCase to match the admin's types | Lists of translated items (facts, features, steps) fit naturally; a new language needs no migration; records go to the forms without mapping | A column per language (django-modeltranslation); separate translation tables |
+| 2026-10-26 | Content photos stored as references and served through a redirect endpoint | The bucket is private and its presigned links expire, so records keep the key and the API hands out one stable URL | A public-read bucket; saving presigned links |
 | 2026-10-26 | The content admin lives in the website app at `/admin` (a second root layout), hidden in production unless `ADMIN_ENABLED=true` | Client preference: one app to run and deploy. Admin code and CSS never load on website pages. The gate keeps an unauthenticated admin off the live site | A separate `admin/` Next.js app (built first, then retired) |
 | 2026-10-25 | The content admin was built first against browser storage, behind a `ContentRepository` interface | The client asked for the admin frontend first. Screens never touch storage directly, so connecting the Django API swaps one implementation. It matches the website's stack and design quality | Django's built-in admin for content (kept for quote requests); building the API first |
 | 2026-10-24 | All local backend secrets in one file, `backend/.env.local` (template: `backend/.env.example`), with the Neon link (`neon.ts`, `.neon`) in `backend/` too so the Neon CLI writes there. `settings.py` has no secrets and no fallback key | One place to manage them. `neon env pull` updates only its own variables there. The app fails fast if a secret is missing | A separate `backend/.env` for Django-only values |
@@ -404,8 +409,8 @@ Newest first. The README has the same log for developers. Keep the two in sync.
 | Domain rules (cities, services, vehicles, capacity) | `frontend/src/domain/booking.ts` |
 | Translations | `frontend/src/i18n/dictionaries/{en,fr,bg,ar}.ts` |
 | Company contact, social links, media | `frontend/src/config/site.ts` |
-| Backend code and settings | `backend/` · settings: `backend/config/settings.py` |
-| Neon services (Postgres, `assets` bucket) | `backend/neon.ts` (run `neon` commands from `backend/`) · project `driveexclusive` (`icy-block-59285110`), branch `production` |
+| Backend code and settings | `backend/` · settings: `backend/config/settings.py` · content API: `backend/content/` · staff sign-in: `backend/core/auth_views.py` |
+| Neon services (Postgres, `assets` bucket) | `backend/neon.ts` (run `neon` commands from `backend/`) · project `driveexclusive` (`icy-block-59285110`), branches `production` (default) and `dev` (local work) |
 | Local secrets | `backend/.env.local` (gitignored), template [`backend/.env.example`](backend/.env.example) |
 | Quote API contract (payload and response) | [`frontend/README.md#backend-contract`](frontend/README.md#backend-contract) |
 | Design reference code | `driveo-creative/` · live: https://driveo-creative-lab.lovable.app |

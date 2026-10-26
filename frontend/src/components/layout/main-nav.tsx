@@ -5,13 +5,14 @@ import { useSelectedLayoutSegment } from "next/navigation";
 import { SITE_PAGES, pagePath } from "@/config/navigation";
 import { localePath, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/get-dictionary";
+import type { NavService } from "@/lib/content/site-services";
 import { cn } from "@/lib/cn";
 import { ServicesDropdown } from "./services-dropdown";
 
 interface MainNavProps {
   locale: Locale;
   nav: Dictionary["nav"];
-  services: Dictionary["services"]["items"];
+  services: NavService[];
   allServices: string;
   className?: string;
   linkClassName?: string;

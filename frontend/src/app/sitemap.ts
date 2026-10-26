@@ -1,13 +1,12 @@
 import type { MetadataRoute } from "next";
 import { pagePath, SITE_PAGES } from "@/config/navigation";
-import { servicePath } from "@/config/services";
-import { SERVICE_TYPES } from "@/domain/booking";
 import { locales } from "@/i18n/config";
+import { getSiteServices } from "@/lib/content/site-services";
 import { localeUrl } from "@/lib/seo/metadata";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const pages = [pagePath(null), ...SITE_PAGES.map(({ segment }) => pagePath(segment))];
-  const servicePages = SERVICE_TYPES.map(servicePath);
+  const servicePages = (await getSiteServices("en")).map((service) => service.path);
 
   return [...pages, ...servicePages].flatMap((path) => {
     const languages = Object.fromEntries(locales.map((locale) => [locale, localeUrl(locale, path)]));

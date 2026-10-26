@@ -38,14 +38,18 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "corsheaders",
     "rest_framework",
     "storages",
     "core",
     "quotes",
+    "content",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Before CommonMiddleware, so CORS headers are added to every API response.
+    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -223,11 +227,42 @@ CELERY_BEAT_SCHEDULE = {
 
 # DRF
 
+# Deny by default: a view is staff-only unless it opts out (the public quote
+# form and health check set AllowAny). Session auth only, see core/auth_views.py.
 REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAdminUser",
+    ],
     "DEFAULT_THROTTLE_RATES": {
         "quote_requests": os.environ.get("QUOTE_REQUESTS_RATE") or "10/hour",
+        "staff_sign_in": os.environ.get("STAFF_SIGN_IN_RATE") or "20/hour",
     },
 }
+
+# The website calls the API from the browser, so its origin must be allowed.
+# Comma-separated, scheme included, e.g. https://driveoexclusive.com
+CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS")
+CORS_URLS_REGEX = r"^/api/.*$"
+# The content admin (/admin on the website) signs staff in with the session
+# cookie, so allowed origins may send cookies.
+CORS_ALLOW_CREDENTIALS = True
+
+# Staff sessions for the content admin (core/auth_views.py).
+# The admin's origin must be trusted for CSRF; it is the website's origin.
+CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS") or CORS_ALLOWED_ORIGINS
+# "Lax" works while the website and API share a site, e.g. driveoexclusive.com
+# and api.driveoexclusive.com (or localhost:3000 and localhost:8000). On
+# unrelated domains use "None" (HTTPS only), but browsers that block
+# third-party cookies will then refuse to sign in.
+SESSION_COOKIE_SAMESITE = os.environ.get("SESSION_COOKIE_SAMESITE") or "Lax"
+CSRF_COOKIE_SAMESITE = SESSION_COOKIE_SAMESITE
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+# A working day; staff sign in again after that.
+SESSION_COOKIE_AGE = 60 * 60 * 12
 
 
 # Quote request alerts (quotes app)

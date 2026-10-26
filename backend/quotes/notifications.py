@@ -8,12 +8,16 @@ shows what was sent, what failed and why.
 
 import json
 import logging
+import re
 import smtplib
 from datetime import timedelta
+from email.utils import formataddr, parseaddr
+from urllib.parse import quote as quote_url
 
 from django.conf import settings
 from django.core.mail import EmailMultiAlternatives
 from django.db import transaction
+from django.template.defaultfilters import pluralize
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
@@ -166,6 +170,25 @@ def admin_url(quote):
     return f"{settings.BACKEND_BASE_URL.rstrip('/')}{path}"
 
 
+def whatsapp_chat_url(phone):
+    """wa.me link that opens a WhatsApp chat with the customer.
+
+    None for a local number without a country code, which wa.me can't resolve.
+    """
+    compact = phone.strip()
+    digits = re.sub(r"\D", "", compact)
+    if compact.startswith("00"):
+        digits = digits[2:]
+    elif not compact.startswith("+"):
+        return None
+    return f"https://wa.me/{digits}" if len(digits) >= 8 else None
+
+
+def reply_email_url(quote):
+    subject = quote_url(f"Your Driveo Exclusive quote {quote.reference}")
+    return f"mailto:{quote.email}?subject={subject}"
+
+
 def summary_lines(quote: QuoteRequest):
     """The facts the owner needs, shared by every channel."""
     when = f"{quote.journey_date:%a %d %b %Y}, {quote.journey_time:%H:%M}"
@@ -179,11 +202,15 @@ def summary_lines(quote: QuoteRequest):
         "when": when,
         "route": route,
         "vehicle": (
-            f"{quote.get_vehicle_class_display()} · {quote.passengers} passengers · "
+            f"{quote.get_vehicle_class_display()} · "
+            f"{quote.passengers} passenger{pluralize(quote.passengers)} · "
             f"{quote.luggage} luggage"
         ),
         "customer": f"{quote.full_name} · {quote.phone} · {quote.email}",
         "admin_url": admin_url(quote),
+        # The owner answers every request personally; nothing goes to the customer automatically.
+        "reply_whatsapp_url": whatsapp_chat_url(quote.phone) or "",
+        "reply_email_url": reply_email_url(quote),
     }
 
 
@@ -193,10 +220,15 @@ def summary_lines(quote: QuoteRequest):
 def send_email(quote, recipient):
     facts = summary_lines(quote)
     context = {"quote": quote, **facts}
+    # "Ada Lovelace via Driveo Exclusive": the customer is recognisable in the
+    # inbox, and Reply goes straight to them. The sending address is unchanged.
+    sender_name, sender_address = parseaddr(settings.DEFAULT_FROM_EMAIL)
     message = EmailMultiAlternatives(
         subject=f"New quote request {quote.reference}: {facts['service']}, {facts['when']}",
         body=render_to_string("quotes/email/new_quote_request.txt", context),
-        from_email=settings.DEFAULT_FROM_EMAIL,
+        from_email=formataddr(
+            (f"{quote.full_name} via {sender_name or 'Driveo Exclusive'}", sender_address)
+        ),
         to=[recipient],
         reply_to=[quote.email],
     )
@@ -251,6 +283,7 @@ def send_whatsapp(quote, recipient):
                 "4": facts["route"],
                 "5": facts["customer"],
                 "6": facts["admin_url"],
+                "7": facts["reply_whatsapp_url"] or quote.phone,
             }
         )
     else:

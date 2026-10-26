@@ -3,21 +3,19 @@ import Link from "next/link";
 import { serviceIcons } from "@/components/icons/service-icons";
 import { Reveal } from "@/components/motion/reveal";
 import { SectionHeading } from "@/components/page/section-heading";
-import { servicePath } from "@/config/services";
-import { SERVICE_TYPES, type ServiceType } from "@/domain/booking";
 import { localePath, type Locale } from "@/i18n/config";
-import type { Dictionary } from "@/i18n/get-dictionary";
+import type { SiteService } from "@/lib/content/site-services";
 
 interface OtherServicesProps {
   locale: Locale;
-  current: ServiceType;
-  services: Dictionary["services"]["items"];
+  /** Every published service except the current one. */
+  services: SiteService[];
   heading: { eyebrow: string; title: string; viewDetails: string };
 }
 
-/** Cross-links to the remaining three service pages. */
-export function OtherServices({ locale, current, services, heading }: OtherServicesProps) {
-  const others = SERVICE_TYPES.filter((type) => type !== current);
+/** Cross-links to the other service pages. */
+export function OtherServices({ locale, services, heading }: OtherServicesProps) {
+  if (services.length === 0) return null;
 
   return (
     <section className="section-band bg-secondary">
@@ -27,13 +25,12 @@ export function OtherServices({ locale, current, services, heading }: OtherServi
           stagger
           className="mt-12 grid gap-px overflow-hidden rounded-lg border border-border bg-border md:grid-cols-3"
         >
-          {others.map((type) => {
-            const item = services[type];
-            const Icon = serviceIcons[type];
+          {services.map((item) => {
+            const Icon = serviceIcons[item.icon];
             return (
               <Link
-                key={type}
-                href={localePath(locale, servicePath(type))}
+                key={item.slug}
+                href={localePath(locale, item.path)}
                 className="group flex flex-col bg-background p-8 transition-colors duration-300 hover:bg-secondary"
               >
                 <span className="grid size-11 place-items-center rounded-full border border-primary/45 text-primary">
@@ -41,7 +38,7 @@ export function OtherServices({ locale, current, services, heading }: OtherServi
                 </span>
                 <p className="mono-label mt-6">{item.label}</p>
                 <h3 className="card-title mt-2">{item.title}</h3>
-                <p className="body-muted flex-1">{item.copy}</p>
+                <p className="body-muted flex-1">{item.summary}</p>
                 <span className="mt-7 inline-flex items-center gap-2 font-mono text-[0.65rem] font-bold tracking-[0.2em] text-accent uppercase">
                   {heading.viewDetails}
                   <ArrowRight

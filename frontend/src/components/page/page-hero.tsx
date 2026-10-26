@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { isRemoteImage } from "@/lib/remote-image";
 import Link from "next/link";
 import { Fragment, type ReactNode } from "react";
 import { WhatsAppIcon } from "@/components/icons/social-icons";
@@ -46,7 +47,15 @@ export function PageHero({
   return (
     <ParallaxSurface as="section" id="top" className={styles.stage}>
       <div className={styles.camera}>
-        <Image src={image.src} alt={image.alt} fill priority sizes="100vw" className={styles.image} />
+        <Image
+          src={image.src}
+          alt={image.alt}
+          fill
+          priority
+          sizes="100vw"
+          unoptimized={isRemoteImage(image.src)}
+          className={styles.image}
+        />
         <div className={styles.plane} aria-hidden="true" />
         <div className={styles.lightLine} aria-hidden="true" />
       </div>

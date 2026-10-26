@@ -126,6 +126,7 @@ export const en = {
     pickup: "Pickup location",
     pickupPlaceholder: "Address, hotel or airport",
     hours: "Select hours",
+    hoursField: "Hours",
     hoursUnit: "hours",
     hourlyNote:
       "Each hour includes 15 miles within Greater London. Journeys outside this area may be charged differently.",
@@ -151,6 +152,9 @@ export const en = {
     again: "Send another request",
     error:
       "We could not email your request. Please try again or email info@driveoexclusive.com.",
+    errorInvalid: "Please check these details:",
+    errorRateLimited:
+      "You have sent several requests in a short time. Please wait a few minutes and try again, or email info@driveoexclusive.com.",
     serviceOptions: {
       airport_transfer: "Airport transfer",
       point_to_point: "Point-to-point",

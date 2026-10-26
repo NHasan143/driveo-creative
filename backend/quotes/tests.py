@@ -11,7 +11,12 @@ from django.utils import timezone
 from twilio.base.exceptions import TwilioRestException
 
 from .models import Notification, QuoteRequest
-from .notifications import RetryableDeliveryError, deliver, requeue_stale_notifications
+from .notifications import (
+    RetryableDeliveryError,
+    deliver,
+    requeue_stale_notifications,
+    whatsapp_chat_url,
+)
 from .tasks import send_notification
 
 URL = reverse("quote-request-create")
@@ -96,6 +101,12 @@ class CreateQuoteRequestTests(QuoteApiTestCase):
         self.assertEqual(sent["from_"], "whatsapp:+14155238886")
         self.assertIn(reference, sent["body"])
 
+        # Built for a personal reply: the customer's name as sender, links to answer them.
+        self.assertTrue(email.from_email.startswith("Ada Lovelace via Driveo Exclusive <"))
+        self.assertIn("https://wa.me/442079460000", email.body)
+        self.assertIn("Nothing has been sent to the customer", email.body)
+        self.assertIn("WhatsApp: https://wa.me/442079460000", sent["body"])
+
         statuses = dict(quote.notifications.values_list("channel", "status"))
         self.assertEqual(statuses, {"email": "sent", "whatsapp": "sent"})
         self.assertEqual(quote.notifications.get(channel="whatsapp").provider_message_id, "SM42")
@@ -161,6 +172,30 @@ class CreateQuoteRequestTests(QuoteApiTestCase):
             codes = [self.post(payload()).status_code for _ in range(3)]
 
         self.assertEqual(codes, [201, 201, 429])
+
+
+class ReplyLinkTests(TestCase):
+    def test_whatsapp_chat_url(self):
+        self.assertEqual(whatsapp_chat_url("+44 20 7946 0000"), "https://wa.me/442079460000")
+        self.assertEqual(whatsapp_chat_url("0033 6 12 34 56 78"), "https://wa.me/33612345678")
+        self.assertIsNone(whatsapp_chat_url("020 7946 0000"))  # No country code.
+
+    @override_settings(CORS_ALLOWED_ORIGINS=["https://driveoexclusive.com"])
+    def test_website_origin_may_call_the_api(self):
+        preflight = self.client.options(
+            URL,
+            HTTP_ORIGIN="https://driveoexclusive.com",
+            HTTP_ACCESS_CONTROL_REQUEST_METHOD="POST",
+            HTTP_ACCESS_CONTROL_REQUEST_HEADERS="content-type",
+        )
+        self.assertEqual(
+            preflight.headers["Access-Control-Allow-Origin"], "https://driveoexclusive.com"
+        )
+
+        other = self.client.options(
+            URL, HTTP_ORIGIN="https://evil.example", HTTP_ACCESS_CONTROL_REQUEST_METHOD="POST"
+        )
+        self.assertNotIn("Access-Control-Allow-Origin", other.headers)
 
 
 @override_settings(**ALERTS)

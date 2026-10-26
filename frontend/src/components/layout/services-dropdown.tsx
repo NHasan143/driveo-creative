@@ -4,17 +4,15 @@ import { ArrowUpRight, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { serviceIcons } from "@/components/icons/service-icons";
-import { servicePath } from "@/config/services";
-import { SERVICE_TYPES } from "@/domain/booking";
 import { localePath, type Locale } from "@/i18n/config";
-import type { Dictionary } from "@/i18n/get-dictionary";
+import type { NavService } from "@/lib/content/site-services";
 import { cn } from "@/lib/cn";
 import styles from "./services-dropdown.module.css";
 
 interface ServicesDropdownProps {
   locale: Locale;
   label: string;
-  items: Dictionary["services"]["items"];
+  items: NavService[];
   allServices: string;
   current: boolean;
   className?: string;
@@ -60,7 +58,7 @@ export function ServicesDropdown({ locale, label, items, allServices, current, c
       return;
     }
     const index = linksRef.current.indexOf(document.activeElement as HTMLAnchorElement);
-    const last = SERVICE_TYPES.length;
+    const last = items.length;
     let next: number | undefined;
     if (event.key === "ArrowDown") next = index < 0 ? 0 : (index + 1) % (last + 1);
     if (event.key === "ArrowUp") next = index < 0 ? last : (index + last) % (last + 1);
@@ -111,25 +109,25 @@ export function ServicesDropdown({ locale, label, items, allServices, current, c
       </button>
       <div id={panelId} hidden={!open} className={styles.panel}>
         <ul aria-labelledby={triggerId} className={styles.list}>
-          {SERVICE_TYPES.map((type, index) => {
-            const Icon = serviceIcons[type];
+          {items.map((service, index) => {
+            const Icon = serviceIcons[service.icon];
             return (
-              <li key={type}>
+              <li key={service.slug}>
                 <Link
                   ref={(element) => { linksRef.current[index] = element; }}
-                  href={localePath(locale, servicePath(type))}
+                  href={localePath(locale, service.path)}
                   className={styles.option}
                   onClick={() => setOpen(false)}
                 >
                   <Icon aria-hidden="true" className={styles.icon} />
-                  <span>{items[type].title}</span>
+                  <span>{service.title}</span>
                 </Link>
               </li>
             );
           })}
         </ul>
         <Link
-          ref={(element) => { linksRef.current[SERVICE_TYPES.length] = element; }}
+          ref={(element) => { linksRef.current[items.length] = element; }}
           href={localePath(locale, "/services")}
           aria-current={current ? "page" : undefined}
           className={styles.all}

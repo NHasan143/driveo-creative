@@ -1,8 +1,9 @@
 from django.contrib import admin, messages
 from django.db.models import Count, Q
+from django.utils.html import format_html_join
 
 from .models import Notification, QuoteRequest
-from .notifications import enqueue
+from .notifications import enqueue, reply_email_url, whatsapp_chat_url
 
 
 class NotificationInline(admin.TabularInline):
@@ -55,10 +56,14 @@ class QuoteRequestAdmin(admin.ModelAdmin):
         "ip_address",
         "created_at",
         "updated_at",
+        "reply",
     ]
     fieldsets = [
         (None, {"fields": ["reference", "status", "staff_notes"]}),
-        ("Customer", {"fields": ["first_name", "last_name", "email", "phone", "locale"]}),
+        (
+            "Customer",
+            {"fields": ["first_name", "last_name", "email", "phone", "locale", "reply"]},
+        ),
         (
             "Journey",
             {
@@ -94,6 +99,19 @@ class QuoteRequestAdmin(admin.ModelAdmin):
     @admin.display(description="Customer", ordering="last_name")
     def full_name(self, obj):
         return obj.full_name
+
+    @admin.display(description="Reply")
+    def reply(self, obj):
+        """Links for answering the customer personally; set the status afterwards."""
+        links = [("Email", reply_email_url(obj))]
+        if whatsapp_url := whatsapp_chat_url(obj.phone):
+            links.append(("WhatsApp", whatsapp_url))
+        links.append(("Call", f"tel:{obj.phone}"))
+        return format_html_join(
+            " · ",
+            '<a href="{}" target="_blank" rel="noopener">{}</a>',
+            ((url, label) for label, url in links),
+        )
 
     @admin.display(description="Alerts")
     def alerts(self, obj):

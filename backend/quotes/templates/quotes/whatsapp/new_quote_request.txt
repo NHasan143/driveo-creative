@@ -6,4 +6,8 @@
 
 {{ customer }}
 
-Open: {{ admin_url }}{% endautoescape %}
+*Reply to the customer* (replies to this chat don't reach them):
+{% if reply_whatsapp_url %}WhatsApp: {{ reply_whatsapp_url }}
+{% endif %}Email: {{ reply_email_url }}
+
+Dashboard: {{ admin_url }}{% endautoescape %}

@@ -1,10 +1,9 @@
 import { Reveal } from "@/components/motion/reveal";
-import type { ServiceType } from "@/domain/booking";
-import type { Dictionary } from "@/i18n/get-dictionary";
+import type { SiteService } from "@/lib/content/site-services";
 
 interface ServiceFactsProps {
   eyebrow: string;
-  facts: Dictionary["pages"]["serviceDetail"]["items"][ServiceType]["facts"];
+  facts: SiteService["facts"];
 }
 
 /** Big-number strip of the service's key facts. */

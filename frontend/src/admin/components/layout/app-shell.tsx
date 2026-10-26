@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Dialog } from "radix-ui";
 import { Suspense, useLayoutEffect, useState, type ReactNode } from "react";
+import { SignOutButton } from "@/admin/components/auth/auth-gate";
 import { Button } from "@/admin/components/ui/button";
 import { IS_LOCAL_DEMO } from "@/admin/lib/content";
 import { cn } from "@/admin/lib/cn";
@@ -183,6 +184,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </span>
             )}
             <ThemeToggle />
+            <SignOutButton />
           </div>
         </header>
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main>

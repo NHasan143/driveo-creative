@@ -1,9 +1,14 @@
-import { Clock3, Plane, Route, Sparkles, type LucideIcon } from "lucide-react";
-import type { ServiceType } from "@/domain/booking";
+import { Briefcase, Clock3, Heart, Map, Plane, Route, Sparkles, Star, type LucideIcon } from "lucide-react";
+import type { ServiceIcon } from "@/admin/lib/content/types";
 
-export const serviceIcons: Record<ServiceType, LucideIcon> = {
-  airport_transfer: Plane,
-  point_to_point: Route,
-  hourly_hire: Clock3,
-  private_event: Sparkles,
+/** Icons a service can use; the content admin offers the same set. */
+export const serviceIcons: Record<ServiceIcon, LucideIcon> = {
+  plane: Plane,
+  route: Route,
+  clock: Clock3,
+  sparkles: Sparkles,
+  briefcase: Briefcase,
+  heart: Heart,
+  map: Map,
+  star: Star,
 };

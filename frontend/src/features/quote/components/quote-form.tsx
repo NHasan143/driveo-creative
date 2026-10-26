@@ -44,7 +44,7 @@ export function QuoteForm({ locale, labels, cityNames }: QuoteFormProps) {
   // Vehicle, city and service can be pre-filled from elsewhere on the page.
   const { preset, update: updatePreset, reset: resetPreset } = useQuotePreset();
   const { vehicle, city, service: serviceType } = preset;
-  const { status, reference, submit, reset } = useQuoteSubmission(locale);
+  const { status, error, reference, submit, reset } = useQuoteSubmission(locale);
   const [passengers, setPassengers] = useState(1);
   const [luggage, setLuggage] = useState(0);
   const [minDate, setMinDate] = useState<string>();
@@ -301,7 +301,11 @@ export function QuoteForm({ locale, labels, cityNames }: QuoteFormProps) {
 
       {status === "error" && (
         <p className={styles.error} role="alert">
-          {labels.error}
+          {error.kind === "invalid"
+            ? `${labels.errorInvalid} ${error.fields.map((field) => labels[field]).join(", ")}.`
+            : error.kind === "rateLimited"
+              ? labels.errorRateLimited
+              : labels.error}
         </p>
       )}
     </form>

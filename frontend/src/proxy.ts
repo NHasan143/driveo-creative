@@ -9,8 +9,11 @@ import {
 } from "@/i18n/config";
 
 /**
- * The content admin (`/admin`) has no sign-in yet, so production builds hide it
- * unless `ADMIN_ENABLED=true` is set on the server. It is always on in development.
+ * Production builds hide the content admin (`/admin`) unless `ADMIN_ENABLED=true`
+ * is set on the server. It is always on in development. Turn it on in production
+ * only with NEXT_PUBLIC_ADMIN_CONTENT_SOURCE=api: then the Django API signs staff
+ * in and refuses every content request without a staff session. In demo mode
+ * ("local") there is no sign-in and edits never reach the website.
  */
 const adminEnabled = process.env.NODE_ENV !== "production" || process.env.ADMIN_ENABLED === "true";
 

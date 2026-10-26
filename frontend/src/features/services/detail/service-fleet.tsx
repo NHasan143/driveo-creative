@@ -3,17 +3,18 @@ import { ParallaxSurface } from "@/components/motion/parallax-surface";
 import { Reveal } from "@/components/motion/reveal";
 import { SectionHeading } from "@/components/page/section-heading";
 import { ArrowLink } from "@/components/ui/arrow-link";
-import { getVehicleCapacity, type FleetVehicle, type ServiceType } from "@/domain/booking";
+import { getVehicleCapacity, type FleetVehicle } from "@/domain/booking";
 import { FleetFrame } from "@/features/fleet/fleet-frame";
 import { fleetMedia } from "@/features/fleet/fleet-media";
 import fleetStyles from "@/features/fleet/fleet-section.module.css";
-import { RequestQuoteButton } from "@/features/quote";
+import { RequestQuoteButton, type QuotePreset } from "@/features/quote";
 import { localePath, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/get-dictionary";
 
 interface ServiceFleetProps {
   locale: Locale;
-  type: ServiceType;
+  /** Pre-fill for this service's quote buttons (empty for services the booking rules don't know). */
+  preset: Partial<QuotePreset>;
   vehicles: readonly FleetVehicle[];
   heading: { eyebrow: string; title: string; more: string };
   fleet: Dictionary["fleet"];
@@ -21,7 +22,7 @@ interface ServiceFleetProps {
 }
 
 /** The fleet in the order that suits this service, each pre-filling service and vehicle. */
-export function ServiceFleet({ locale, type, vehicles, heading, fleet, capacity }: ServiceFleetProps) {
+export function ServiceFleet({ locale, preset, vehicles, heading, fleet, capacity }: ServiceFleetProps) {
   return (
     <section className="section-band bg-background">
       <div className="site-shell">
@@ -54,7 +55,7 @@ export function ServiceFleet({ locale, type, vehicles, heading, fleet, capacity 
                     {capacity.luggage}: {capacity.upTo} {limits.luggage}
                   </li>
                 </ul>
-                <RequestQuoteButton preset={{ service: type, vehicle }} className={fleetStyles.button}>
+                <RequestQuoteButton preset={{ ...preset, vehicle }} className={fleetStyles.button}>
                   {fleet.button}
                 </RequestQuoteButton>
               </ParallaxSurface>

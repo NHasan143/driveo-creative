@@ -1,33 +1,42 @@
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { serviceMedia, servicePath } from "@/config/services";
-import { SERVICE_TYPES } from "@/domain/booking";
+import type { CSSProperties } from "react";
 import { localePath, type Locale } from "@/i18n/config";
-import type { Dictionary } from "@/i18n/get-dictionary";
+import type { SiteService } from "@/lib/content/site-services";
+import { isRemoteImage } from "@/lib/remote-image";
 import styles from "./services-page.module.css";
 
 interface ServicesGalleryProps {
   locale: Locale;
-  services: Dictionary["services"];
+  title: string;
+  services: SiteService[];
   viewDetails: string;
 }
 
-export function ServicesGallery({ locale, services, viewDetails }: ServicesGalleryProps) {
+/** Up to five panels share one row; more are split evenly across rows (6 → 3 + 3, 7 → 4 + 3). */
+function galleryColumns(count: number) {
+  const rows = Math.max(1, Math.ceil(count / 5));
+  return Math.max(1, Math.ceil(count / rows));
+}
+
+export function ServicesGallery({ locale, title, services, viewDetails }: ServicesGalleryProps) {
+  const gridStyle = { "--gallery-columns": galleryColumns(services.length) } as CSSProperties;
+
   return (
-    <section className={styles.gallery} aria-label={services.title}>
-      <div className={styles.galleryGrid}>
-        {SERVICE_TYPES.map((type, index) => {
-          const item = services.items[type];
+    <section className={styles.gallery} aria-label={title}>
+      <div className={styles.galleryGrid} style={gridStyle}>
+        {services.map((item, index) => {
           return (
             <Link
-              key={type}
-              href={localePath(locale, servicePath(type))}
+              key={item.slug}
+              href={localePath(locale, item.path)}
               className={styles.galleryPanel}
-              aria-labelledby={`gallery-${type}-title`}
+              aria-labelledby={`gallery-${item.slug}-title`}
             >
               <Image
-                src={serviceMedia[type].collection}
+                src={item.galleryImage}
+                unoptimized={isRemoteImage(item.galleryImage)}
                 alt=""
                 fill
                 preload={index === 0}
@@ -39,7 +48,7 @@ export function ServicesGallery({ locale, services, viewDetails }: ServicesGalle
                 <ArrowRight className="rtl:-scale-x-100" strokeWidth={1.5} />
               </span>
               <div className={styles.panelCaption}>
-                <h2 id={`gallery-${type}-title`} className={styles.galleryTitle}>{item.title}</h2>
+                <h2 id={`gallery-${item.slug}-title`} className={styles.galleryTitle}>{item.title}</h2>
                 <span className={styles.galleryAction}>
                   {viewDetails}<ArrowRight aria-hidden="true" className="rtl:-scale-x-100" strokeWidth={1.5} />
                 </span>

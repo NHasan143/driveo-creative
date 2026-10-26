@@ -6,6 +6,7 @@ import { ServicesGallery } from "@/features/services/services-gallery";
 import { ServicesStandard } from "@/features/services/services-standard";
 import styles from "@/features/services/services-page.module.css";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
+import { getSiteServices } from "@/lib/content/site-services";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 const PATH = "/services";
@@ -20,6 +21,7 @@ export default async function ServicesPage() {
   const locale = await getLocale();
   const t = await getDictionary(locale);
   const page = t.pages.services;
+  const services = await getSiteServices(locale);
 
   return (
     <main className={styles.page}>
@@ -29,10 +31,16 @@ export default async function ServicesPage() {
         home={t.pages.breadcrumbHome}
         cta={t.hero.cta}
       />
-      <ServicesGallery locale={locale} services={t.services} viewDetails={t.pages.serviceDetail.viewDetails} />
+      <ServicesGallery
+        locale={locale}
+        title={t.services.title}
+        services={services}
+        viewDetails={t.pages.serviceDetail.viewDetails}
+      />
       <ServiceDetails
         locale={locale}
-        services={t.services}
+        title={t.services.title}
+        services={services}
         page={page}
         viewDetails={t.pages.serviceDetail.viewDetails}
       />

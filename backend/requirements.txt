@@ -6,3 +6,5 @@ django-storages[s3]>=1.14
 python-dotenv>=1.1
 celery[redis]>=5.5
 twilio>=9.0
+django-cors-headers>=4.6
+

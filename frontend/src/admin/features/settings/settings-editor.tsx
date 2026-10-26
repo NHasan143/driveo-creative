@@ -13,7 +13,7 @@ import { ConfirmDialog } from "@/admin/components/ui/confirm-dialog";
 import { Field } from "@/admin/components/ui/field";
 import { Input } from "@/admin/components/ui/input";
 import { Card, CardBody, CardHeader, Switch } from "@/admin/components/ui/primitives";
-import { IS_LOCAL_DEMO } from "@/admin/lib/content";
+import { ContentValidationError, IS_LOCAL_DEMO } from "@/admin/lib/content";
 import { useResetContent, useSaveSettings } from "@/admin/lib/content/hooks";
 import type { SiteSettings } from "@/admin/lib/content/types";
 import { newTestimonial, settingsSchema, toSettingsForm, type SettingsFormValues } from "./settings-schema";
@@ -90,7 +90,11 @@ export function SettingsEditor({ settings }: { settings: SiteSettings }) {
       form.reset(toSettingsForm(saved));
       toast.success("Settings saved");
     } catch (error) {
-      toast.error("Couldn't save the settings", { description: (error as Error).message });
+      if (error instanceof ContentValidationError && error.field) {
+        form.setError(error.field as "email", { message: error.message }, { shouldFocus: true });
+      } else {
+        toast.error("Couldn't save the settings", { description: (error as Error).message });
+      }
     }
   }
 
@@ -168,35 +172,46 @@ export function SettingsEditor({ settings }: { settings: SiteSettings }) {
           </CardBody>
         </Card>
 
-        {IS_LOCAL_DEMO && (
-          <Card className="border-warning/30">
-            <CardHeader
-              title="Demo content"
-              description="Everything here is stored in this browser until the admin is connected to the Driveo API."
-            />
-            <CardBody>
-              <div>
-                <Button variant="secondary" onClick={() => setConfirmReset(true)}>
-                  <RotateCcw aria-hidden="true" />
-                  Restore the website&apos;s original content
-                </Button>
-              </div>
-            </CardBody>
-          </Card>
-        )}
+        <Card className="border-warning/30">
+          <CardHeader
+            title={IS_LOCAL_DEMO ? "Demo content" : "Original content"}
+            description={
+              IS_LOCAL_DEMO
+                ? "Everything here is stored in this browser until the admin is connected to the Driveo API."
+                : "Loads the website's built-in copy into the database, replacing all services, vehicles, cities and settings. Use it to fill a new database. Superusers only."
+            }
+          />
+          <CardBody>
+            <div>
+              <Button variant="secondary" onClick={() => setConfirmReset(true)}>
+                <RotateCcw aria-hidden="true" />
+                {IS_LOCAL_DEMO ? "Restore the website's original content" : "Load the website's original content"}
+              </Button>
+            </div>
+          </CardBody>
+        </Card>
       </EditorShell>
 
       <ConfirmDialog
         open={confirmReset}
         onOpenChange={setConfirmReset}
-        title="Restore the original content?"
-        description="All services, vehicles, cities and settings go back to the website's current copy. Your edits in this browser will be lost."
-        confirmLabel="Restore content"
+        title={IS_LOCAL_DEMO ? "Restore the original content?" : "Replace all content?"}
+        description={
+          IS_LOCAL_DEMO
+            ? "All services, vehicles, cities and settings go back to the website's current copy. Your edits in this browser will be lost."
+            : "Every service, vehicle, city and setting saved in the database is replaced with the website's built-in copy. This can't be undone."
+        }
+        confirmLabel={IS_LOCAL_DEMO ? "Restore content" : "Replace content"}
         busy={reset.isPending}
         onConfirm={async () => {
-          await reset.mutateAsync();
-          setConfirmReset(false);
-          toast.success("Original content restored");
+          try {
+            await reset.mutateAsync();
+            toast.success("Original content restored");
+          } catch (error) {
+            toast.error("Couldn't restore the content", { description: (error as Error).message });
+          } finally {
+            setConfirmReset(false);
+          }
         }}
       />
     </>

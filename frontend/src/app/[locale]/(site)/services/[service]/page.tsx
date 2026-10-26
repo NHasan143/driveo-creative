@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageHero } from "@/components/page/page-hero";
-import { SERVICE_SLUGS, serviceFromSlug, serviceMedia, servicePath } from "@/config/services";
-import { SERVICE_TYPES } from "@/domain/booking";
 import { TestimonialSection } from "@/features/home/testimonial-section";
 import { QuotePresetDefaults, QuoteSection } from "@/features/quote";
 import { OtherServices } from "@/features/services/detail/other-services";
@@ -12,47 +10,52 @@ import { ServiceGlanceCard } from "@/features/services/detail/service-glance-car
 import { ServiceOverview } from "@/features/services/detail/service-overview";
 import { ServiceSteps } from "@/features/services/detail/service-steps";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
+import { getSiteServices } from "@/lib/content/site-services";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 type Props = PageProps<"/[locale]/services/[service]">;
 
+/** Published services are prerendered; one added later renders on its first visit. */
 export async function generateStaticParams() {
-  return SERVICE_TYPES.map((type) => ({ service: SERVICE_SLUGS[type] }));
+  const services = await getSiteServices("en");
+  return services.map((service) => ({ service: service.slug }));
 }
 
 async function resolveService(params: Props["params"]) {
-  const type = serviceFromSlug((await params).service);
-  if (!type) notFound();
-  return type;
+  const [{ service: slug }, locale] = await Promise.all([params, getLocale()]);
+  const services = await getSiteServices(locale);
+  const service = services.find((item) => item.slug === slug);
+  if (!service) notFound();
+  return { service, services, locale };
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const type = await resolveService(params);
-  const locale = await getLocale();
-  const { pages } = await getDictionary(locale);
-  return buildPageMetadata(locale, pages.serviceDetail.items[type].meta, servicePath(type));
+  const { service, locale } = await resolveService(params);
+  return buildPageMetadata(
+    locale,
+    { title: service.seoTitle, description: service.seoDescription },
+    service.path,
+  );
 }
 
 /**
- * Every service is prerendered (generateStaticParams), so the page is complete
- * static HTML. Reading `params` makes Next.js flag client navigations here as
- * "not instant"; we accept that rather than wrapping the page in <Suspense>,
- * which would ship a placeholder and reveal the content only after JavaScript runs.
+ * Every published service is prerendered (generateStaticParams), so the page is
+ * complete static HTML. Reading `params` makes Next.js flag client navigations
+ * here as "not instant"; we accept that rather than wrapping the page in
+ * <Suspense>, which would ship a placeholder and reveal the content only after
+ * JavaScript runs.
  */
 export const instant = false;
 
 export default async function ServiceDetailPage({ params }: Props) {
-  const type = await resolveService(params);
-  const locale = await getLocale();
+  const { service, services, locale } = await resolveService(params);
   const t = await getDictionary(locale);
   const detail = t.pages.serviceDetail;
-  const item = detail.items[type];
-  const service = t.services.items[type];
-  const media = serviceMedia[type];
+  const preset = service.bookingType ? { service: service.bookingType } : {};
 
   return (
     <main className="min-h-screen overflow-hidden bg-background text-foreground">
-      <QuotePresetDefaults preset={{ service: type }} />
+      <QuotePresetDefaults preset={preset} />
       <PageHero
         locale={locale}
         crumbs={{
@@ -60,28 +63,30 @@ export default async function ServiceDetailPage({ params }: Props) {
           trail: [{ label: t.nav.services, path: "/services" }, { label: service.title }],
         }}
         eyebrow={service.label}
-        title={item.title}
-        intro={service.copy}
-        image={{ src: media.hero, alt: "" }}
+        title={service.headline}
+        intro={service.summary}
+        image={{ src: service.heroImage, alt: "" }}
         cta={t.hero.cta}
         whatsappLabel={t.hero.whatsapp}
         aside={
           <ServiceGlanceCard
-            type={type}
-            label={service.title}
-            facts={item.facts}
+            service={service}
             heading={detail.atAGlance}
             cta={t.pages.services.quoteCta}
           />
         }
       />
-      <ServiceFacts eyebrow={detail.factsEyebrow} facts={item.facts} />
-      <ServiceOverview eyebrow={detail.overviewEyebrow} item={item} image={media.overview} />
-      <ServiceSteps eyebrow={detail.stepsEyebrow} title={detail.stepsTitle} steps={item.steps} />
+      {service.facts.length > 0 && <ServiceFacts eyebrow={detail.factsEyebrow} facts={service.facts} />}
+      {(service.overviewTitle || service.features.length > 0) && (
+        <ServiceOverview eyebrow={detail.overviewEyebrow} service={service} />
+      )}
+      {service.steps.length > 0 && (
+        <ServiceSteps eyebrow={detail.stepsEyebrow} title={detail.stepsTitle} steps={service.steps} />
+      )}
       <ServiceFleet
         locale={locale}
-        type={type}
-        vehicles={media.vehicles}
+        preset={preset}
+        vehicles={service.vehicles}
         heading={{ eyebrow: detail.fleetEyebrow, title: detail.fleetTitle, more: t.pages.links.fleet }}
         fleet={t.fleet}
         capacity={{
@@ -93,8 +98,7 @@ export default async function ServiceDetailPage({ params }: Props) {
       <TestimonialSection testimonial={t.testimonial} />
       <OtherServices
         locale={locale}
-        current={type}
-        services={t.services.items}
+        services={services.filter((item) => item.slug !== service.slug)}
         heading={{ eyebrow: detail.otherEyebrow, title: detail.otherTitle, viewDetails: detail.viewDetails }}
       />
       <QuoteSection locale={locale} quote={t.quote} cityNames={t.cities.names} />

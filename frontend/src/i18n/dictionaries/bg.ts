@@ -134,6 +134,7 @@ export const bg: Dictionary = {
     pickup: "Място на вземане",
     pickupPlaceholder: "Адрес, хотел или летище",
     hours: "Изберете часове",
+    hoursField: "Часове",
     hoursUnit: "часа",
     hourlyNote:
       "Всеки час включва 15 мили в рамките на Голям Лондон. Пътувания извън тази зона може да се таксуват различно.",
@@ -160,6 +161,9 @@ export const bg: Dictionary = {
     again: "Изпратете ново запитване",
     error:
       "Не успяхме да изпратим запитването. Опитайте отново или пишете на info@driveoexclusive.com.",
+    errorInvalid: "Моля, проверете тези данни:",
+    errorRateLimited:
+      "Изпратихте няколко запитвания за кратко време. Изчакайте няколко минути и опитайте отново или пишете на info@driveoexclusive.com.",
     serviceOptions: {
       airport_transfer: "Летищен трансфер",
       point_to_point: "От точка до точка",

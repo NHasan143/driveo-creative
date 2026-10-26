@@ -128,6 +128,7 @@ export const fr: Dictionary = {
     pickup: "Lieu de prise en charge",
     pickupPlaceholder: "Adresse, hôtel ou aéroport",
     hours: "Choisir les heures",
+    hoursField: "Heures",
     hoursUnit: "heures",
     hourlyNote:
       "Chaque heure inclut 15 miles dans le Grand Londres. Les trajets hors de cette zone peuvent être facturés différemment.",
@@ -154,6 +155,9 @@ export const fr: Dictionary = {
     again: "Envoyer une autre demande",
     error:
       "Nous n’avons pas pu envoyer votre demande. Réessayez ou écrivez à info@driveoexclusive.com.",
+    errorInvalid: "Veuillez vérifier ces informations :",
+    errorRateLimited:
+      "Vous avez envoyé plusieurs demandes en peu de temps. Patientez quelques minutes et réessayez, ou écrivez à info@driveoexclusive.com.",
     serviceOptions: {
       airport_transfer: "Transfert aéroport",
       point_to_point: "Point à point",

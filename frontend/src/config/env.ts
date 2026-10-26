@@ -9,4 +9,9 @@ export const env = {
   /** When true (or when no API URL is set) requests are answered by local mocks. */
   apiMock:
     process.env.NEXT_PUBLIC_API_MOCK === "true" || !process.env.NEXT_PUBLIC_API_BASE_URL,
+  /**
+   * Where the content admin (/admin) reads and writes: "local" keeps demo content in this
+   * browser; "api" uses the Django API above, with staff sign-in.
+   */
+  adminContentSource: process.env.NEXT_PUBLIC_ADMIN_CONTENT_SOURCE === "api" ? "api" : "local",
 } as const;

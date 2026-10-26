@@ -13,7 +13,12 @@ Language:   {{ quote.get_locale_display }}
 Notes:
 {{ quote.notes }}
 {% endif %}
-Open in the dashboard: {{ admin_url }}
+REPLY TO {{ quote.first_name|upper }}
+Nothing has been sent to the customer. Reply personally:
+- Email: just reply to this email (it goes to {{ quote.email }})
+{% if reply_whatsapp_url %}- WhatsApp: {{ reply_whatsapp_url }}
+{% endif %}- Phone: {{ quote.phone }}
 
-Reply to this email to answer the customer directly.
+Open in the dashboard (set the status to "Contacted" once you've replied):
+{{ admin_url }}
 {% endautoescape %}

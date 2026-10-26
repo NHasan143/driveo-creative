@@ -8,6 +8,7 @@ import { ServicesSection } from "@/features/home/services-section";
 import { TestimonialSection } from "@/features/home/testimonial-section";
 import { QuoteSection } from "@/features/quote";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
+import { getSiteServices } from "@/lib/content/site-services";
 import { LocalBusinessJsonLd } from "@/lib/seo/json-ld";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
@@ -20,6 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function HomePage() {
   const locale = await getLocale();
   const t = await getDictionary(locale);
+  const services = await getSiteServices(locale);
 
   return (
     <main className="min-h-screen overflow-hidden bg-background text-foreground">
@@ -28,7 +30,8 @@ export default async function HomePage() {
       <AssuranceSection items={t.assurance} />
       <ServicesSection
         locale={locale}
-        services={t.services}
+        heading={t.services}
+        services={services}
         more={t.pages.links.services}
         viewDetails={t.pages.serviceDetail.viewDetails}
       />

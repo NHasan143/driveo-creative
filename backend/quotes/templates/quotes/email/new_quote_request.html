@@ -18,14 +18,23 @@
             <tr><td colspan="2" style="border-top:1px solid #eee;padding:0;height:8px;"></td></tr>
             <tr><td style="color:#666;">Customer</td><td>{{ quote.full_name }}</td></tr>
             <tr><td style="color:#666;">Phone</td><td><a href="tel:{{ quote.phone }}" style="color:#111;">{{ quote.phone }}</a></td></tr>
-            <tr><td style="color:#666;">Email</td><td><a href="mailto:{{ quote.email }}" style="color:#111;">{{ quote.email }}</a></td></tr>
+            <tr><td style="color:#666;">Email</td><td><a href="{{ reply_email_url }}" style="color:#111;">{{ quote.email }}</a></td></tr>
             <tr><td style="color:#666;">Language</td><td>{{ quote.get_locale_display }}</td></tr>
             {% if quote.notes %}<tr><td style="color:#666;vertical-align:top;">Notes</td><td>{{ quote.notes|linebreaksbr }}</td></tr>{% endif %}
           </table>
-          <p style="margin:24px 0 8px;">
-            <a href="{{ admin_url }}" style="display:inline-block;padding:10px 18px;background:#0b0b0b;color:#fff;text-decoration:none;">Open in the dashboard</a>
+
+          <div style="margin:24px 0 0;padding:16px;background:#f7f5f0;border-left:3px solid #c9a96e;">
+            <div style="font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#8a7346;">Reply to {{ quote.first_name }}</div>
+            <p style="font-size:13px;color:#555;margin:6px 0 12px;">Nothing has been sent to the customer. Reply to this email to answer by email, or:</p>
+            <a href="{{ reply_email_url }}" style="display:inline-block;margin:0 6px 6px 0;padding:9px 14px;background:#0b0b0b;color:#fff;text-decoration:none;font-size:13px;">Reply by email</a>
+            {% if reply_whatsapp_url %}<a href="{{ reply_whatsapp_url }}" style="display:inline-block;margin:0 6px 6px 0;padding:9px 14px;background:#1f7a4d;color:#fff;text-decoration:none;font-size:13px;">Reply on WhatsApp</a>{% endif %}
+            <a href="tel:{{ quote.phone }}" style="display:inline-block;margin:0 6px 6px 0;padding:9px 14px;border:1px solid #0b0b0b;color:#0b0b0b;text-decoration:none;font-size:13px;">Call</a>
+          </div>
+
+          <p style="margin:20px 0 0;font-size:13px;">
+            <a href="{{ admin_url }}" style="color:#111;">Open in the dashboard</a>
+            <span style="color:#888;">· set the status to "Contacted" once you've replied</span>
           </p>
-          <p style="font-size:12px;color:#888;margin:16px 0 0;">Reply to this email to answer the customer directly.</p>
         </td>
       </tr>
     </table>

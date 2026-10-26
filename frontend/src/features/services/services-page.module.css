@@ -54,7 +54,8 @@
 }
 .galleryGrid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  /* Set per page from the number of services (see services-gallery.tsx). */
+  grid-template-columns: repeat(var(--gallery-columns, 4), minmax(0, 1fr));
   gap: 0.625rem;
 }
 .galleryPanel {

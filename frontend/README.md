@@ -38,7 +38,8 @@ npm run dev                  # http://localhost:3000 → redirects to /?lang=en
 | `NEXT_PUBLIC_SITE_URL` | Public origin. Used for canonical URLs, hreflang, sitemap and Open Graph. |
 | `NEXT_PUBLIC_API_BASE_URL` | Django API base, e.g. `https://api.example.com/api` |
 | `NEXT_PUBLIC_API_MOCK` | `true` answers API calls locally. This is also the default when no API URL is set. |
-| `ADMIN_ENABLED` | Server-side, read at runtime. `/admin` is always on in development. Production answers 404 there unless this is `true`. Keep it off until the admin has staff sign-in. |
+| `NEXT_PUBLIC_ADMIN_CONTENT_SOURCE` | Where `/admin` keeps content. `local` (default): demo mode in this browser, no sign-in. `api`: the Django content API with staff sign-in. |
+| `ADMIN_ENABLED` | Server-side, read at runtime. `/admin` is always on in development. Production answers 404 there unless this is `true`. Turn it on only together with `NEXT_PUBLIC_ADMIN_CONTENT_SOURCE=api`. |
 
 `NEXT_PUBLIC_*` values are inlined at build time, so rebuild the image after changing them.
 
@@ -91,9 +92,14 @@ Editors create, update, publish and delete the website's **services** (cards and
 **site settings** (company, contact, social links, testimonials). Every customer-facing text has
 EN, FR, BG and AR versions. English is required; the others fall back to English until translated.
 
-> **Status: demo mode.** Content is stored in the editor's browser (IndexedDB), starting from the
-> website's current copy. Edits never reach the live site yet, and there is no sign-in, so production
-> hides `/admin` unless `ADMIN_ENABLED=true` (see [Environment](#environment)).
+> **Two modes** (`NEXT_PUBLIC_ADMIN_CONTENT_SOURCE`, see [Environment](#environment)):
+>
+> - **`api`**: content is saved in Postgres through the Django content API (`backend/content/`). Editors
+>   sign in with a Django staff account; the API refuses every content request without one.
+> - **`local`** (default): demo mode. Content is stored in the editor's browser (IndexedDB), starting
+>   from the website's current copy, with no sign-in.
+>
+> Either way, the website doesn't read this content yet. Production hides `/admin` unless `ADMIN_ENABLED=true`.
 
 **How it fits into the website app**
 
@@ -119,6 +125,12 @@ EN, FR, BG and AR versions. English is required; the others fall back to English
   - If a save fails validation, the editor jumps to the first problem, switching language if needed.
   - Closing or reloading the tab with unsaved changes asks first. Moving to another admin page doesn't yet.
 - **Images:** upload or drag in a photo, which is resized to at most 1920px and saved as JPEG, or pick one from `public/media`.
+  In `api` mode the photo is uploaded to the Neon `assets` bucket when the record is saved.
+- **Sign-in (`api` mode):** `components/auth/auth-gate.tsx` shows a sign-in screen until a staff member is
+  signed in, and a Sign out button in the header. An expired session brings the sign-in screen back.
+- **Original content:** Settings has a button that loads the website's built-in copy (`seed.ts`). In demo mode
+  it resets the browser store; in `api` mode it replaces all content in the database (superusers only), which
+  is how a new database gets its first content.
 
 **Code**
 
@@ -136,16 +148,26 @@ src/admin/
 
 - **One interface for all data:** `ContentRepository` (`lib/content/repository.ts`), used through the
   TanStack Query hooks in `hooks.ts`. Every write invalidates `["content"]`, so all screens stay in sync.
-- `local-repository.ts` is today's IndexedDB implementation. It enforces unique slugs and cleans up references.
+- `api-repository.ts` talks to the Django API through `lib/admin-api.ts`. That client sends the session
+  cookie (`credentials: "include"`), keeps the CSRF token in memory and sends it as `X-CSRFToken`, uploads
+  photos picked in the form (data URLs) before saving, and turns DRF `400` errors into `ContentValidationError`
+  with the form's field path (`{facts: {"0": {value: {en: [...]}}}}` → `facts.0.value.en`).
+- `local-repository.ts` is the IndexedDB implementation for demo mode. It enforces unique slugs and cleans up references.
 - `seed.ts` builds the starting content from the website's own dictionaries, `config/` and
   `domain/booking.ts`, so it can't drift from the site.
 - `types.ts` is the content model. Ids are the stable domain ids (`airport_transfer`, `business_class`, `london` …).
-- **Connecting the API:**
-  1. Add Django content models and staff-only endpoints that match `types.ts`.
-  2. Write an `api-repository.ts` and switch the export in `lib/content/index.ts` (`IS_LOCAL_DEMO = false`).
-  3. Add staff sign-in.
-  4. Upload images to Neon storage.
-  5. Have the website read its content from the API.
+- `index.ts` picks the implementation from `NEXT_PUBLIC_ADMIN_CONTENT_SOURCE` and exports `IS_LOCAL_DEMO`,
+  which the screens use for demo-mode notices.
+- **The website reads published services** through `src/lib/content/site-services.ts`:
+  - It calls `GET /api/v1/content/published/` inside a `"use cache"` function with `cacheLife("minutes")`
+    and `cacheTag("content")`, and falls back to `seed.services` in mock mode or when the API fails.
+  - Server code may set `API_INTERNAL_BASE_URL`, for example a Docker service name, in place of the
+    public API URL.
+  - Built-in services keep their booking id (`airport_transfer`, …), so their quote buttons pre-select
+    the service. Services added in the admin open the form with none selected.
+  - **Still to do:** fleet, cities and site settings still render from the dictionaries.
+
+  The endpoints are listed in the [root README](../README.md#content-api-backendcontent).
 
 ### Conventions
 
@@ -230,7 +252,13 @@ The quote form sends `POST {NEXT_PUBLIC_API_BASE_URL}/v1/quote-requests/` with J
 - Capacity: business_van takes 7 passengers and 8 luggage items. Every other class takes 4 and 3.
 - A non-empty `honeypot` means a bot. Reject it silently.
 - Expected response: `201 { "reference": "DRV-XXXXXX" }`. The form shows that reference.
-- CORS must allow the website origin.
+- CORS must allow the website origin (backend `CORS_ALLOWED_ORIGINS`).
+- Errors the form understands (see `src/features/quote/hooks/use-quote-submission.ts`):
+  - `400` with DRF field errors, e.g. `{"passengers": ["..."]}`. The form lists the matching field labels
+    in the visitor's language.
+  - `429`: the "too many requests" message.
+  - Anything else (network, 5xx): the generic error with the contact email.
+- To work on the website without the backend, set `NEXT_PUBLIC_API_MOCK=true` in `.env.local`.
 
 Types and the mapping live in `src/features/quote/api/submit-quote-request.ts`.
 The client-side rules live in `src/features/quote/schema.ts`.

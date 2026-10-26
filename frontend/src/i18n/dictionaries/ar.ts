@@ -119,6 +119,7 @@ export const ar: Dictionary = {
     pickup: "مكان الاستقبال",
     pickupPlaceholder: "عنوان أو فندق أو مطار",
     hours: "اختر عدد الساعات",
+    hoursField: "عدد الساعات",
     hoursUnit: "ساعات",
     hourlyNote:
       "كل ساعة تشمل 15 ميلاً داخل لندن الكبرى. الرحلات خارج هذه المنطقة قد تُحتسب بشكل مختلف.",
@@ -142,6 +143,9 @@ export const ar: Dictionary = {
     successBodyAfter: ". تم إرسال طلبك إلى Driveo وسيتواصل معك أحد المنسّقين بسعر ثابت.",
     again: "إرسال طلب آخر",
     error: "تعذّر إرسال طلبك. حاول مرة أخرى أو راسلنا على info@driveoexclusive.com.",
+    errorInvalid: "يرجى التحقق من هذه البيانات:",
+    errorRateLimited:
+      "أرسلت عدة طلبات خلال وقت قصير. يرجى الانتظار بضع دقائق ثم المحاولة مرة أخرى، أو راسلنا على info@driveoexclusive.com.",
     serviceOptions: {
       airport_transfer: "توصيل المطار",
       point_to_point: "من نقطة إلى نقطة",

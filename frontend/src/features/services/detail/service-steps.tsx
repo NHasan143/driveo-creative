@@ -1,15 +1,14 @@
 import { Reveal } from "@/components/motion/reveal";
 import { SectionHeading } from "@/components/page/section-heading";
-import type { ServiceType } from "@/domain/booking";
-import type { Dictionary } from "@/i18n/get-dictionary";
+import type { SiteService } from "@/lib/content/site-services";
 
 interface ServiceStepsProps {
   eyebrow: string;
   title: string;
-  steps: Dictionary["pages"]["serviceDetail"]["items"][ServiceType]["steps"];
+  steps: SiteService["steps"];
 }
 
-/** Three service-specific booking steps, styled like the home "How it works" band. */
+/** Service-specific booking steps (usually three), styled like the home "How it works" band. */
 export function ServiceSteps({ eyebrow, title, steps }: ServiceStepsProps) {
   return (
     <section className="section-band bg-secondary">

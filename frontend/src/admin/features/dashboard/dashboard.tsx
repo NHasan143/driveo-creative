@@ -119,7 +119,7 @@ export function Dashboard() {
         description={
           IS_LOCAL_DEMO
             ? "Here's the state of the Driveo website content. In demo mode, changes stay in this browser."
-            : "Here's the state of the Driveo website content. Changes you publish here go to the live site."
+            : "Here's the state of the Driveo website content. Changes are saved in the Driveo database."
         }
         actions={
           <Button asChild>

@@ -13,7 +13,7 @@ import "@/admin/styles/admin.css";
  */
 export const metadata: Metadata = {
   title: { default: "Driveo Admin", template: "%s · Driveo Admin" },
-  description: "Manage the Driveo Exclusive website: services, fleet, cities and site settings.",
+  description: "Manage the Driveo Exclusive website: services, fleet and cities.",
   robots: { index: false, follow: false },
   icons: { icon: siteConfig.assets.favicon },
 };

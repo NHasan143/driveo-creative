@@ -43,7 +43,7 @@ _Last updated: 2026-10-25_
 | Component | Directory | Stack | Status |
 | --- | --- | --- | --- |
 | Website | [`frontend/`](frontend/) | Next.js · React · TypeScript · Tailwind · GSAP | 🟡 In progress: pages complete, quote form connected to the Django API |
-| Content admin | [`frontend/`](frontend/) at `/admin` | Next.js · React · TypeScript · Tailwind · TanStack Query · react-hook-form · Zod | 🟡 Full create/update/delete/reorder for services, fleet, cities and site settings in four languages. Saves to the Django API with staff sign-in when `NEXT_PUBLIC_ADMIN_CONTENT_SOURCE=api`, otherwise a browser-only demo. The website shows the published **services** (fleet, cities and settings still use built-in copy); hidden in production builds (`ADMIN_ENABLED`) |
+| Content admin | [`frontend/`](frontend/) at `/admin` | Next.js · React · TypeScript · Tailwind · TanStack Query · react-hook-form · Zod | 🟡 Full create/update/delete/reorder for services, fleet and cities in four languages. Site information is fixed in the frontend; there is no Site settings screen. Saves to the Django API with staff sign-in when `NEXT_PUBLIC_ADMIN_CONTENT_SOURCE=api`, otherwise a browser-only demo. The website shows the published **services** (fleet, cities and settings still use built-in copy); hidden in production builds (`ADMIN_ENABLED`) |
 | Shared API + admin | [`backend/`](backend/) | Python · Django · DRF · Lakebase Postgres (Neon) · Neon Object Storage · Redis · Celery | 🟡 Quote requests (with email/WhatsApp alerts), website content API with staff sign-in, health endpoint. Not deployed yet |
 | Mobile apps | `mobile/` _(planned)_ | React · Vite · TypeScript · Capacitor | ⚪ Not started |
 | Infrastructure | `.github/`, `infra/` _(planned)_ | Docker Compose · Nginx · Cloudflare · GitHub Actions | 🟡 Started: frontend Dockerfile and CI/CD workflows. Server and compose stack pending |
@@ -189,8 +189,7 @@ By default it runs in demo mode and stores content in your browser.
 
 To save content in Postgres instead, run the backend (below) and set `NEXT_PUBLIC_ADMIN_CONTENT_SOURCE=api` in
 `frontend/.env.local`, then restart `npm run dev`. The admin asks for a sign-in: use a Django **staff** account
-(`createsuperuser`, or tick "Staff status" for a user at http://localhost:8000/admin/). On an empty database,
-a superuser can load the website's built-in copy from **Settings → Load the website's original content**.
+(`createsuperuser`, or tick "Staff status" for a user at http://localhost:8000/admin/).
 Use `localhost` for both apps (not `127.0.0.1` for one of them), so the browser treats them as the same site and
 sends the session cookie. See [Content admin in the frontend README](frontend/README.md#content-admin-admin).
 
@@ -323,7 +322,7 @@ forms without mapping. Every endpoint is staff-only unless marked public.
 | `/v1/content/{collection}/reorder/` | `POST` | `{"ids": [...]}` in display order → `204` |
 | `/v1/content/settings/` | `GET` · `PUT` | Site settings (company, contacts, social links, testimonials) |
 | `/v1/content/snapshot/` | `GET` | Everything: `{services, vehicles, cities, settings}` |
-| `/v1/content/import/` | `POST` | Superusers only. Replaces all content with a snapshot, keeping ids (the admin's "Load the website's original content") |
+| `/v1/content/import/` | `POST` | Superusers only. Replaces all content with a snapshot, keeping ids |
 | `/v1/content/images/` | `POST` | Multipart `file` (JPG, PNG or WebP, ≤ 12 MB) → `201 {"url"}` |
 | `/v1/content/images/{name}` | `GET` | Public. Redirects to a fresh presigned link in the `assets` bucket |
 | `/v1/content/published/` | `GET` | Public. Published records only. The website reads its services from it |

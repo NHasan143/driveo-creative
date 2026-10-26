@@ -1,4 +1,4 @@
-import { CarFront, LayoutDashboard, MapPin, Settings, Sparkles, type LucideIcon } from "lucide-react";
+import { CarFront, LayoutDashboard, MapPin, Sparkles, type LucideIcon } from "lucide-react";
 
 export interface NavItem {
   href: string;
@@ -19,10 +19,6 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
       { href: "/admin/fleet", label: "Fleet", icon: CarFront, description: "Vehicle classes" },
       { href: "/admin/cities", label: "Cities", icon: MapPin, description: "Where Driveo operates" },
     ],
-  },
-  {
-    label: "Configuration",
-    items: [{ href: "/admin/settings", label: "Site settings", icon: Settings, description: "Contact, social, testimonials" }],
   },
 ];
 

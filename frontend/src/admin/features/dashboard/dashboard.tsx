@@ -5,67 +5,48 @@ import {
   ArrowRight,
   CarFront,
   CheckCircle2,
-  Languages,
   MapPin,
-  MessageSquareQuote,
   Plus,
-  Settings,
+  Pencil,
   Sparkles,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState, type ReactNode } from "react";
-import { PageHeader } from "@/admin/components/layout/page-header";
+import type { ReactNode } from "react";
 import { Button } from "@/admin/components/ui/button";
-import { Card, CardBody, CardHeader, Skeleton } from "@/admin/components/ui/primitives";
-import { IS_LOCAL_DEMO } from "@/admin/lib/content";
+import { Skeleton } from "@/admin/components/ui/primitives";
+import { orderDashboardFleet } from "./dashboard-fleet";
 import { coverageOf, emptyCoverage, percent } from "@/admin/lib/content/completeness";
-import { useCollection, useSettings } from "@/admin/lib/content/hooks";
+import { useCollection } from "@/admin/lib/content/hooks";
 import { LOCALE_LABELS, LOCALES } from "@/admin/lib/content/types";
 import { formatRelative } from "@/admin/lib/format";
 import { cn } from "@/admin/lib/cn";
+import styles from "./dashboard.module.css";
 
 function StatCard({ href, icon: Icon, label, value, detail }: { href: string; icon: LucideIcon; label: string; value: ReactNode; detail: string }) {
   return (
-    <Link href={href} className="group">
-      <Card className="h-full p-4 transition-colors group-hover:border-primary/40 sm:p-5">
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-sm font-semibold text-muted-foreground">{label}</span>
-          <span className="hidden size-9 shrink-0 place-items-center rounded-lg bg-primary-soft text-primary sm:grid">
-            <Icon aria-hidden="true" className="size-4" />
-          </span>
-        </div>
-        <p className="mt-2 font-display text-3xl font-medium tabular-nums sm:mt-3">{value}</p>
-        <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
-      </Card>
+    <Link href={href} className={styles.stat}>
+      <Icon aria-hidden="true" className={styles.statIcon} />
+      <span className={styles.statText}>
+        <span className={styles.statValue}>{value}</span>
+        <span className={styles.statLabel}>{label}</span>
+        <span className={styles.statDetail}>{detail}</span>
+      </span>
     </Link>
   );
-}
-
-function greeting(hour: number) {
-  if (hour < 12) return "Good morning";
-  if (hour < 18) return "Good afternoon";
-  return "Good evening";
 }
 
 export function Dashboard() {
   const services = useCollection("services");
   const vehicles = useCollection("vehicles");
   const cities = useCollection("cities");
-  const settings = useSettings();
-  const [hello, setHello] = useState("Welcome back");
-
-  // The visitor's clock, not the server's.
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => setHello(greeting(new Date().getHours())), []);
-
-  const loading = services.isPending || vehicles.isPending || cities.isPending || settings.isPending;
-  if (loading || !services.data || !vehicles.data || !cities.data || !settings.data) {
+  const loading = services.isPending || vehicles.isPending || cities.isPending;
+  if (loading || !services.data || !vehicles.data || !cities.data) {
     return (
       <>
-        <PageHeader title={hello} description="Loading your content…" />
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-          {Array.from({ length: 4 }, (_, index) => (
+        <header className={styles.intro}><h1>Dashboard</h1><p>Loading your content…</p></header>
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3">
+          {Array.from({ length: 3 }, (_, index) => (
             <Skeleton key={index} className="h-32 rounded-xl" />
           ))}
         </div>
@@ -73,10 +54,10 @@ export function Dashboard() {
     );
   }
 
-  const all = { services: services.data, vehicles: vehicles.data, cities: cities.data, settings: settings.data };
+  const all = { services: services.data, vehicles: vehicles.data, cities: cities.data };
   const published = <T extends { status: string }>(items: T[]) => items.filter((item) => item.status === "published").length;
   const coverage = coverageOf(all, emptyCoverage());
-  const liveTestimonials = all.settings.testimonials.filter((testimonial) => testimonial.published).length;
+  const fleet = orderDashboardFleet(all.vehicles);
 
   // Everything that needs an editor's attention, each with a direct link to the fix.
   const issues: { text: string; href: string }[] = [];
@@ -107,125 +88,169 @@ export function Dashboard() {
     ...all.services.map((item) => ({ name: item.title.en, href: `/admin/services/${item.id}`, kind: "Service", icon: Sparkles, updatedAt: item.updatedAt })),
     ...all.vehicles.map((item) => ({ name: item.name.en, href: `/admin/fleet/${item.id}`, kind: "Vehicle", icon: CarFront, updatedAt: item.updatedAt })),
     ...all.cities.map((item) => ({ name: item.name.en, href: `/admin/cities/${item.id}`, kind: "City", icon: MapPin, updatedAt: item.updatedAt })),
-    { name: "Site settings", href: "/admin/settings", kind: "Settings", icon: Settings, updatedAt: all.settings.updatedAt },
   ]
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
     .slice(0, 6);
 
   return (
-    <>
-      <PageHeader
-        title={hello}
-        description={
-          IS_LOCAL_DEMO
-            ? "Here's the state of the Driveo website content. In demo mode, changes stay in this browser."
-            : "Here's the state of the Driveo website content. Changes are saved in the Driveo database."
-        }
-        actions={
-          <Button asChild>
-            <Link href="/admin/services/new">
-              <Plus aria-hidden="true" />
-              New service
-            </Link>
-          </Button>
-        }
-      />
+    <div className={styles.dashboard}>
+      <header className={styles.intro}>
+        <h1>Dashboard</h1>
+        <Button asChild size="lg" className={styles.newService}>
+          <Link href="/admin/services/new">
+            <Plus aria-hidden="true" />
+            New service
+          </Link>
+        </Button>
+      </header>
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+      <div className={styles.stats}>
         <StatCard href="/admin/services" icon={Sparkles} label="Services" value={published(all.services)} detail={`${all.services.length} total · ${all.services.length - published(all.services)} drafts`} />
         <StatCard href="/admin/fleet" icon={CarFront} label="Vehicle classes" value={published(all.vehicles)} detail={`${all.vehicles.length} total`} />
         <StatCard href="/admin/cities" icon={MapPin} label="Cities" value={published(all.cities)} detail={`${all.cities.length} total`} />
-        <StatCard href="/admin/settings" icon={MessageSquareQuote} label="Testimonials" value={liveTestimonials} detail={`${all.settings.testimonials.length} total`} />
       </div>
 
-      <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <Card>
-          <CardHeader
-            title="Needs attention"
-            description={issues.length ? `${issues.length} ${issues.length === 1 ? "item" : "items"} to review` : undefined}
-          />
-          {issues.length === 0 ? (
-            <div className="flex items-center gap-3 px-5 py-6 text-sm">
-              <CheckCircle2 aria-hidden="true" className="size-5 text-success" />
-              Everything is published and fully translated.
+      <div className={styles.workspace}>
+        <div className={styles.workColumn}>
+          <section aria-labelledby="fleet-title" className={styles.fleet}>
+            <div className={styles.sectionHeading}>
+              <h2 id="fleet-title">Fleet</h2>
             </div>
-          ) : (
-            <ul className="divide-y divide-border">
-              {issues.slice(0, 8).map((issue) => (
-                <li key={issue.text}>
-                  <Link href={issue.href} className="group flex items-center gap-3 px-5 py-3 text-sm hover:bg-surface-muted/50">
-                    <AlertCircle aria-hidden="true" className="size-4 shrink-0 text-warning" />
-                    <span className="flex-1">{issue.text}</span>
-                    <ArrowRight aria-hidden="true" className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 rtl:-scale-x-100" />
+            {fleet.length === 0 ? (
+              <p className={styles.clearMessage}>No vehicle classes yet. Use “Add a vehicle class” to create one.</p>
+            ) : (
+              <ul className={styles.fleetList}>
+                {fleet.map((vehicle) => (
+                  <li key={vehicle.id} className={styles.fleetRow}>
+                    <div className={styles.fleetImage}>
+                      {vehicle.image ? (
+                        // eslint-disable-next-line @next/next/no-img-element -- admin images can be uploaded data URLs or remote API assets
+                        <img src={vehicle.image} alt="" />
+                      ) : (
+                        <CarFront aria-hidden="true" className="size-8 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className={styles.fleetDetails}>
+                      <h3><Link href={`/admin/fleet/${vehicle.id}`}>{vehicle.name.en || "Untitled vehicle"}</Link></h3>
+                      <p>{vehicle.model}</p>
+                    </div>
+                    <span className={styles.fleetStatus}>
+                      <span aria-hidden="true" className={cn(styles.statusDot, vehicle.status === "published" ? "bg-success" : "bg-muted-foreground")} />
+                      {vehicle.status === "published" ? "Published" : "Draft"}
+                    </span>
+                    <Button variant="secondary" asChild className={styles.editButton}>
+                      <Link href={`/admin/fleet/${vehicle.id}`} aria-label={`Edit ${vehicle.name.en || "vehicle"}`}>
+                        <Pencil aria-hidden="true" />
+                        Edit
+                      </Link>
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section aria-labelledby="recent-title" className={styles.recent}>
+            <div className={styles.sectionHeading}>
+              <h2 id="recent-title">Recently updated</h2>
+            </div>
+            <ul className={styles.recentList}>
+              {recent.map(({ name, href, kind, icon: Icon, updatedAt }) => (
+                <li key={href}>
+                  <Link href={href} className={styles.recentLink}>
+                    <span className={styles.recentIcon}>
+                      <Icon aria-hidden="true" className="size-4" />
+                    </span>
+                    <span className={styles.recentName}>
+                      <span>{name}</span>
+                      <span>{kind}</span>
+                    </span>
+                    <span className={styles.timestamp}>{formatRelative(updatedAt)}</span>
+                    <ArrowRight aria-hidden="true" className={styles.rowArrow} />
                   </Link>
                 </li>
               ))}
             </ul>
-          )}
-        </Card>
-
-        <Card>
-          <CardHeader title="Translations" description="All website text, per language." />
-          <CardBody className="gap-4">
-            {LOCALES.map((locale) => {
-              const done = percent(coverage[locale]);
-              return (
-                <div key={locale} className="grid gap-1.5">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="flex items-center gap-2 font-semibold" lang={locale}>
-                      <Languages aria-hidden="true" className="size-3.5 text-muted-foreground" />
-                      {LOCALE_LABELS[locale]}
-                    </span>
-                    <span className="text-xs text-muted-foreground tabular-nums">{done}%</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-surface-muted">
-                    <div className={cn("h-full rounded-full", done === 100 ? "bg-success" : "bg-warning")} style={{ width: `${done}%` }} />
-                  </div>
-                </div>
-              );
-            })}
-          </CardBody>
-        </Card>
-
-        <Card>
-          <CardHeader title="Recently updated" />
-          <ul className="divide-y divide-border">
-            {recent.map(({ name, href, kind, icon: Icon, updatedAt }) => (
-              <li key={href}>
-                <Link href={href} className="flex items-center gap-3 px-5 py-3 hover:bg-surface-muted/50">
-                  <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-surface-muted text-muted-foreground">
-                    <Icon aria-hidden="true" className="size-4" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold">{name}</span>
-                    <span className="block text-xs text-muted-foreground">{kind}</span>
-                  </span>
-                  <span className="text-xs whitespace-nowrap text-muted-foreground">{formatRelative(updatedAt)}</span>
+          </section>
+        </div>
+        <div className={styles.sideColumn}>
+          <section aria-labelledby="actions-title" className={styles.actions}>
+            <div className={styles.sectionHeading}>
+              <h2 id="actions-title">Quick actions</h2>
+            </div>
+            <div className={styles.actionList}>
+              {[
+                { href: "/admin/services/new", label: "Add a service", icon: Sparkles },
+                { href: "/admin/fleet/new", label: "Add a vehicle class", icon: CarFront },
+                { href: "/admin/cities/new", label: "Add a city", icon: MapPin },
+              ].map(({ href, label, icon: Icon }) => (
+                <Link key={href} href={href} className={styles.actionLink}>
+                  <Icon aria-hidden="true" className="size-4 shrink-0" />
+                  <span>{label}</span>
+                  <ArrowRight aria-hidden="true" className={styles.rowArrow} />
                 </Link>
-              </li>
-            ))}
-          </ul>
-        </Card>
+              ))}
+            </div>
+          </section>
 
-        <Card>
-          <CardHeader title="Quick actions" />
-          <CardBody className="gap-2">
-            {[
-              { href: "/admin/services/new", label: "Add a service", icon: Sparkles },
-              { href: "/admin/fleet/new", label: "Add a vehicle class", icon: CarFront },
-              { href: "/admin/cities/new", label: "Add a city", icon: MapPin },
-              { href: "/admin/settings", label: "Update contact details", icon: Settings },
-            ].map(({ href, label, icon: Icon }) => (
-              <Button key={href} variant="secondary" className="justify-start" asChild>
-                <Link href={href}>
-                  <Icon aria-hidden="true" />
-                  {label}
-                </Link>
-              </Button>
-            ))}
-          </CardBody>
-        </Card>
+          <section aria-labelledby="attention-title" className={styles.attention}>
+            <div className={styles.sectionHeading}>
+              <h2 id="attention-title">Needs attention</h2>
+              {issues.length > 0 && (
+                <span className={styles.issueCount}>{issues.length} {issues.length === 1 ? "item" : "items"} to review</span>
+              )}
+            </div>
+            {issues.length === 0 ? (
+              <p className={styles.clearMessage}>
+                <CheckCircle2 aria-hidden="true" className="size-5 shrink-0 text-success" />
+                Everything is published and fully translated.
+              </p>
+            ) : (
+              <ul className={styles.issueList}>
+                {issues.slice(0, 8).map((issue) => (
+                  <li key={issue.text}>
+                    <Link href={issue.href} className={styles.issueLink}>
+                      <AlertCircle aria-hidden="true" className="size-4 shrink-0 text-warning" />
+                      <span>{issue.text}</span>
+                      <ArrowRight aria-hidden="true" className={styles.rowArrow} />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section aria-labelledby="translations-title" className={styles.translations}>
+            <div className={styles.sectionHeading}>
+              <h2 id="translations-title">Translations</h2>
+              <p>Editable content, per language.</p>
+            </div>
+            <div className={styles.languageList}>
+              {LOCALES.map((locale) => {
+                const done = percent(coverage[locale]);
+                return (
+                  <div key={locale} className={styles.language}>
+                    <div className={styles.languageLabel}>
+                      <span lang={locale}>{LOCALE_LABELS[locale]}</span>
+                      <span>{done}%</span>
+                    </div>
+                    <div
+                      className={styles.progress}
+                      role="progressbar"
+                      aria-label={`${LOCALE_LABELS[locale]} translation coverage`}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={done}
+                    >
+                      <div className={cn(styles.progressFill, done === 100 ? "bg-success" : "bg-warning")} style={{ width: `${done}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        </div>
       </div>
-    </>
+    </div>
   );
 }

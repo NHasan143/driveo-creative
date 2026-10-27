@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, LogOut } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useId, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useId, useState, useSyncExternalStore, type FormEvent, type ReactNode } from "react";
 import { Button } from "@/admin/components/ui/button";
 import { Field } from "@/admin/components/ui/field";
 import { Input } from "@/admin/components/ui/input";
@@ -12,6 +12,8 @@ import { getSession, onSignedOut, signIn, signOut, type StaffUser } from "@/admi
 import { IS_LOCAL_DEMO } from "@/admin/lib/content";
 
 const sessionKey = ["admin-session"] as const;
+
+const subscribeToNothing = () => () => {};
 
 /** The signed-in staff member, or null. Always null in demo mode, which has no sign-in. */
 export function useStaffUser() {
@@ -28,6 +30,9 @@ export function useStaffUser() {
  * With the Django API as the content source, shows the sign-in screen until a
  * staff member is signed in. The API enforces this on every request; the gate
  * only keeps the screens honest. Demo mode renders the admin directly.
+ *
+ * Each admin page wraps its own content in this gate. A layout-level gate would
+ * drop the page segment from the prerendered shell.
  */
 export function AuthGate({ children }: { children: ReactNode }) {
   if (IS_LOCAL_DEMO) return children;
@@ -44,9 +49,13 @@ function ApiAuthGate({ children }: { children: ReactNode }) {
     [queryClient],
   );
 
-  if (session.isPending) {
+  // The page hydrates after the layout, whose header may already have loaded the session.
+  // Match the server's "checking" render during hydration, then show the real state.
+  const hydrated = useSyncExternalStore(subscribeToNothing, () => true, () => false);
+
+  if (!hydrated || session.isPending) {
     return (
-      <div className="grid min-h-svh place-items-center text-sm text-muted-foreground">Checking your sign-in…</div>
+      <div className="grid min-h-[60svh] place-items-center text-sm text-muted-foreground">Checking your sign-in…</div>
     );
   }
   if (session.isError) {
@@ -68,7 +77,7 @@ function ApiAuthGate({ children }: { children: ReactNode }) {
 
 function AuthScreen({ children }: { children: ReactNode }) {
   return (
-    <main className="grid min-h-svh place-items-center bg-background px-4 py-10">
+    <div className="grid min-h-[60svh] place-items-center py-10">
       <div className="w-full max-w-sm">
         <div className="mb-6 flex items-center justify-center gap-3">
           <span className="relative size-10 overflow-hidden rounded-md border border-border">
@@ -85,7 +94,7 @@ function AuthScreen({ children }: { children: ReactNode }) {
           <CardBody className="p-6">{children}</CardBody>
         </Card>
       </div>
-    </main>
+    </div>
   );
 }
 

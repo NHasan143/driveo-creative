@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { AuthGate } from "@/admin/components/auth/auth-gate";
 import { AppShell } from "@/admin/components/layout/app-shell";
 import { themeInitScript } from "@/admin/components/layout/theme";
 import { Providers } from "@/admin/components/providers";
@@ -41,9 +40,7 @@ export default function AdminLayout({ children }: LayoutProps<"/admin">) {
       </head>
       <body>
         <Providers>
-          <AuthGate>
-            <AppShell>{children}</AppShell>
-          </AuthGate>
+          <AppShell>{children}</AppShell>
         </Providers>
       </body>
     </html>

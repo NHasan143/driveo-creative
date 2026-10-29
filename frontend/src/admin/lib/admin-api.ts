@@ -14,6 +14,8 @@ export interface StaffUser {
   username: string;
   name: string;
   email: string;
+  /** Superusers also manage staff accounts (Staff screen). */
+  isSuperuser: boolean;
 }
 
 interface SessionResponse {
@@ -61,7 +63,7 @@ async function fetchCsrfToken() {
 }
 
 interface RequestOptions {
-  method?: "GET" | "POST" | "PUT" | "DELETE";
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   /** JSON body, or FormData for uploads. */
   body?: unknown;
 }

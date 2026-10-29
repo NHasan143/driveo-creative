@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { QUOTE_SENT_EVENT } from "@/features/account/events";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import { ApiError } from "@/lib/api/http-client";
@@ -116,6 +117,7 @@ export function useQuoteSubmission(locale: Locale) {
       const response = await submitQuoteRequest(parsed.data, locale);
       lastSentAt.current = Date.now();
       sentCount.current += 1;
+      window.dispatchEvent(new Event(QUOTE_SENT_EVENT));
       setReference(response.reference);
       setStatus("sent");
       return true;

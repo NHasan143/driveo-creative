@@ -1,0 +1,77 @@
+# ${SITE_HOST} → website (frontend:3000) · ${API_HOST} → API and Django admin (backend:8000).
+# TLS ends here with the Cloudflare origin certificate (Cloudflare SSL mode "Full (strict)").
+# The nginx image fills in ${SITE_HOST} and ${API_HOST} at start-up; nginx variables
+# such as $host are left alone because no environment variable has their name.
+
+server_tokens off;
+
+# Look container names up through Docker's DNS on every request (cached 10 s).
+# A fixed `proxy_pass http://backend:8000` is resolved once at start-up, so a
+# recreated container (new IP, e.g. after each deploy) would get 502s until
+# Nginx restarts. The upstreams below are variables for this reason.
+resolver 127.0.0.11 valid=10s ipv6=off;
+
+# Plain HTTP: only the container health check; everything else goes to HTTPS.
+server {
+    listen 80 default_server;
+    server_name _;
+
+    location = /nginx-health {
+        access_log off;
+        return 200 "ok\n";
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# Any other host name (e.g. the server's bare IP): close the connection.
+server {
+    listen 443 ssl default_server;
+    server_name _;
+    ssl_certificate /etc/nginx/certs/origin.pem;
+    ssl_certificate_key /etc/nginx/certs/origin.key;
+    return 444;
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name ${SITE_HOST};
+    ssl_certificate /etc/nginx/certs/origin.pem;
+    ssl_certificate_key /etc/nginx/certs/origin.key;
+
+    client_max_body_size 1m;
+
+    location / {
+        set $frontend http://frontend:3000;
+        proxy_pass $frontend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name ${API_HOST};
+    ssl_certificate /etc/nginx/certs/origin.pem;
+    ssl_certificate_key /etc/nginx/certs/origin.key;
+
+    # The content admin uploads photos of up to 12 MB.
+    client_max_body_size 15m;
+
+    location / {
+        set $backend http://backend:8000;
+        proxy_pass $backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        # Django counts the proxies in front of it (DRF_NUM_PROXIES) to find the visitor in here.
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        # Overwrites anything a client sent, which is why Django may trust it (DJANGO_BEHIND_PROXY).
+        proxy_set_header X-Forwarded-Proto https;
+    }
+}

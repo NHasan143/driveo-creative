@@ -7,4 +7,5 @@ python-dotenv>=1.1
 celery[redis]>=5.5
 twilio>=9.0
 django-cors-headers>=4.6
-
+whitenoise>=6.9
+gunicorn>=23.0

@@ -85,6 +85,22 @@ src/
 └── styles/globals.css        # Design tokens, base styles, shared primitives
 ```
 
+## Customer accounts (`/account`)
+
+Customers create an account, sign in, reset a forgotten password and see their quote requests, in all four
+languages. Code: `src/features/account/`, pages in `src/app/[locale]/(site)/account/`.
+
+- **Pages:** `/account` (My account: requests, details, password, sign out), `/account/sign-in`,
+  `/account/register`, `/account/forgot-password`, `/account/reset-password?uid=…&token=…` (from the email).
+  They are client-rendered, never indexed (`robots.ts`, `noindex`) and, like every page, end with the quote form.
+- **Session:** `src/lib/api/session-client.ts` sends the API's session cookie (`credentials: "include"`) and keeps
+  the CSRF token from JSON responses in memory. `account-store.ts` shares who is signed in across the page.
+- **Quote form:** a signed-in customer's details are filled in, the request is linked to their account, and
+  My account lists it straight away (`QUOTE_SENT_EVENT`). The form always sends the CSRF token.
+- **Errors:** the API's messages are English, so the pages map them to translated ones (`errors.ts`).
+- **Header:** an Account link from 640px; phones reach it through the footer.
+- **Mock mode** (`NEXT_PUBLIC_API_MOCK=true`): accounts are unavailable and the forms say so.
+
 ## Content admin (`/admin`)
 
 Editors create, update, publish and delete the website's **services** (cards and full service pages),
@@ -270,7 +286,7 @@ The client-side rules live in `src/features/quote/schema.ts`.
 ```bash
 docker build -t driveo-frontend \
   --build-arg NEXT_PUBLIC_SITE_URL=https://driveoexclusive.com \
-  --build-arg NEXT_PUBLIC_API_BASE_URL=https://driveoexclusive.com/api .
+  --build-arg NEXT_PUBLIC_API_BASE_URL=https://api.driveoexclusive.com/api .
 docker run -p 3000:3000 driveo-frontend
 ```
 

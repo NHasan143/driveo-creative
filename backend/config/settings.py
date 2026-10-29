@@ -44,10 +44,14 @@ INSTALLED_APPS = [
     "core",
     "quotes",
     "content",
+    "account",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Serves the Django admin's CSS/JS from STATIC_ROOT, so production needs no
+    # separate static file server.
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     # Before CommonMiddleware, so CORS headers are added to every API response.
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -127,7 +131,7 @@ STORAGES = {
         },
     },
     "staticfiles": {
-        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
 }
 
@@ -150,6 +154,10 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Users: account.User (same fields as Django's, table auth_user). Databases
+# created before it existed need `manage.py adopt_custom_user` once.
+AUTH_USER_MODEL = "account.User"
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.1/topics/i18n/
@@ -167,10 +175,53 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = "static/"
+# `collectstatic` copies the admin's assets here (the Docker image does it at build time).
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 
 def env_list(name):
     return [item.strip() for item in os.environ.get(name, "").split(",") if item.strip()]
+
+
+def env_bool(name, default=False):
+    value = os.environ.get(name, "")
+    return value.lower() == "true" if value else default
+
+
+# Production: HTTPS behind Cloudflare and Nginx
+# Every switch below is off by default, so local http://localhost works as is.
+# backend/.env.example lists the production values.
+
+# Nginx passes the original scheme in X-Forwarded-Proto. Trust it only behind
+# a proxy that overwrites it; otherwise any client could claim to be on HTTPS.
+if env_bool("DJANGO_BEHIND_PROXY"):
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# Cloudflare and Nginx already send http:// to https://; this is a second line.
+SECURE_SSL_REDIRECT = env_bool("DJANGO_SSL_REDIRECT")
+# Container health checks call the API over plain HTTP inside the network.
+SECURE_REDIRECT_EXEMPT = [r"^api/v1/health/$"]
+# Browsers remember to use HTTPS for this many seconds. Start short (3600) and
+# raise it to a year (31536000) once HTTPS is known to work. Sent on HTTPS only.
+SECURE_HSTS_SECONDS = int(os.environ.get("DJANGO_HSTS_SECONDS") or 0)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("DJANGO_HSTS_INCLUDE_SUBDOMAINS")
+
+# Rate limits (and the IP stored with quote requests) use the visitor's IP.
+# Behind proxies REMOTE_ADDR is the proxy's, so DRF reads X-Forwarded-For
+# instead: set this to the number of proxies in front of Django (Cloudflare +
+# Nginx = 2). Leave it empty when nothing sits in front of Django.
+NUM_PROXIES = int(os.environ["DRF_NUM_PROXIES"]) if os.environ.get("DRF_NUM_PROXIES") else None
+
+# Rate limits are counted in the cache. The default in-memory cache belongs to
+# one process, so with several web workers each counts on its own. Production
+# points this at Redis, e.g. redis://redis:6379/1 (Celery uses database 0).
+if os.environ.get("CACHE_REDIS_URL"):
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": os.environ["CACHE_REDIS_URL"],
+        },
+    }
 
 
 # Email
@@ -239,7 +290,12 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "quote_requests": os.environ.get("QUOTE_REQUESTS_RATE") or "10/hour",
         "staff_sign_in": os.environ.get("STAFF_SIGN_IN_RATE") or "20/hour",
+        # Customer accounts (account app), per IP.
+        "account_sign_in": os.environ.get("ACCOUNT_SIGN_IN_RATE") or "20/hour",
+        "account_register": os.environ.get("ACCOUNT_REGISTER_RATE") or "10/hour",
+        "password_reset": os.environ.get("PASSWORD_RESET_RATE") or "5/hour",
     },
+    "NUM_PROXIES": NUM_PROXIES,
 }
 
 # The website calls the API from the browser, so its origin must be allowed.
@@ -281,12 +337,21 @@ TWILIO_WHATSAPP_CONTENT_SID = os.environ.get("TWILIO_WHATSAPP_CONTENT_SID", "")
 # Used to build dashboard links in alerts.
 BACKEND_BASE_URL = os.environ.get("BACKEND_BASE_URL") or "http://localhost:8000"
 
+# Public website, used to build links in emails (e.g. password reset).
+WEBSITE_BASE_URL = os.environ.get("WEBSITE_BASE_URL") or "http://localhost:3000"
+# Password reset links stop working after this many seconds (and once used).
+PASSWORD_RESET_TIMEOUT = 60 * 60 * 2
 
+
+# Everything goes to the console (docker logs). Warnings and errors from any
+# module, including unhandled request errors (django.request), reach it through
+# the root logger.
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "root": {"handlers": ["console"], "level": "WARNING"},
     "loggers": {
-        "quotes": {"handlers": ["console"], "level": "INFO"},
+        "quotes": {"handlers": ["console"], "level": "INFO", "propagate": False},
     },
 }

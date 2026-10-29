@@ -1,5 +1,6 @@
 import secrets
 
+from django.conf import settings
 from django.db import IntegrityError, models, transaction
 
 from .choices import (
@@ -50,6 +51,14 @@ class QuoteRequest(models.Model):
     luggage = models.PositiveSmallIntegerField()
     notes = models.TextField(max_length=1500, blank=True)
     locale = models.CharField(max_length=2, choices=Locale.choices, default=Locale.EN)
+    # The customer who was signed in when sending it; they see it under My account.
+    customer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="quote_requests",
+    )
 
     # Kept to investigate abuse of the public form.
     ip_address = models.GenericIPAddressField(null=True, blank=True)

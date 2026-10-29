@@ -5,8 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Dialog } from "radix-ui";
-import { Suspense, useLayoutEffect, useState, type ReactNode } from "react";
-import { SignOutButton } from "@/admin/components/auth/auth-gate";
+import { Suspense, useLayoutEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import { SignOutButton, useStaffUser } from "@/admin/components/auth/auth-gate";
 import { Button } from "@/admin/components/ui/button";
 import { IS_LOCAL_DEMO } from "@/admin/lib/content";
 import { cn } from "@/admin/lib/cn";
@@ -17,7 +17,14 @@ function isActive(pathname: string, href: string) {
   return href === "/admin" ? pathname === "/admin" : pathname === href || pathname.startsWith(`${href}/`);
 }
 
+const subscribeToNothing = () => () => {};
+
 function NavLinks({ pathname, onNavigate }: { pathname: string | null; onNavigate?: () => void }) {
+  const { data: staff } = useStaffUser();
+  // Who is signed in is only known in the browser. Hydrate with the server's
+  // (signed-out) menu, then add superuser-only items, or React reports a mismatch.
+  const hydrated = useSyncExternalStore(subscribeToNothing, () => true, () => false);
+  const isSuperuser = hydrated && Boolean(staff?.isSuperuser);
   return (
     <nav aria-label="Admin" className="flex-1 space-y-1 overflow-y-auto px-4">
       {NAV_GROUPS.map((group) => (
@@ -26,7 +33,7 @@ function NavLinks({ pathname, onNavigate }: { pathname: string | null; onNavigat
             {group.label}
           </p>
           <ul className="space-y-1">
-            {group.items.map(({ href, label, icon: Icon }) => {
+            {group.items.filter((item) => !item.superuserOnly || isSuperuser).map(({ href, label, icon: Icon }) => {
               const active = pathname !== null && isActive(pathname, href);
               return (
                 <li key={href}>

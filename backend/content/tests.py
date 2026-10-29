@@ -164,7 +164,9 @@ class SignInTests(TestCase):
         response = self.sign_in("editor")
         self.assertEqual(response.status_code, 200, response.content)
         body = response.json()
-        self.assertEqual(body["user"], {"username": "editor", "name": "Eve", "email": "editor@example.com"})
+        self.assertEqual(
+            body["user"], {"username": "editor", "name": "Eve", "email": "editor@example.com", "isSuperuser": False}
+        )
         # Signing in rotates the CSRF token; the new one comes back in the body.
         self.assertNotEqual(body["csrfToken"], self.token)
         self.assertEqual(self.client.get(self.URL).json()["user"]["username"], "editor")

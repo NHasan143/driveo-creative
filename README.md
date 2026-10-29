@@ -260,7 +260,7 @@ Each app owns its environment template. Never commit real secrets.
 | App | Template | Key variables |
 | --- | --- | --- |
 | Website + content admin | [`frontend/.env.example`](frontend/.env.example) | `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_API_MOCK`, `NEXT_PUBLIC_ADMIN_CONTENT_SOURCE` (`local` demo or `api`), `ADMIN_ENABLED` (production gate for `/admin`) |
-| Backend | [`backend/.env.example`](backend/.env.example) → `backend/.env.local` (Neon section filled in by `neon env pull`) | `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`; Neon: `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `AWS_*`; jobs: `REDIS_URL`; alerts: `QUOTE_ALERT_EMAILS`, `QUOTE_ALERT_WHATSAPP`, `SMTP_*`, `DEFAULT_FROM_EMAIL`, `TWILIO_*`, `BACKEND_BASE_URL` (also the base of content photo URLs); browser access: `CORS_ALLOWED_ORIGINS`, `CSRF_TRUSTED_ORIGINS`, `SESSION_COOKIE_SAMESITE`, `STAFF_SIGN_IN_RATE` |
+| Backend | [`backend/.env.example`](backend/.env.example) → `backend/.env.local` (Neon section filled in by `neon env pull`) | `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`; Neon: `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `AWS_*`; jobs: `REDIS_URL`; alerts: `QUOTE_ALERT_EMAILS`, `QUOTE_ALERT_WHATSAPP`, `SMTP_*`, `DEFAULT_FROM_EMAIL`, `TWILIO_*`, `BACKEND_BASE_URL` (also the base of content photo URLs); browser access: `CORS_ALLOWED_ORIGINS`, `CSRF_TRUSTED_ORIGINS`, `SESSION_COOKIE_SAMESITE`, `STAFF_SIGN_IN_RATE`; accounts: `WEBSITE_BASE_URL` (links in emails), `ACCOUNT_SIGN_IN_RATE`, `ACCOUNT_REGISTER_RATE`, `PASSWORD_RESET_RATE` |
 
 With no API URL set, the website runs in **mock mode**: quote requests get a fake `DRV-XXXXXX` reference.
 This lets you work on the frontend without the backend.
@@ -344,6 +344,34 @@ forms without mapping. Every endpoint is staff-only unless marked public.
   after the cities exist.
 - **Photos:** a record stores a website path (`/media/…`) or the bucket key of an upload, and the API returns
   the key as a stable `/v1/content/images/…` URL. Data URLs are refused; the admin uploads photos before saving.
+
+### Accounts API (`backend/account/`)
+
+Users are `account.User` (Django's fields plus `phone` and `locale`, table `auth_user`). **Staff** have
+`is_staff`; **customers** are everyone else and register on the website. Snake_case JSON. Sign-in works like
+staff sign-in: Django's session cookie plus a CSRF token from JSON, sent back as `X-CSRFToken`.
+
+| Endpoint | Method | Purpose |
+| --- | --- | --- |
+| `/v1/account/session/` | `GET` · `POST` · `DELETE` | Public. `{"user": {...} or null, "csrf_token"}` (never an error) · sign in `{"email", "password"}` (`ACCOUNT_SIGN_IN_RATE`) · sign out |
+| `/v1/account/register/` | `POST` | Public. `{"email", "first_name", "last_name", "phone", "locale", "password"}` → `201`, signed in (`ACCOUNT_REGISTER_RATE`) |
+| `/v1/account/profile/` | `GET` · `PATCH` | Signed in. Name, email, phone, email language |
+| `/v1/account/password/` | `POST` | Signed in. `{"current_password", "new_password"}` → `204`; other sessions end |
+| `/v1/account/password-reset/` | `POST` | Public. `{"email", "locale"}` → always `204`; emails a one-time link to `{WEBSITE_BASE_URL}/account/reset-password` valid 2 hours (`PASSWORD_RESET_RATE`) |
+| `/v1/account/password-reset/confirm/` | `POST` | Public. `{"uid", "token", "new_password"}` → `204` |
+| `/v1/account/quote-requests/` | `GET` | Signed in. The customer's quote requests, newest first (100 at most) |
+| `/v1/staff/customers/` | `GET` | Staff. `?search=&page=`, 25 per page, with request counts |
+| `/v1/staff/customers/{id}/` | `GET` · `PATCH` | Staff. The customer and their requests · `{"is_active"}` |
+| `/v1/staff/users/` | `GET` · `POST` | Superusers. Staff accounts · add one `{"username", "email", "first_name", "last_name", "password", "is_superuser"}` |
+| `/v1/staff/users/{id}/` | `GET` · `PATCH` | Superusers. Name, email, phone, `is_active`, `is_superuser` (not for yourself) |
+| `/v1/staff/users/{id}/password/` | `POST` | Superusers. `{"password"}` → `204` |
+
+- **Quote requests from signed-in customers** are linked to the account (`QuoteRequest.customer`). The quote
+  endpoint uses session auth, so a signed-in visitor must send the CSRF token; the website always does.
+- **One session per browser:** the website, its admin and Django's admin share the session cookie, so signing in
+  to one as someone else signs the other out.
+- **Passwords** go through Django's validators (8+ characters, not common, not only digits, not like the name).
+- **Existing databases** created before `account.User` run `manage.py adopt_custom_user` once, then `migrate`.
 
 > When the backend is created, publish its OpenAPI schema (for example, drf-spectacular at `/api/schema/`)
 > and link it here. That schema then becomes the source of truth for this table.
@@ -429,11 +457,84 @@ Website image (see the [Dockerfile](frontend/Dockerfile)):
 cd frontend
 docker build -t driveo-frontend \
   --build-arg NEXT_PUBLIC_SITE_URL=https://driveoexclusive.com \
-  --build-arg NEXT_PUBLIC_API_BASE_URL=https://driveoexclusive.com/api .
+  --build-arg NEXT_PUBLIC_API_BASE_URL=https://api.driveoexclusive.com/api .
 docker run -p 3000:3000 driveo-frontend
 ```
 
 `NEXT_PUBLIC_*` values are baked in at build time, so build a separate image for each environment.
+
+### Production stack (`infra/`)
+
+[`infra/docker-compose.yml`](infra/docker-compose.yml) runs everything on one VPS: **Nginx** (TLS with the
+Cloudflare origin certificate) → **frontend** (Next.js) and **backend** (gunicorn), plus the alert **worker**,
+its scheduler (**beat**) and **Redis** (broker and rate-limit cache). Postgres and files stay on Neon.
+
+| Host | Served by |
+| --- | --- |
+| `SITE_HOST`, e.g. `driveoexclusive.com` | Website and content admin (`/admin`) |
+| `API_HOST`, e.g. `api.driveoexclusive.com` | API (`/api/v1/…`) and Django's admin (`/admin/`) |
+
+Server set-up, in the deploy folder (`DEPLOY_PATH`):
+
+1. Copy `infra/docker-compose.yml` and `infra/nginx/` there.
+2. Create `.env` from [`infra/.env.example`](infra/.env.example) (host names, images, `ADMIN_ENABLED`) and
+   `backend.env` from [`infra/backend.env.example`](infra/backend.env.example) (Django settings and secrets,
+   values without quotes).
+3. Put the Cloudflare origin certificate in `certs/origin.pem` and `certs/origin.key`; set Cloudflare SSL to
+   "Full (strict)".
+4. `docker compose pull`, then `docker compose run --rm migrate`, then `docker compose up -d`.
+
+The frontend deploy workflow later replaces only the `frontend` container. To try the whole stack on a
+laptop, build both images from the checkout:
+`docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build`
+(with a self-signed certificate for `localhost` and `api.localhost`).
+
+Details that matter:
+- **Nginx re-resolves container names** (Docker DNS, 10 s), so a recreated container is reached at once;
+  with a fixed `proxy_pass` address every deploy would cause 502s until Nginx restarted.
+- **The website's server calls the API inside the network** (`API_INTERNAL_BASE_URL=http://backend:8000/api`),
+  so `DJANGO_ALLOWED_HOSTS` includes `backend`, and Django's own HTTPS redirect stays off.
+- **`backend.env` is read raw** (Compose 2.30+), so a `$` in the Django secret key isn't expanded away.
+- **Logs** rotate at 10 MB × 5 per container. **Redis** keeps nothing on disk: alerts are saved in Postgres
+  first and re-queued by the scheduler.
+
+Backend image (see the [Dockerfile](backend/Dockerfile)). One image runs the API (default command, gunicorn
+on port 8000), the alert worker and the scheduler; configuration comes from environment variables, and the
+image contains no secrets:
+
+```bash
+cd backend
+docker build -t driveo-backend .
+docker run --env-file .env.production -p 8000:8000 driveo-backend                         # API
+docker run --env-file .env.production driveo-backend celery -A config worker -l info      # alert worker
+docker run --env-file .env.production driveo-backend celery -A config beat -l info --schedule /tmp/celerybeat-schedule
+docker run --env-file .env.production driveo-backend python manage.py migrate --database direct   # one-off, before a release
+```
+
+The image runs as a non-root user, serves the Django admin's static files itself (collected at build time) and
+has a health check on `/api/v1/health/` (database and bucket), so `DJANGO_ALLOWED_HOSTS` must include
+`localhost`. Docker's `--env-file` keeps quotes, so write values there unquoted (`backend/.env.local` quotes
+some of its values and can't be passed as is). Disable that health check for the worker and scheduler containers. Migrations never run at
+start-up, because several containers start together.
+
+### Backend production settings
+
+`backend/config/settings.py` is one file for every environment; production differs only in environment
+variables (all listed in [`backend/.env.example`](backend/.env.example)). Behind Cloudflare + Nginx:
+
+| Variable | Production value | Why |
+| --- | --- | --- |
+| `DJANGO_DEBUG` | `false` | Also makes the session and CSRF cookies Secure |
+| `DJANGO_ALLOWED_HOSTS` | `<api host>,localhost` | `localhost` for the container health check |
+| `DJANGO_BEHIND_PROXY` | `true` | Trust Nginx's `X-Forwarded-Proto: https` |
+| `DJANGO_SSL_REDIRECT` | `false` behind our Nginx | Nginx already redirects outside HTTP; Django's redirect would break the website's internal `http://backend:8000` calls. Use `true` only without such a proxy |
+| `DJANGO_HSTS_SECONDS` | `3600`, later `31536000` | Browsers stick to HTTPS |
+| `DRF_NUM_PROXIES` | `2` | Rate limits and stored IPs use the visitor's address from `X-Forwarded-For` |
+| `CACHE_REDIS_URL` | `redis://redis:6379/1` | One rate-limit count shared by all web workers |
+
+The Django admin's CSS and JS are served by WhiteNoise from `STATIC_ROOT` (`collectstatic` at image build).
+Check a configuration with `manage.py check --deploy`: with real SMTP settings it should only warn about the
+HSTS subdomain and preload switches, which stay off until every subdomain is on HTTPS.
 
 ### CI/CD (GitHub Actions)
 
@@ -464,7 +565,7 @@ flowchart LR
    | Kind | Name | Example |
    | --- | --- | --- |
    | Variable | `NEXT_PUBLIC_SITE_URL` | `https://driveoexclusive.com` |
-   | Variable | `NEXT_PUBLIC_API_BASE_URL` | `https://driveoexclusive.com/api` |
+   | Variable | `NEXT_PUBLIC_API_BASE_URL` | `https://api.driveoexclusive.com/api` |
    | Variable | `DEPLOY_PATH` | `/opt/driveo` |
    | Variable | `ALLOW_MOCK_DEPLOY` | `true` (staging previews only) |
    | Secret | `DEPLOY_HOST` | `203.0.113.10` |
@@ -547,6 +648,35 @@ Record decisions that would surprise a newcomer. Add new entries at the top.
 ## Changelog
 
 Newest first. Follow [Keep a Changelog](https://keepachangelog.com/) headings: Added / Changed / Fixed / Removed.
+
+### 2026-10-29
+
+**Added**
+- `backend`: custom user model `account.User` (Django's fields plus `phone` and `locale`, email unique ignoring
+  case) on the existing `auth_user` table, with `manage.py adopt_custom_user` to switch existing databases over.
+- `backend` + `frontend`: customer accounts. Register, sign in, forgotten-password email (in the customer's
+  language) and reset, edit details, change password, and see the quote requests sent while signed in.
+  Website pages at `/account` in all four languages, an Account link in the header (from 640px) and footer,
+  and the quote form fills in a signed-in customer's details. Quote requests now record the customer.
+- `frontend` (admin): **Customers** (search, details, their requests, deactivate), **Staff** (superusers: add
+  staff, make superuser, deactivate, set password) and **My account** (details and password).
+- Backend tests for users, accounts and staff screens' API (109 backend tests in total, all passing).
+
+- `infra`: production stack (OPS-04): `infra/docker-compose.yml` with Nginx (TLS, two host names), website,
+  API, alert worker, scheduler and Redis; env templates; a build override for local runs. Tried locally end to
+  end: pages, API, HTTPS redirect, a quote request through Nginx → Django → Redis → worker → email.
+- `frontend`: the Docker image is built with the content admin in API mode (`NEXT_PUBLIC_ADMIN_CONTENT_SOURCE=api`).
+- `backend`: Docker image for the API, alert worker and scheduler (API-12): Python 3.12, gunicorn
+  (`gunicorn.conf.py`, `WEB_CONCURRENCY` workers), non-root, static files collected at build, health check,
+  no secrets (`.dockerignore`).
+- `backend`: production settings (API-14), all off by default: trust the proxy's HTTPS header, HTTPS redirect,
+  HSTS, the visitor's real IP behind `DRF_NUM_PROXIES` proxies (rate limits and stored quote IPs), a shared
+  Redis cache for rate limits, WhiteNoise for the Django admin's static files, and console logging of warnings
+  and errors from every module. See [Backend production settings](#backend-production-settings).
+
+**Changed**
+- The quote form always sends the session cookie and CSRF token (`credentials: "include"`), because the API
+  refuses a signed-in visitor's post without the token.
 
 ### 2026-10-25
 

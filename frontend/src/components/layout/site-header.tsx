@@ -5,6 +5,7 @@ import { siteConfig } from "@/config/site";
 import { localePath, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import type { NavService } from "@/lib/content/site-services";
+import { AccountLink } from "./account-link";
 import { LanguageSwitcher } from "./language-switcher";
 import { MainNav } from "./main-nav";
 
@@ -37,6 +38,7 @@ export function SiteHeader({ locale, nav, services, allServices }: SiteHeaderPro
 
         {/* The language switcher and quote button share one size so they read as a pair. */}
         <div className="flex shrink-0 items-center gap-2">
+          <AccountLink locale={locale} label={nav.account} />
           <LanguageSwitcher locale={locale} label={nav.language} />
           {/* Every page ends with the quote form, so this anchor always resolves. */}
           <ButtonLink href="#quote" size="compact">

@@ -1,6 +1,6 @@
 import { env } from "@/config/env";
 import type { Locale } from "@/i18n/config";
-import { apiRequest } from "@/lib/api/http-client";
+import { sessionRequest } from "@/lib/api/session-client";
 import type { QuoteRequest } from "../schema";
 
 /** Wire format expected by the Django REST endpoint (snake_case). */
@@ -64,7 +64,9 @@ export async function submitQuoteRequest(
 ): Promise<QuoteRequestResponseDto> {
   if (env.apiMock) return mockSubmit();
 
-  return apiRequest<QuoteRequestResponseDto>(QUOTE_REQUESTS_ENDPOINT, {
+  // Sent with the session cookie and CSRF token: a signed-in customer's request is
+  // linked to their account, and the API refuses a signed-in post without the token.
+  return sessionRequest<QuoteRequestResponseDto>(QUOTE_REQUESTS_ENDPOINT, {
     method: "POST",
     body: toQuoteRequestDto(request, locale),
     locale,

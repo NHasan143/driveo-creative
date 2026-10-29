@@ -94,6 +94,12 @@ export function SiteFooter({ locale, nav, footer, install, cityNames }: SiteFoot
                   </Link>
                 </li>
               ))}
+              {/* Phones have no room for the header's Account link, so it lives here too. */}
+              <li>
+                <Link href={localePath(locale, "/account")} className={listLink}>
+                  {nav.account}
+                </Link>
+              </li>
             </ul>
           </nav>
 

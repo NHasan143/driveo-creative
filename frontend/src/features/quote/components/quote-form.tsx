@@ -4,6 +4,7 @@ import { ArrowRight, Check, LoaderCircle } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { useAccount } from "@/features/account";
 import {
   CITIES,
   getVehicleCapacity,
@@ -49,6 +50,7 @@ export function QuoteForm({ locale, labels, cityNames, pricing, guidePrices }: Q
   const { preset, update: updatePreset, reset: resetPreset } = useQuotePreset();
   const { vehicle, city, service: serviceType } = preset;
   const { status, error, reference, submit, reset } = useQuoteSubmission(locale);
+  const { user } = useAccount();
   const [passengers, setPassengers] = useState(1);
   const [luggage, setLuggage] = useState(0);
   const [hours, setHours] = useState<number>(HIRE_HOURS.min);
@@ -147,48 +149,55 @@ export function QuoteForm({ locale, labels, cityNames, pricing, guidePrices }: Q
       />
 
       <div className={styles.grid}>
-        <Field label={labels.firstName}>
-          <input
-            name="firstName"
-            autoComplete="given-name"
-            required
-            minLength={2}
-            maxLength={60}
-            placeholder={labels.firstNamePlaceholder}
-          />
-        </Field>
-        <Field label={labels.lastName}>
-          <input
-            name="lastName"
-            autoComplete="family-name"
-            required
-            maxLength={60}
-            placeholder={labels.lastNamePlaceholder}
-          />
-        </Field>
-        <Field label={labels.email}>
-          <input
-            name="email"
-            type="email"
-            autoComplete="email"
-            required
-            maxLength={254}
-            placeholder="you@example.com"
-          />
-        </Field>
-        <Field label={labels.phone}>
-          <input
-            name="phone"
-            type="tel"
-            autoComplete="tel"
-            required
-            minLength={7}
-            maxLength={40}
-            pattern={String.raw`[\d+ \(\)\.\/\-]+`}
-            placeholder="+44"
-            dir="ltr"
-          />
-        </Field>
+        {/* Signed-in customers get their details filled in; the key re-applies them once known. */}
+        <div key={user ? `account-${user.id}` : "guest"} className="contents">
+          <Field label={labels.firstName}>
+            <input
+              name="firstName"
+              autoComplete="given-name"
+              required
+              minLength={2}
+              maxLength={60}
+              placeholder={labels.firstNamePlaceholder}
+              defaultValue={user?.first_name}
+            />
+          </Field>
+          <Field label={labels.lastName}>
+            <input
+              name="lastName"
+              autoComplete="family-name"
+              required
+              maxLength={60}
+              placeholder={labels.lastNamePlaceholder}
+              defaultValue={user?.last_name}
+            />
+          </Field>
+          <Field label={labels.email}>
+            <input
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              maxLength={254}
+              placeholder="you@example.com"
+              defaultValue={user?.email}
+            />
+          </Field>
+          <Field label={labels.phone}>
+            <input
+              name="phone"
+              type="tel"
+              autoComplete="tel"
+              required
+              minLength={7}
+              maxLength={40}
+              pattern={String.raw`[\d+ \(\)\.\/\-]+`}
+              placeholder="+44"
+              dir="ltr"
+              defaultValue={user?.phone}
+            />
+          </Field>
+        </div>
 
         <Field label={labels.city}>
           <Select
@@ -317,7 +326,12 @@ export function QuoteForm({ locale, labels, cityNames, pricing, guidePrices }: Q
       </div>
 
       <div className={styles.actions}>
-        <p>{labels.privacy}</p>
+        <p>
+          {labels.privacy}
+          {user && (
+            <span className="mt-1 block">{labels.signedInAs.replace("{name}", user.first_name || user.email)}</span>
+          )}
+        </p>
         <Button type="submit" className={styles.submit} disabled={status === "sending"}>
           {status === "sending" ? (
             <>

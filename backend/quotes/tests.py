@@ -3,6 +3,7 @@ import smtplib
 from datetime import timedelta
 from unittest import mock
 
+from django.conf import settings
 from django.core import mail
 from django.core.cache import cache
 from django.test import TestCase, override_settings
@@ -153,6 +154,27 @@ class CreateQuoteRequestTests(QuoteApiTestCase):
         quote = QuoteRequest.objects.get()
         self.assertEqual((quote.hire_hours, quote.destination), (4, ""))
 
+    def post_from(self, forwarded_for):
+        with self.captureOnCommitCallbacks(execute=True):
+            return self.client.post(
+                URL, payload(), content_type="application/json", headers={"X-Forwarded-For": forwarded_for}
+            )
+
+    @override_settings(REST_FRAMEWORK={**settings.REST_FRAMEWORK, "NUM_PROXIES": 2})
+    @mock.patch("twilio.rest.Client")
+    def test_behind_proxies_the_forwarded_client_ip_is_stored(self, client):
+        client.return_value.messages.create.return_value = twilio_message()
+        # Cloudflare adds the visitor's IP, Nginx appends Cloudflare's.
+        self.assertEqual(self.post_from("203.0.113.5, 198.51.100.7").status_code, 201)
+        self.assertEqual(QuoteRequest.objects.get().ip_address, "203.0.113.5")
+
+    @mock.patch("twilio.rest.Client")
+    def test_without_proxies_a_forwarded_header_is_ignored(self, client):
+        client.return_value.messages.create.return_value = twilio_message()
+        # Nothing in front of Django: a client could write any X-Forwarded-For.
+        self.assertEqual(self.post_from("203.0.113.5").status_code, 201)
+        self.assertEqual(QuoteRequest.objects.get().ip_address, "127.0.0.1")
+
     @mock.patch("twilio.rest.Client")
     def test_van_takes_seven_passengers_and_eight_bags(self, client):
         client.return_value.messages.create.return_value = twilio_message()
@@ -278,8 +300,9 @@ class AlertConfigurationTests(QuoteApiTestCase):
 class AdminTests(QuoteApiTestCase):
     @mock.patch("twilio.rest.Client")
     def test_staff_can_list_open_and_resend(self, client):
-        from django.contrib.auth.models import User
+        from django.contrib.auth import get_user_model
 
+        User = get_user_model()
         client.return_value.messages.create.side_effect = TwilioRestException(
             400, "uri", msg="Not a WhatsApp number", code=63003
         )

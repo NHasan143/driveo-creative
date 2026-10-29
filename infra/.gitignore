@@ -1,0 +1,3 @@
+# Server-only files with secrets (templates: .env.example, backend.env.example).
+backend.env
+certs/

@@ -8,7 +8,7 @@
 > - **Last updated:** 2026-10-29
 > - **Current phase:** Phase 2, Backend API and admin, overlapping Phases 1, 3 and 4 (see [§6](#6-plan-phases-and-milestones))
 > - **Next milestone:** M2, ready to deploy (see [§6](#6-plan-phases-and-milestones))
-> - **Tracker totals:** 102 items · ✅ 45 done · 🟡 1 in progress · ⛔ 14 blocked · ⬜ 34 to do · 💤 7 later · ➖ 1 dropped · v1 progress ≈ 48 % · 13 launch blockers open
+> - **Tracker totals:** 110 items · ✅ 55 done · 🟡 1 in progress · ⛔ 14 blocked · ⬜ 31 to do · 💤 7 later · ➖ 2 dropped · v1 progress ≈ 55 % · 10 launch blockers open
 >
 > The [README](README.md) is the technical entry point (setup, commands, API contract, changelog).
 > This file is the project view. Update it in the same change as the work ([§14](#14-how-to-maintain-this-file)).
@@ -161,7 +161,8 @@ shared business logic.
 
 - Public website: marketing pages, quote request form, four languages, SEO, PWA install.
 - Shared Django REST API under `/api/v1`.
-- Content admin at `/admin` (services, fleet, cities, guide prices) and Django's admin for quote requests.
+- Content admin at `/admin` (services, fleet, cities, guide prices, customers, staff) and Django's admin for quote requests.
+- Customer accounts on the website: register, sign in, password reset, details, and the quote requests they sent (D-19).
 - Owner notifications: email and Twilio WhatsApp, with logging and retries.
 - Android and iOS apps (React + Capacitor) for browsing services and requesting quotes.
 - Hosting: Docker Compose on a Linux VPS behind Nginx and Cloudflare; CI/CD on GitHub Actions; database and files on Neon.
@@ -174,7 +175,7 @@ shared business logic.
 | Online card payments and automated invoicing | PRD-23 |
 | Live driver tracking or a driver app | PRD-24, PRD-22 |
 | Automatic instant pricing (v1 prices are quoted by a person) | PRD-19 |
-| Customer accounts and online booking management | PRD-20, PRD-21 |
+| Online booking management (modify, cancel) and corporate accounts | PRD-20, PRD-21 |
 | High-availability or multi-server infrastructure | — |
 | Third-party fees (hosting, Neon, email, Twilio, app stores): paid by the client | — |
 
@@ -193,11 +194,11 @@ The client shared a reference list for a full chauffeur platform. Each item is t
 | First Class (S-Class, 7 Series, A8) | PRD-07, PRD-14 | ✅ Built (S-Class) |
 | Business Van / SUV (V-Class, Escalade, Suburban; up to 5) | PRD-08, PRD-14 | 🟡 Mercedes VLE only, 7 passengers |
 | All-inclusive upfront pricing | PRD-10, PRD-15, PRD-19 | 🟡 Guide prices in progress; final prices quoted by hand |
-| Modify or cancel bookings on web and apps | PRD-20 | ⬜ Not started (💤 later phase) |
+| Modify or cancel bookings on web and apps | PRD-20, PRD-25 | 🟡 Customer accounts and request history built; modify/cancel later |
 | Carbon offset programme | PRD-16 | ⬜ Not started |
 | Professional standards (licensed, vetted, English-speaking; amenities) | PRD-17, PRD-18 | ✅ As website copy; preferences to do |
 
-**Summary: 4 of 12 built, 4 partly built, 4 not started.**
+**Summary: 4 of 12 built, 5 partly built, 3 not started.**
 
 ---
 
@@ -209,10 +210,13 @@ Android/iOS apps (planned) ──────┼──► Shared Django REST API
 Django admin (quote requests) ───┘          /api/v1           └──► Celery + Redis ──► Email · Twilio WhatsApp
 ```
 
-- **Hosting (planned):** Cloudflare (DNS, CDN, TLS) → Nginx → containers (Next.js, Django, Celery worker and beat, Redis) on one VPS.
+- **Hosting (`infra/docker-compose.yml`, not deployed yet):** two host names, the website (`SITE_HOST`) and the API
+  with Django's admin (`API_HOST`, e.g. `api.driveoexclusive.com`) (D-21). Cloudflare (DNS, CDN, TLS) → Nginx → containers (Next.js, Django, Celery worker and beat, Redis) on one VPS.
   The database and files live on Neon, not on the VPS.
 - **Website ↔ API:** the quote form posts to `/api/v1/quote-requests/`; the website reads published services from
   `/api/v1/content/published/` (cached about a minute, built-in copy as fallback).
+- **Customer accounts ↔ API:** the website's `/account` pages and the quote form use the same session cookie
+  and CSRF token as the admin (`/api/v1/account/`). A signed-in customer's quote request is linked to them.
 - **Content admin ↔ API:** with `NEXT_PUBLIC_ADMIN_CONTENT_SOURCE=api`, staff sign in (Django session cookie + CSRF token)
   and edit content in Postgres. Otherwise it is a browser-only demo.
 - **Full stack table, diagrams, API contract and setup:** [README.md](README.md).
@@ -231,7 +235,7 @@ Django admin (quote requests) ───┘          /api/v1           └──�
 
 | Environment | Website | API | Database (Neon branch) | State |
 | --- | --- | --- | --- | --- |
-| Local | http://localhost:3000 (`/admin` for the admin) | http://localhost:8000/api/v1 | `dev` (in `backend/.env.local`; expires 2026-11-02) | Working |
+| Local | http://localhost:3000 (`/admin` for the admin) | http://localhost:8000/api/v1 | `dev` (in `backend/.env.local`; expires 2026-11-05) | Working; no content loaded since the 2026-10-29 reset (ADM-09) |
 | Staging | — | — | its own branch (OPS-08) | Not set up |
 | Production | — | — | `production` (default branch; no content tables yet, API-10) | Not deployed |
 
@@ -285,7 +289,7 @@ The master list. Columns: **ID** · **Feature / task** · **Pri**ority · **Stat
 | PRD-07 | First Class (Mercedes S-Class; 4 passengers, 3 bags) | P1 | ✅ Done | 1 | — | |
 | PRD-08 | Business Van (Mercedes VLE; 7 passengers, 8 bags) | P1 | ✅ Done | 1 | — | SUVs: PRD-14 |
 | PRD-09 | Personal fixed-price quote request with `DRV-XXXXXX` reference | P0 | ✅ Done | 2 | — | Website form + API + Django admin. Alerts: NTF-01 to NTF-07 |
-| PRD-10 | Guide "From €X" prices per service, city and vehicle class | P1 | 🟡 In progress | 2 | — | Built: admin Prices grid, `ServicePrice` model (migrations 0002–0003), website "From" price, quote-form guide price. **Not committed yet.** Remaining: commit, client enters amounts |
+| PRD-10 | Guide "From €X" prices per service, city and vehicle class | P1 | 🟡 In progress | 2 | — | Built and committed (`4e62654`): admin Prices grid, `ServicePrice` model (migrations 0002–0003), website "From" price, quote-form guide price. Remaining: the client enters the amounts |
 | PRD-11 | Airport extras: name-sign wording and a flight-number field | P2 | ⬜ To do | 4 | — | Done when: copy mentions the name sign in 4 languages; the quote form and API have a flight-number field shown in alerts. Flight-status integration later |
 | PRD-12 | Hourly hire up to 24 hours | P2 | ⛔ Blocked | 4 | Q13 | Done when: the agreed maximum is applied in copy, quote form and API validation, with tests |
 | PRD-13 | City-to-city rides as its own service | P2 | ⬜ To do | 4 | ADM-08 | Done when: published from the admin with its own page and bookable in the quote form |
@@ -295,11 +299,12 @@ The master list. Columns: **ID** · **Feature / task** · **Pri**ority · **Stat
 | PRD-17 | Chauffeur standards copy (vetted, licensed, suited; car amenities) | P1 | ✅ Done | 1 | — | Operational promises, described on the website |
 | PRD-18 | "English-speaking" chauffeurs and passenger preferences (temperature, music, quiet ride) | P2 | ⬜ To do | 4 | — | Done when: copy updated where true; preferences are optional quote fields shown in alerts |
 | PRD-19 | Instant pricing: distance/time-based fixed price shown before booking | P3 | 💤 Later | 8 | Q5, Q12 | Needs pricing rules, a route/distance service and API-17 |
-| PRD-20 | Bookings and customer accounts: sign-in, booking status, modify or cancel on web and apps | P3 | 💤 Later | 8 | Q3, Q12, API-09 | Quote requests would become bookings |
+| PRD-20 | Booking management: bookings with a status, modify or cancel on web and apps | P3 | 💤 Later | 8 | Q12, PRD-25 | Accounts exist (PRD-25); quote requests would become bookings |
 | PRD-21 | Corporate accounts: company bookers, booking for guests, consolidated invoices, account manager | P3 | 💤 Later | 8 | PRD-20, PRD-23 | |
 | PRD-22 | On-demand chauffeur hailing (immediate pickups) | P3 | 💤 Later | 8 | Q12, PRD-24 | Needs live availability and dispatch |
 | PRD-23 | Online card payments and automated invoicing | P3 | 💤 Later | 8 | Q12 | Out of v1 scope |
 | PRD-24 | Driver app and live driver tracking | P3 | 💤 Later | 8 | Q12 | Out of v1 scope |
+| PRD-25 | Customer accounts: register, sign in, forgotten password, details, quote request history | P1 | ✅ Done | 2 | API-09 | Website `/account` pages (WEB-22) on `/api/v1/account/` (API-20). Signed-in quote requests are linked to the customer and the form fills in their details |
 
 ### 7.2 Website (`WEB`): `frontend/`
 
@@ -326,6 +331,7 @@ The master list. Columns: **ID** · **Feature / task** · **Pri**ority · **Stat
 | WEB-19 | Native-speaker review of FR, BG and AR copy | P1 | ⬜ To do | 1 | — | |
 | WEB-20 | Hourly-hire mileage note for cities outside London | P2 | ⛔ Blocked | 1 | Q6 | |
 | WEB-21 | Dynamic copyright year | P3 | ⬜ To do | 1 | — | `© 2026` is fixed in the dictionaries |
+| WEB-22 | Account pages in 4 languages: sign in, create account, forgot/reset password, My account; Account link in header (640px+) and footer; quote form pre-fill | P1 | ✅ Done | 4 | API-20 | `src/features/account/`. Copy needs the native-speaker review (WEB-19) |
 
 ### 7.3 Content admin (`ADM`): `frontend/src/admin/`, at `/admin`
 
@@ -342,6 +348,9 @@ The master list. Columns: **ID** · **Feature / task** · **Pri**ority · **Stat
 | ADM-09 | Load the website's original content into the production database | P0 | ⬜ To do | 5 | API-10 | The admin's "Load original content" button went with the settings screen. `POST /api/v1/content/import/` (superusers) still exists; add a management command or button |
 | ADM-10 | Warn about unsaved changes when moving between admin pages | P3 | ⬜ To do | 2 | — | Closing or reloading the tab already warns |
 | ADM-11 | Narrower editor permissions (Django groups) | P3 | ⬜ To do | 2 | — | Today any staff account edits all content |
+| ADM-12 | Customers screen: search, details, their quote requests, deactivate or reactivate | P1 | ✅ Done | 2 | API-20 | `/admin/customers`; links each request to Django's admin |
+| ADM-13 | Staff screen (superusers): add staff, make superuser, deactivate, set a password | P1 | ✅ Done | 2 | API-20 | `/admin/staff`; hidden from other staff |
+| ADM-14 | My account for staff: details and password | P2 | ✅ Done | 2 | API-20 | `/admin/account` |
 
 ### 7.4 Backend API (`API`): `backend/`
 
@@ -354,18 +363,20 @@ The master list. Columns: **ID** · **Feature / task** · **Pri**ority · **Stat
 | API-05 | Content API `/api/v1/content/` (services, vehicles, cities, reorder, snapshot, import, images, published) | P1 | ✅ Done | 2 | — | Translations as JSON per field; camelCase JSON |
 | API-06 | Staff sign-in API `/api/v1/auth/` (session cookie + CSRF, rate limited) | P0 | ✅ Done | 2 | — | Website and API must share a site (KI-08) |
 | API-07 | Security defaults: DRF deny-by-default, CORS allow-list, Secure cookies when `DEBUG` is off | P0 | ✅ Done | 2 | — | |
-| API-08 | Backend test suite (Django `TestCase`, run on a Neon test database) | P1 | ✅ Done | 2 | — | 79 tests (content 50, quotes 29). Last full green run: 2026-10-26 (69 tests); rerun after PRD-10 |
-| API-09 | Custom user model (`AUTH_USER_MODEL`) | P0 | ⬜ To do | 2 | — | Do it before the first real user; `production` has none, `dev` has one test superuser |
-| API-10 | Apply all migrations on the `production` branch (`migrate --database direct`) | P0 | ⬜ To do | 5 | API-09 | Content migrations 0001–0003 are only on `dev` |
-| API-11 | Settings split (development / production) | P1 | ⬜ To do | 2 | — | |
-| API-12 | Backend Dockerfile (web, Celery worker and beat) | P0 | ⬜ To do | 5 | — | |
+| API-08 | Backend test suite (Django `TestCase`, run on a Neon test database) | P1 | ✅ Done | 2 | — | 114 tests across `account`, `content`, `core` and `quotes`, all passing on 2026-10-29 in the conda env `driveexclusive`. Long runs on Neon can lose the database connection midway (KI-16); rerun the failed tests |
+| API-09 | Custom user model (`AUTH_USER_MODEL`) | P0 | ✅ Done | 2 | — | `account.User` (app `backend/account/`) on Django's `auth_user` table, 32-bit id, email unique ignoring case. Existing databases switch with `manage.py adopt_custom_user` once, then `migrate`. Done on `dev` 2026-10-29; `production` is part of API-10 |
+| API-10 | Apply all migrations on the `production` branch (`migrate --database direct`) | P0 | ⬜ To do | 5 | API-09 | Steps: `adopt_custom_user`, then `migrate --database direct` (account 0002, content 0001–0003). Rehearsed on `dev` (a copy of `production`) on 2026-10-29 |
+| API-11 | Settings split (development / production) | P1 | ➖ Dropped | 2 | — | Dropped 2026-10-29 (D-20): one settings file, production set by environment variables |
+| API-12 | Backend Dockerfile (web, Celery worker and beat) | P0 | ✅ Done | 5 | — | Done 2026-10-29: `backend/Dockerfile`, `gunicorn.conf.py`, `.dockerignore`. Built (469 MB) and run against `dev`: healthy, non-root, no secret files, Celery app loads; with production variables it redirects to HTTPS, sends HSTS and Secure cookies, and serves admin static files |
 | API-13 | ruff linting and pytest | P2 | ⬜ To do | 2 | — | |
-| API-14 | Production HTTPS settings: HSTS, `SECURE_PROXY_SSL_HEADER`, real client IP and shared Redis cache for rate limits | P0 | ⬜ To do | 5 | OPS-05 | See KI-03 |
+| API-14 | Production HTTPS settings: HSTS, `SECURE_PROXY_SSL_HEADER`, real client IP and shared Redis cache for rate limits | P0 | ✅ Done | 5 | — | Done 2026-10-29, all opt-in through environment variables (README "Backend production settings"), plus WhiteNoise for admin static files and console logging. The production values are set when OPS-04/OPS-05 deploy |
 | API-15 | Dependency audit (pip and npm) | P1 | ⬜ To do | 5 | — | |
 | API-16 | OpenAPI schema (drf-spectacular) linked from the README | P2 | ⬜ To do | 2 | — | |
 | API-17 | Data model for Customer, Booking, PricingRule, Availability | P3 | 💤 Later | 8 | Q3, Q5, Q12 | Basis for PRD-19 to PRD-21 |
 | API-18 | Delete content photos from the bucket when no record uses them | P3 | ⬜ To do | 2 | — | |
 | API-19 | Remove (or reuse) the unused `SiteSettings` model and endpoint | P3 | ⬜ To do | 2 | — | Left over from ADM-07 |
+| API-20 | Accounts API: `/api/v1/account/` (customers) and `/api/v1/staff/` (customers list, staff accounts) | P1 | ✅ Done | 2 | API-09 | Session cookie + CSRF, rate-limited sign-in, registration and reset; Django password validators |
+| API-21 | Send password-reset emails through Celery instead of inside the request | P3 | ⬜ To do | 5 | NTF-03 | A slow SMTP server only delays that one response today; failures are logged |
 
 ### 7.5 Notifications (`NTF`)
 
@@ -386,13 +397,14 @@ The master list. Columns: **ID** · **Feature / task** · **Pri**ority · **Stat
 | OPS-01 | Frontend CI/CD workflows (lint, typecheck, build, Docker check; GHCR image; SSH deploy) | P1 | ✅ Done | 5 | — | Deploy job is paused in `frontend-deploy.yml` |
 | OPS-02 | Activate CI/CD: production environment and secrets, branch protection, resume deploy | P0 | ⬜ To do | 5 | OPS-05 | |
 | OPS-03 | Backend CI workflow (tests) | P1 | ⬜ To do | 5 | — | Tests need a Neon test database or a Postgres service |
-| OPS-04 | Docker Compose stack: frontend, backend, worker, beat, Redis, Nginx, health checks | P0 | ⬜ To do | 5 | API-12 | |
+| OPS-04 | Docker Compose stack: frontend, backend, worker, beat, Redis, Nginx, health checks | P0 | ✅ Done | 5 | API-12 | Done 2026-10-29: `infra/` (compose, Nginx template, env templates, build override). Run locally end to end. On the server it needs OPS-05 (host, domain, certificate) |
 | OPS-05 | VPS, production domain, Cloudflare DNS/TLS and security headers | P0 | ⛔ Blocked | 5 | Q4 | |
 | OPS-06 | Backups: Neon history retention, snapshots, a tested restore | P0 | ⬜ To do | 5 | Q11 | |
 | OPS-07 | Monitoring: uptime checks, error tracking, central logs, alerts | P1 | ⬜ To do | 5 | OPS-05 | |
 | OPS-08 | Staging environment on its own Neon branch | P2 | ⬜ To do | 5 | OPS-04 | |
-| OPS-09 | Neon `dev` branch for local work | P1 | ✅ Done | 2 | — | Created 2026-10-26, expires 2026-11-02: recreate with `neon checkout dev --create`, then migrate |
+| OPS-09 | Neon `dev` branch for local work | P1 | ✅ Done | 2 | — | Created 2026-10-26; reset from `production` 2026-10-29; expires 2026-11-05. Recreate with `neon checkout dev --create`, then `adopt_custom_user` and `migrate` |
 | OPS-10 | Neon account ownership and paid plan for production | P1 | ⛔ Blocked | 5 | Q11 | |
+| OPS-11 | Publish the backend image to GHCR and deploy it (workflow like `frontend-deploy.yml`) | P0 | ⬜ To do | 5 | OPS-03 | `infra/docker-compose.yml` pulls `ghcr.io/nhasan143/driveo-backend:production`, which nothing publishes yet. Stopgap: build on the server with `docker-compose.build.yml` |
 
 ### 7.7 Mobile apps (`MOB`): `mobile/`
 
@@ -423,17 +435,17 @@ It counts items, not effort: the remaining items include the larger ones (deploy
 
 | Area | Progress | ✅ Done | 🟡 In progress | ⛔ Blocked | ⬜ To do | 💤 Later | ➖ Dropped | Total |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Product features (`PRD`) | ██████████░░░░░░░░ 58 % | 10 | 1 | 4 | 3 | 6 | 0 | 24 |
-| Website (`WEB`) | █████████░░░░░░░░░ 52 % | 11 | 0 | 3 | 7 | 0 | 0 | 21 |
-| Content admin (`ADM`) | ███████████░░░░░░░ 60 % | 6 | 0 | 1 | 3 | 0 | 1 | 11 |
-| Backend API (`API`) | ████████░░░░░░░░░░ 44 % | 8 | 0 | 0 | 10 | 1 | 0 | 19 |
+| Product features (`PRD`) | ███████████░░░░░░░ 61 % | 11 | 1 | 4 | 3 | 6 | 0 | 25 |
+| Website (`WEB`) | ██████████░░░░░░░░ 55 % | 12 | 0 | 3 | 7 | 0 | 0 | 22 |
+| Content admin (`ADM`) | ████████████░░░░░░ 69 % | 9 | 0 | 1 | 3 | 0 | 1 | 14 |
+| Backend API (`API`) | ███████████░░░░░░░ 63 % | 12 | 0 | 0 | 7 | 1 | 1 | 21 |
 | Notifications (`NTF`) | ██████████░░░░░░░░ 57 % | 4 | 0 | 2 | 1 | 0 | 0 | 7 |
-| Infrastructure (`OPS`) | ████░░░░░░░░░░░░░░ 20 % | 2 | 0 | 2 | 6 | 0 | 0 | 10 |
+| Infrastructure (`OPS`) | █████░░░░░░░░░░░░░ 27 % | 3 | 0 | 2 | 6 | 0 | 0 | 11 |
 | Mobile apps (`MOB`) | ░░░░░░░░░░░░░░░░░░ 0 % | 0 | 0 | 1 | 2 | 0 | 0 | 3 |
 | Docs and PM (`DOC`) | ██████████░░░░░░░░ 57 % | 4 | 0 | 1 | 2 | 0 | 0 | 7 |
-| **All** | █████████░░░░░░░░░ **48 %** | **45** | **1** | **14** | **34** | **7** | **1** | **102** |
+| **All** | ██████████░░░░░░░░ **55 %** | **55** | **1** | **14** | **31** | **7** | **2** | **110** |
 
-**Open launch blockers (P0 not done): 13** · WEB-13, ADM-09, API-09, API-10, API-12, API-14, NTF-03, NTF-05, NTF-07, OPS-02, OPS-04, OPS-05, OPS-06
+**Open launch blockers (P0 not done): 10** · WEB-13, ADM-09, API-10, NTF-03, NTF-05, NTF-07, OPS-02, OPS-05, OPS-06, OPS-11
 
 ### What works today
 
@@ -457,6 +469,11 @@ It counts items, not effort: the remaining items include the larger ones (deploy
 
 ### Recently completed
 
+- 2026-10-29: Production stack (OPS-04) in `infra/`, run locally end to end; found and fixed Nginx 502s after container restarts, Django's redirect breaking internal API calls, and Compose mangling `$` in the secret key.
+- 2026-10-29: Backend Docker image (API-12): one image for API, worker and scheduler, built and checked against `dev`, including production settings.
+- 2026-10-29: Production settings (API-14): proxy HTTPS header, HTTPS redirect, HSTS, real client IP, shared Redis cache, WhiteNoise, logging. `check --deploy` passes apart from the missing SMTP (NTF-03) and deliberate HSTS switches. API-11 dropped (D-20).
+- 2026-10-29: Customer and staff accounts (PRD-25, API-20, WEB-22, ADM-12 to ADM-14): website account pages in 4 languages, quote requests linked to customers, admin Customers, Staff and My account screens. 109 backend tests pass.
+- 2026-10-29: Custom user model `account.User` with case-insensitive unique email, and the `adopt_custom_user` switch-over command (API-09). `dev` reset to a copy of `production` and switched over as a rehearsal for API-10.
 - 2026-10-29: This file restructured into one tracker (IDs, priorities, statuses, milestones).
 - 2026-10-28: Client's target feature list added (PRD-11 to PRD-24); backend packages installed in the conda environment `driveexclusive`.
 - 2026-10-27: Website reads services from the API (WEB-11); site settings screen dropped (ADM-07); admin dashboard redesigned; guide prices built (PRD-10, uncommitted).
@@ -474,16 +491,13 @@ In order. If an item is blocked, take the next one.
 
 | # | ID | Task | Why now |
 | --- | --- | --- | --- |
-| 1 | PRD-10 | Commit guide prices; rerun the backend tests | Finished work sitting uncommitted |
-| 2 | API-09 | Custom user model | Must happen before the first real user (M2) |
-| 3 | API-10, ADM-09 | Migrate `production`; add a way to load the original content | The production database is empty (M2) |
-| 4 | WEB-12 | Website reads fleet and cities from the API | Admin edits otherwise don't show (Phase 4) |
-| 5 | API-12, OPS-04 | Backend Dockerfile and Compose stack | Deployment path (M2) |
-| 6 | API-14, API-11 | Production settings | Deployment path (M2) |
-| 7 | Client | Answer Q1, Q2, Q4, Q7 | They block the P0 items NTF-03, NTF-05, OPS-05 and WEB-13 |
-| 8 | OPS-02, OPS-03 | Activate CI/CD; backend CI | Quality gate before launch |
-| 9 | WEB-15, WEB-16, WEB-17 | Performance, tests, accessibility | O1 and O7 before launch |
-| 10 | Client | Answer Q12–Q14 | Unblocks the quick wins PRD-11 to PRD-15 and PRD-18, and the Phase 8 plan |
+| 1 | API-10, ADM-09 | Migrate `production`; add a way to load the original content | The production database is empty (M2) |
+| 2 | WEB-12 | Website reads fleet and cities from the API | Admin edits otherwise don't show (Phase 4) |
+| 3 | OPS-05 → OPS-02 | Server, domain, certificate; then turn on deploys | The stack is ready to run (M2) |
+| 4 | Client | Answer Q1, Q2, Q4, Q7 | They block the P0 items NTF-03, NTF-05, OPS-05 and WEB-13 |
+| 5 | OPS-02, OPS-03 | Activate CI/CD; backend CI | Quality gate before launch |
+| 6 | WEB-15, WEB-16, WEB-17 | Performance, tests, accessibility | O1 and O7 before launch |
+| 7 | Client | Answer Q12–Q14 | Unblocks the quick wins PRD-11 to PRD-15 and PRD-18, and the Phase 8 plan |
 
 ---
 
@@ -511,18 +525,20 @@ In order. If an item is blocked, take the next one.
 | --- | --- | --- |
 | KI-01 | No automated dependency updates since Dependabot was removed. Run `npm outdated` monthly; align `@types/node` (`^20`) with Node 24 | API-15 |
 | KI-02 | Large hero videos (≈3.4 MB and ≈9.9 MB) are slow on mobile data | WEB-15 |
-| KI-03 | Rate limits use the connecting IP and a per-process cache; behind Nginx/Cloudflare they need the real client IP and a shared Redis cache | API-14 |
+| KI-03 | Rate limits need `DRF_NUM_PROXIES` and `CACHE_REDIS_URL` set in production; without them every visitor shares Nginx's IP and each web worker counts separately (the settings exist since API-14) | OPS-04 |
 | KI-04 | Production WhatsApp alerts need a Meta-approved template; free-form messages only work in the sandbox or within 24 hours | NTF-05 |
 | KI-05 | The testimonial is the design's sample quote | WEB-18 |
 | KI-06 | Uploaded content photos are never deleted from the bucket | API-18 |
 | KI-07 | Any staff account can edit all content; only superusers can import | ADM-11 |
-| KI-08 | Staff sign-in needs the website and API on one site (e.g. `driveoexclusive.com` + `api.driveoexclusive.com`), or browsers won't send the session cookie | OPS-05 |
-| KI-09 | The `dev` Neon branch expires on 2026-11-02 with its data (test superuser, content, test photo) | OPS-09 |
-| KI-10 | Python environments: use `backend/.venv` (Python 3.12) or the conda env `driveexclusive` (Python 3.15; tests not yet run there). Base Anaconda has Django 4.2 and fails with `No module named 'dj_database_url'` | — |
+| KI-08 | Staff and customer sign-in need the website and API on one site; the stack's two host names (`driveoexclusive.com` + `api.driveoexclusive.com`) satisfy this. Don't move the API to an unrelated domain | OPS-05 |
+| KI-09 | The `dev` Neon branch expires on 2026-11-05 with its data (test superuser `devadmin`; no content since the 2026-10-29 reset) | OPS-09 |
+| KI-10 | Python environments: `backend/.venv` (Python 3.12) or the conda env `driveexclusive` (Python 3.15; all tests pass there). Base Anaconda has Django 4.2 and fails with `No module named 'dj_database_url'`. `.claude/launch.json` has `backend-conda` | — |
 | KI-11 | The Neon CLI must be signed in to org `org-super-hill-79285047`; the user-level Neon MCP key belongs to another org, so `.mcp.json` pins this project | — |
 | KI-12 | Arabic headings fall back to Noto Kufi Arabic (Fraunces has no Arabic glyphs); needs a designer review | WEB-19 |
 | KI-13 | The copyright year is fixed in the dictionaries | WEB-21 |
 | KI-14 | Unused `SiteSettings` model and `/api/v1/content/settings/` endpoint after the settings screen was dropped | API-19 |
+| KI-15 | One session per browser: the website, its admin and Django's admin share the session cookie, so signing in to one as a different person signs the other out | — |
+| KI-16 | A full test run takes ~7 minutes against Neon; Neon sometimes closes the connection midway, failing the rest of one test class with `the connection is closed`. Rerunning those tests passes. Backend CI should retry or use a local Postgres | OPS-03 |
 
 ---
 
@@ -532,6 +548,9 @@ Newest first. The README has the same log for developers; keep both in sync.
 
 | ID | Date | Decision | Why | Alternatives considered |
 | --- | --- | --- | --- | --- |
+| D-21 | 2026-10-29 | The website and the API get separate host names (`driveoexclusive.com`, `api.driveoexclusive.com`); Nginx routes by host. Behind it Django's own HTTPS redirect is off | Django's admin (`/admin/`) and the website's content admin (`/admin`) would collide on one domain; a subdomain keeps sign-in cookies same-site. The redirect broke the website's internal calls to the API | One domain with `/api` routing and Django's admin moved to another path |
+| D-20 | 2026-10-29 | One settings file for every environment; production switches (HTTPS, proxies, cache) are environment variables, all off by default. API-11 dropped | Twelve-factor style; no settings module to keep in sync; local runs need no extra variables | `config/settings/{base,development,production}.py` |
+| D-19 | 2026-10-29 | Customers get accounts in v1 (register, sign in, quote history), on the same Django users and session mechanism as staff. Booking management stays later (PRD-20) | Answers Q3. Returning clients find their requests and skip retyping details; one user table and one sign-in mechanism to secure | Anonymous requests only; a separate customer identity service (e.g. Neon Auth) |
 | D-18 | 2026-10-28 | The client's target feature list is tracked as PRD-11 to PRD-24; items outside v1 scope stay 💤 until Q12 | Keeps v1 shippable while recording what the client wants | Adding everything to v1 |
 | D-17 | 2026-10-27 | Guide prices in euros per service, city and vehicle class (hourly hire per hour), shown as "from" prices; the final price is still quoted by hand | Answers Q5 in part: customers see a starting point without automatic pricing | Instant pricing (PRD-19) |
 | D-16 | 2026-10-27 | No site settings screen in the admin; site information stays in `frontend/src/config/site.ts` | Rarely changes; simpler admin | A settings screen (built, then dropped: ADM-07) |
@@ -559,7 +578,7 @@ Newest first. The README has the same log for developers; keep both in sync.
 | --- | --- | --- | --- | --- |
 | Q1 | Who receives quote alerts (email addresses, WhatsApp number)? | NTF-05 | Client | Open |
 | Q2 | Which email provider and sender domain? | NTF-03 | Client + dev | Open |
-| Q3 | Do customers need accounts in v1, or only anonymous requests? | PRD-20, API-17 | Client | Open |
+| Q3 | Do customers need accounts in v1, or only anonymous requests? | PRD-25, API-17 | Client | Answered 2026-10-29: yes, accounts (D-19); anonymous requests still work |
 | Q4 | Production domain, VPS provider and Cloudflare access | OPS-05 | Client | Open |
 | Q5 | Pricing: what may the system calculate vs. what is always quoted by hand? | PRD-19 | Client | Partly answered (D-17); amounts still to be entered |
 | Q6 | Hourly-hire mileage allowance outside London | WEB-20 | Client | Open |

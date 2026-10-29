@@ -53,6 +53,7 @@ class QuoteRequestAdmin(admin.ModelAdmin):
         "luggage",
         "notes",
         "locale",
+        "customer",
         "ip_address",
         "created_at",
         "updated_at",
@@ -62,7 +63,7 @@ class QuoteRequestAdmin(admin.ModelAdmin):
         (None, {"fields": ["reference", "status", "staff_notes"]}),
         (
             "Customer",
-            {"fields": ["first_name", "last_name", "email", "phone", "locale", "reply"]},
+            {"fields": ["first_name", "last_name", "email", "phone", "locale", "customer", "reply"]},
         ),
         (
             "Journey",

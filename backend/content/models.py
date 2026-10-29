@@ -20,6 +20,9 @@ DEFAULT_LOCALE = "en"
 
 SERVICE_ICONS = ("plane", "route", "clock", "sparkles", "briefcase", "heart", "map", "star")
 
+# What a service's guide prices are for: one journey, or one hour (hourly hire).
+PRICE_UNITS = ("trip", "hour")
+
 
 def empty_localized():
     return {locale: "" for locale in LOCALES}
@@ -85,6 +88,7 @@ class Service(Entry):
     )
     seo_title = models.JSONField(default=empty_localized)
     seo_description = models.JSONField(default=empty_localized)
+    price_unit = models.CharField(max_length=4, choices=[(unit, unit) for unit in PRICE_UNITS], default="trip")
 
     class Meta(Entry.Meta):
         pass
@@ -110,6 +114,25 @@ class City(Entry):
 
     class Meta(Entry.Meta):
         verbose_name_plural = "cities"
+
+
+class ServicePrice(models.Model):
+    """A guide price in euros for one service with one vehicle class in one city.
+
+    The website shows it as a "from" price; customers still get a fixed quote.
+    Deleting the city or vehicle removes its prices.
+    """
+
+    service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name="prices")
+    city = models.ForeignKey(City, on_delete=models.CASCADE, related_name="service_prices")
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name="service_prices")
+    amount = models.DecimalField(max_digits=8, decimal_places=2)
+
+    class Meta:
+        ordering = ["pk"]
+        constraints = [
+            models.UniqueConstraint(fields=["service", "city", "vehicle"], name="unique_service_price"),
+        ]
 
 
 class SiteSettings(models.Model):

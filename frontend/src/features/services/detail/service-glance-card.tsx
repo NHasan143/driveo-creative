@@ -1,15 +1,20 @@
 import { serviceIcons } from "@/components/icons/service-icons";
+import { FromPrice } from "@/components/ui/from-price";
 import { RequestQuoteButton } from "@/features/quote";
+import type { Locale } from "@/i18n/config";
+import type { Dictionary } from "@/i18n/get-dictionary";
 import type { SiteService } from "@/lib/content/site-services";
 
 interface ServiceGlanceCardProps {
   service: SiteService;
   heading: string;
   cta: string;
+  locale: Locale;
+  pricing: Dictionary["pricing"];
 }
 
 /** Frosted summary card floated in the hero: three key facts and a quote action. */
-export function ServiceGlanceCard({ service, heading, cta }: ServiceGlanceCardProps) {
+export function ServiceGlanceCard({ service, heading, cta, locale, pricing }: ServiceGlanceCardProps) {
   const Icon = serviceIcons[service.icon];
 
   return (
@@ -21,6 +26,7 @@ export function ServiceGlanceCard({ service, heading, cta }: ServiceGlanceCardPr
         </span>
       </div>
       <p className="mt-3 font-display text-2xl">{service.title}</p>
+      <FromPrice amount={service.fromPrice} unit={service.priceUnit} locale={locale} labels={pricing} className="mt-2" />
 
       <dl className="mt-6 grid gap-4 border-t border-border pt-5">
         {service.facts.slice(0, 3).map((fact) => (

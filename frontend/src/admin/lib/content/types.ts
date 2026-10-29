@@ -33,6 +33,20 @@ interface Entity {
 export const SERVICE_ICONS = ["plane", "route", "clock", "sparkles", "briefcase", "heart", "map", "star"] as const;
 export type ServiceIcon = (typeof SERVICE_ICONS)[number];
 
+/** Guide prices are per journey, or per hour for hourly hire. */
+export const PRICE_UNITS = ["trip", "hour"] as const;
+export type PriceUnit = (typeof PRICE_UNITS)[number];
+
+/** Every guide price is in euros. */
+export const PRICE_CURRENCY = "EUR";
+
+/** A guide price for a service with one vehicle class in one city. */
+export interface ServicePrice {
+  cityId: string;
+  vehicleId: string;
+  amount: number;
+}
+
 export interface Fact {
   value: LocalizedText;
   label: LocalizedText;
@@ -64,6 +78,9 @@ export interface Service extends Entity {
   vehicleIds: string[];
   seoTitle: LocalizedText;
   seoDescription: LocalizedText;
+  priceUnit: PriceUnit;
+  /** Shown on the website as "from" prices; customers still get a fixed quote. */
+  prices: ServicePrice[];
 }
 
 export interface Vehicle extends Entity {

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { imageSchema, localized, slugSchema, statusSchema } from "@/admin/lib/content/schemas";
-import { emptyLocalized, SERVICE_ICONS, type Service } from "@/admin/lib/content/types";
+import { emptyLocalized, PRICE_UNITS, SERVICE_ICONS, type Service } from "@/admin/lib/content/types";
 import type { Draft } from "@/admin/lib/content/repository";
 
 const titledCopy = z.object({ title: localized(80), copy: localized(220) });
@@ -25,6 +25,17 @@ export const serviceSchema = z.object({
   vehicleIds: z.array(z.string()),
   seoTitle: localized(70, { optional: true }),
   seoDescription: localized(170, { optional: true }),
+  priceUnit: z.enum(PRICE_UNITS),
+  prices: z.array(
+    z.object({
+      cityId: z.string(),
+      vehicleId: z.string(),
+      amount: z
+        .number({ error: "Enter a price in euros, or leave it empty." })
+        .min(1, "Enter a price of at least €1, or leave it empty.")
+        .max(100_000, "Keep prices under €100,000."),
+    }),
+  ),
 });
 
 export type ServiceFormValues = z.infer<typeof serviceSchema>;
@@ -53,6 +64,8 @@ export function toServiceForm(service: Service | null): ServiceFormValues {
     vehicleIds: [],
     seoTitle: emptyLocalized(),
     seoDescription: emptyLocalized(),
+    priceUnit: "trip",
+    prices: [],
   };
 }
 

@@ -168,6 +168,14 @@ export const en = {
       please_advise: "Please advise",
     },
   },
+  pricing: {
+    from: "From {price}",
+    perHour: "per hour",
+    perJourney: "per journey",
+    guide: "Guide price",
+    guideNote: "A guide for this car and city. Your fixed price is confirmed in writing.",
+    guideHours: "{price} for {hours} hours",
+  },
   testimonial: {
     eyebrow: "In their words",
     quote:

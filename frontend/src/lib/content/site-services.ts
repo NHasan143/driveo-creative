@@ -2,10 +2,10 @@ import "server-only";
 
 import { cacheLife, cacheTag } from "next/cache";
 import { seed } from "@/admin/lib/content/seed";
-import type { LocalizedText, Service, ServiceIcon } from "@/admin/lib/content/types";
+import type { LocalizedText, PriceUnit, Service, ServiceIcon } from "@/admin/lib/content/types";
 import { env } from "@/config/env";
 import { serviceMedia } from "@/config/services";
-import { FLEET_VEHICLES, SERVICE_TYPES, type FleetVehicle, type ServiceType } from "@/domain/booking";
+import { CITIES, FLEET_VEHICLES, SERVICE_TYPES, type City, type FleetVehicle, type ServiceType } from "@/domain/booking";
 import type { Locale } from "@/i18n/config";
 
 /**
@@ -45,6 +45,9 @@ export interface SiteService {
   vehicles: FleetVehicle[];
   seoTitle: string;
   seoDescription: string;
+  /** Lowest guide price in euros across published cities and vehicles; null when none is set. */
+  fromPrice: number | null;
+  priceUnit: PriceUnit;
 }
 
 /** API base for server-side requests; inside Docker this can be an internal address. */
@@ -114,6 +117,8 @@ function toSiteService(service: Service, locale: Locale): SiteService {
     vehicles: vehicles.length > 0 ? vehicles : [...FLEET_VEHICLES],
     seoTitle: pick(service.seoTitle, locale) || pick(service.title, locale),
     seoDescription: pick(service.seoDescription, locale) || pick(service.summary, locale),
+    fromPrice: service.prices?.length ? Math.min(...service.prices.map((price) => price.amount)) : null,
+    priceUnit: service.priceUnit ?? "trip",
   };
 }
 
@@ -136,4 +141,26 @@ export interface NavService {
 
 export function toNavServices(services: SiteService[]): NavService[] {
   return services.map(({ slug, path, title, icon }) => ({ slug, path, title, icon }));
+}
+
+/** A guide price key for the quote form, e.g. "london:first_class". */
+export type GuidePriceKey = `${City}:${FleetVehicle}`;
+
+/** Guide prices per quote-form service, for the cities and vehicles the form offers. Plain data for the client. */
+export type GuidePrices = Partial<Record<ServiceType, { unit: PriceUnit; amounts: Partial<Record<GuidePriceKey, number>> }>>;
+
+export async function getGuidePrices(): Promise<GuidePrices> {
+  const guide: GuidePrices = {};
+  for (const service of await loadPublishedServices()) {
+    const type = bookingTypeOf(service.id);
+    if (!type) continue;
+    const amounts: Partial<Record<GuidePriceKey, number>> = {};
+    for (const price of service.prices ?? []) {
+      const city = CITIES.find((id) => id === price.cityId);
+      const vehicle = FLEET_VEHICLES.find((id) => id === price.vehicleId);
+      if (city && vehicle) amounts[`${city}:${vehicle}`] = price.amount;
+    }
+    guide[type] = { unit: service.priceUnit ?? "trip", amounts };
+  }
+  return guide;
 }

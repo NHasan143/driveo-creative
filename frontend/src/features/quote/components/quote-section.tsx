@@ -2,7 +2,8 @@ import { BrandMark } from "@/components/brand/brand-mark";
 import { Reveal } from "@/components/motion/reveal";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import type { Locale } from "@/i18n/config";
-import type { Dictionary } from "@/i18n/get-dictionary";
+import { getDictionary, type Dictionary } from "@/i18n/get-dictionary";
+import { getGuidePrices } from "@/lib/content/site-services";
 import { QUOTE_SECTION_ID } from "../quote-preset-context";
 import { QuoteForm } from "./quote-form";
 import styles from "./quote-section.module.css";
@@ -13,7 +14,9 @@ interface QuoteSectionProps {
   cityNames: Dictionary["cities"]["names"];
 }
 
-export function QuoteSection({ locale, quote, cityNames }: QuoteSectionProps) {
+export async function QuoteSection({ locale, quote, cityNames }: QuoteSectionProps) {
+  const [{ pricing }, guidePrices] = await Promise.all([getDictionary(locale), getGuidePrices()]);
+
   return (
     <section id={QUOTE_SECTION_ID} className={styles.band}>
       <div className={styles.orbit} aria-hidden="true">
@@ -40,7 +43,13 @@ export function QuoteSection({ locale, quote, cityNames }: QuoteSectionProps) {
         </Reveal>
 
         <Reveal y={56}>
-          <QuoteForm locale={locale} labels={quote} cityNames={cityNames} />
+          <QuoteForm
+            locale={locale}
+            labels={quote}
+            cityNames={cityNames}
+            pricing={pricing}
+            guidePrices={guidePrices}
+          />
         </Reveal>
       </div>
     </section>

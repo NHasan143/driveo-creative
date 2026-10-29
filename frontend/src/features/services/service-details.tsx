@@ -1,6 +1,7 @@
 import { Plus } from "lucide-react";
 import { ArrowLink } from "@/components/ui/arrow-link";
 import { CheckList } from "@/components/ui/check-list";
+import { FromPrice } from "@/components/ui/from-price";
 import { RequestQuoteButton } from "@/features/quote";
 import { localePath, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/get-dictionary";
@@ -13,10 +14,11 @@ interface ServiceDetailsProps {
   services: SiteService[];
   page: Dictionary["pages"]["services"];
   viewDetails: string;
+  pricing: Dictionary["pricing"];
 }
 
 /** Factual service details and booking actions follow the photographic gallery. */
-export function ServiceDetails({ locale, title, services, page, viewDetails }: ServiceDetailsProps) {
+export function ServiceDetails({ locale, title, services, page, viewDetails, pricing }: ServiceDetailsProps) {
   return (
     <section className={styles.collection} aria-labelledby="service-collection-title">
       <div className={styles.collectionInner}>
@@ -35,6 +37,7 @@ export function ServiceDetails({ locale, title, services, page, viewDetails }: S
               <h3 id={`${item.slug}-title`} className={styles.serviceTitle}>{item.title}</h3>
               <div>
                 <p className={styles.copy}>{item.summary}</p>
+                <FromPrice amount={item.fromPrice} unit={item.priceUnit} locale={locale} labels={pricing} className="mt-4" />
                 <div className={styles.actions}>
                 <ArrowLink href={localePath(locale, item.path)} className={styles.detailsLink}>
                   {viewDetails}

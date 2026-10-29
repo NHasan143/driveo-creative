@@ -1,39 +1,75 @@
 # Project Context: Driveo Exclusive Platform
 
-> **Read this first.** This file is the single place to understand the project: what we are building,
-> why, how, where it stands, and what comes next. It is written for anyone joining the project:
-> developers, designers, the client, or an AI assistant picking up the work.
+> **Read this first.** This is the single file for tracking the project: what we are building and why,
+> the plan, every feature and task with its ID, priority and status, progress, risks, decisions and
+> open questions. It is written for anyone joining the project: developers, designers, the client, or
+> a coding agent picking up the work.
 >
-> - **Last updated:** 2026-10-26
-> - **Current phase:** Phase 1, Website frontend (≈ 85 % done), overlapping with Phase 2, Backend (started)
-> - **Next milestone:** Configure real alert recipients, SMTP and Twilio (Q1, Q2), then the backend foundation fixes and deployment
+> - **Last updated:** 2026-10-29
+> - **Current phase:** Phase 2, Backend API and admin, overlapping Phases 1, 3 and 4 (see [§6](#6-plan-phases-and-milestones))
+> - **Next milestone:** M2, ready to deploy (see [§6](#6-plan-phases-and-milestones))
+> - **Tracker totals:** 102 items · ✅ 45 done · 🟡 1 in progress · ⛔ 14 blocked · ⬜ 34 to do · 💤 7 later · ➖ 1 dropped · v1 progress ≈ 48 % · 13 launch blockers open
 >
-> The [README](README.md) is the technical entry point (setup, commands, architecture).
-> This file is the narrative: goals, plan, progress, risks and decisions.
-> Update it whenever any of those change (see [§14](#14-how-to-maintain-this-file)).
+> The [README](README.md) is the technical entry point (setup, commands, API contract, changelog).
+> This file is the project view. Update it in the same change as the work ([§14](#14-how-to-maintain-this-file)).
 
 ---
 
 ## Table of contents
 
-1. [The business](#1-the-business)
-2. [The problem and the aim](#2-the-problem-and-the-aim)
-3. [Objectives and success criteria](#3-objectives-and-success-criteria)
+1. [How to use this file](#1-how-to-use-this-file)
+2. [Project information](#2-project-information)
+3. [Problem, aims and success criteria](#3-problem-aims-and-success-criteria)
 4. [Scope](#4-scope)
-5. [Project history](#5-project-history)
-6. [The solution at a glance](#6-the-solution-at-a-glance)
-7. [Plan: phases and roadmap](#7-plan-phases-and-roadmap)
-8. [Work objectives by workstream](#8-work-objectives-by-workstream)
-9. [Current progress](#9-current-progress)
-10. [Risks, concerns and known issues](#10-risks-concerns-and-known-issues)
-11. [Decisions made](#11-decisions-made)
-12. [Open questions and blockers](#12-open-questions-and-blockers)
+5. [Solution and architecture](#5-solution-and-architecture)
+6. [Plan: phases and milestones](#6-plan-phases-and-milestones)
+7. [Feature and task tracker](#7-feature-and-task-tracker)
+8. [Progress](#8-progress)
+9. [Next up](#9-next-up)
+10. [Risks and known issues](#10-risks-and-known-issues)
+11. [Decisions](#11-decisions)
+12. [Open questions](#12-open-questions)
 13. [Reference](#13-reference)
 14. [How to maintain this file](#14-how-to-maintain-this-file)
 
 ---
 
-## 1. The business
+## 1. How to use this file
+
+- **Everything has an ID.** Features and tasks live in one tracker ([§7](#7-feature-and-task-tracker)), grouped by area.
+  Risks are `R-xx`, known issues `KI-xx`, decisions `D-xx`, open questions `Qxx`, milestones `Mx`.
+  Refer to work by its ID in commits, PRs and messages, e.g. `feat(backend): custom user model (API-09)`.
+- **Starting work:** pick the first item in [§9 Next up](#9-next-up) that isn't blocked and whose dependencies
+  are done. Set it to 🟡, and to ✅ when its "done when" is met.
+- **IDs are permanent.** Never renumber or reuse an ID. New items get the next free number in their area.
+  Dropped items stay in the table with status ➖ and a reason.
+
+**Priority**
+
+| Priority | Meaning |
+| --- | --- |
+| **P0** | Launch blocker: the site can't go live without it |
+| **P1** | Required for v1 |
+| **P2** | Should have: v1 if time allows, or soon after launch |
+| **P3** | Later phase or nice to have |
+
+**Status**
+
+| Status | Meaning |
+| --- | --- |
+| ✅ Done | Finished and verified |
+| 🟡 In progress | Started or partly done; the notes say what remains |
+| ⛔ Blocked | Waiting on an open question or decision (named in "Depends on") |
+| ⬜ To do | Not started, nothing blocking it |
+| 💤 Later | Outside v1 scope until the client decides otherwise (Q12) |
+| ➖ Dropped | No longer planned; the notes say why |
+
+**Areas (ID prefixes):** `PRD` product features (what customers get) · `WEB` website · `ADM` content admin ·
+`API` backend · `NTF` notifications · `OPS` infrastructure and DevOps · `MOB` mobile apps · `DOC` documentation and project management.
+
+---
+
+## 2. Project information
 
 **Driveo Exclusive Limited** is a premium private chauffeur service, founded in London.
 
@@ -42,12 +78,14 @@
 | **Promise** | "Arrive in absolute silence." Discretion, precision and calm |
 | **Brand values** | Discretion · Precision · Silence |
 | **Operating cities** | London · Paris · Bulgaria · Dubai |
-| **Pricing model** | Every journey is quoted personally as one fixed, all-inclusive price in writing. No surge pricing, no meter |
+| **Pricing model** | Every journey is quoted personally as one fixed price in writing. No surge pricing, no meter. Guide "from" prices are being added (PRD-10) |
 | **Differentiators** | Vetted, licensed, suited chauffeurs · live flight tracking · immaculate black Mercedes-Benz cars · total privacy |
 | **Contact** | +44 330 043 0976 · info@driveoexclusive.com · WhatsApp on the same number |
 | **Social** | LinkedIn, TikTok, Snapchat, Facebook, Instagram (links in `frontend/src/config/site.ts`) |
+| **Languages** | English, French, Bulgarian, Arabic (right-to-left) |
+| **Customers** | High-net-worth private clients, executives, corporate travel managers, event organisers and international travellers |
 
-### Services
+### Services (live on the website)
 
 | Service | What the customer gets |
 | --- | --- |
@@ -56,7 +94,7 @@
 | **Hourly hire** | Chauffeur stays with the client for 2–16 hours. Each hour includes 15 miles within Greater London |
 | **Private events** | Weddings, premieres and long-distance road journeys, planned and quoted personally |
 
-### Fleet
+### Fleet (live on the website)
 
 | Class | Vehicle | Max passengers | Max luggage |
 | --- | --- | --- | --- |
@@ -64,45 +102,56 @@
 | First Class | Mercedes-Benz S-Class (2026), long wheelbase, black | 4 | 3 |
 | Business Van | Mercedes-Benz VLE, black | 7 | 8 |
 
-### Customers
+### People and accounts
 
-High-net-worth private clients, executives, corporate travel managers, event organisers and international
-travellers who need consistent service across cities. The site is offered in **English, French,
-Bulgarian and Arabic** to match the markets served.
+| What | Who / where |
+| --- | --- |
+| Client | Driveo Exclusive Limited |
+| Code | GitHub [`NHasan143/driveo-creative`](https://github.com/NHasan143/driveo-creative); `main` holds the platform |
+| Contributors | Naymul Hasan (NHasan143), RafiAwes |
+| Database and files | Neon project `driveexclusive` (`icy-block-59285110`), org `org-super-hill-79285047` |
+
+### Project history
+
+| When | Event |
+| --- | --- |
+| Before 2026-09 | First website generated with Base44 (`driveo-elite-flow.base44.app`), the source of company info and branding |
+| 2026-09-11 → 09-12 | Lovable prototype (`driveo-creative-lab.lovable.app`). Code in `driveo-creative/` (reference only) |
+| — | Technical proposal agreed: *Technology Stack & Deployment Architecture* v1.0 |
+| 2026-10-22 | `frontend/` created: Next.js rebuild of the Lovable design. README and this file added |
+| 2026-10-23 | Repository on GitHub; inner pages and language dropdown |
+| 2026-10-24 | `backend/` started on Neon (Lakebase Postgres + Object Storage); service detail pages |
+| 2026-10-25 | Quote request API with email/WhatsApp alerts; content admin in demo mode |
+| 2026-10-26 | Quote form connected to the API; content API with staff sign-in; admin moved to `/admin` |
+| 2026-10-27 | Website reads services from the API; site settings screen removed; guide prices started |
+| 2026-10-28 | Client's target feature list added to the tracker (PRD-11 to PRD-24) |
 
 ---
 
-## 2. The problem and the aim
+## 3. Problem, aims and success criteria
 
-**Today:**
-- The business ran on AI-generated prototype websites: first a Base44 site, then a Lovable redesign.
-- Quote requests arrive through a form whose backend (Supabase) is tied to the prototype. There is no
-  proper operations dashboard, no mobile app and no shared business logic.
-- The prototypes can't easily grow into a booking platform with pricing rules, availability, customer
-  records and staff permissions.
+**Before this project:** the business ran on AI-generated prototype websites (Base44, then Lovable). Quote
+requests went through a backend tied to the prototype. There was no operations dashboard, no app and no
+shared business logic.
 
-**The aim** is to build a professional platform the business owns and can grow:
+**The aim** is a professional platform the business owns and can grow:
 
 1. **Win clients:** a fast, search-friendly website that matches the premium brand and turns visitors into quote requests.
-2. **Never lose a request:** every booking or quote is saved first, then the owner is notified by email and WhatsApp, with automatic retries.
-3. **Run operations in one place:** an admin dashboard for vehicles, pricing, availability, customers and incoming requests.
-4. **Reach clients on their phones:** Android and iOS apps that use the same backend and rules.
-5. **Stay maintainable:** one shared API, clean architecture and automated deployment, so the business can change pricing or policy once and have it apply everywhere.
+2. **Never lose a request:** every request is saved first, then the owner is alerted by email and WhatsApp, with retries.
+3. **Run operations in one place:** dashboards for content, vehicles, pricing and incoming requests.
+4. **Reach clients on their phones:** Android and iOS apps on the same backend.
+5. **Stay maintainable:** one shared API, clean architecture and automated deployment.
 
----
-
-## 3. Objectives and success criteria
-
-| # | Objective | Success criteria (measurable where possible) |
+| # | Objective | Success criteria |
 | --- | --- | --- |
-| O1 | Premium, on-brand web presence | The website matches the approved Lovable design. Lighthouse Performance ≥ 90 and SEO/Accessibility/Best Practices ≥ 95 on mobile. Works from 320 px to 4K |
-| O2 | Multilingual reach | EN, FR, BG and AR fully translated, each indexable at its own URL with hreflang. Arabic renders right-to-left |
-| O3 | Reliable lead capture | 100 % of valid quote requests are stored. The owner is alerted by email and WhatsApp within 1 minute. Failed deliveries are logged and retried |
-| O4 | Central operations | Staff can manage vehicles, pricing, availability, customers and requests in the dashboard, with role-based permissions |
-| O5 | Mobile apps | Android and iOS apps published to the stores, reusing the API contracts and branding |
-| O6 | Operational safety | Automated daily database backups, health monitoring, logs, HTTPS everywhere, and tested restores |
-| O7 | Maintainability | CI runs lint, typecheck, tests and build on every PR. Deployments are repeatable through GitHub Actions. Documentation is kept current |
-| O8 | Privacy and compliance | Personal data is handled in line with UK GDPR/GDPR: privacy policy, consent for non-essential cookies, data minimisation |
+| O1 | Premium, on-brand web presence | Matches the approved Lovable design. Lighthouse Performance ≥ 90 and SEO/Accessibility/Best Practices ≥ 95 on mobile. Works from 320 px to 4K |
+| O2 | Multilingual reach | EN, FR, BG and AR fully translated, each indexable with hreflang. Arabic renders right-to-left |
+| O3 | Reliable lead capture | 100 % of valid quote requests stored. Owner alerted by email and WhatsApp within 1 minute. Failures logged and retried |
+| O4 | Central operations | Staff manage content, vehicles, pricing and requests in dashboards, with permissions |
+| O5 | Mobile apps | Android and iOS apps in the stores, reusing the API and branding |
+| O6 | Operational safety | Daily backups, health monitoring, logs, HTTPS everywhere, tested restores |
+| O7 | Maintainability | CI runs lint, typecheck, tests and build on every PR. Repeatable deployments. Current documentation |
+| O8 | Privacy and compliance | UK GDPR/GDPR: privacy policy, consent for non-essential cookies, data minimisation |
 
 ---
 
@@ -111,290 +160,417 @@ Bulgarian and Arabic** to match the markets served.
 ### In scope (v1)
 
 - Public website: marketing pages, quote request form, four languages, SEO, PWA install.
-- Shared Django REST API, versioned under `/api/v1`.
-- Admin dashboard (Django): vehicles, pricing rules, availability, customers, requests, users and permissions.
-- Notifications: transactional email and Twilio WhatsApp to the business owner, with logging and retries.
-- Android and iOS apps (React + Capacitor) for browsing services and requesting bookings or quotes.
-- Hosting: Docker Compose on a Linux VPS behind Nginx and Cloudflare, with CI/CD on GitHub Actions.
-  The database (Lakebase Postgres) and uploaded files (Object Storage) are managed services on Neon.
+- Shared Django REST API under `/api/v1`.
+- Content admin at `/admin` (services, fleet, cities, guide prices) and Django's admin for quote requests.
+- Owner notifications: email and Twilio WhatsApp, with logging and retries.
+- Android and iOS apps (React + Capacitor) for browsing services and requesting quotes.
+- Hosting: Docker Compose on a Linux VPS behind Nginx and Cloudflare; CI/CD on GitHub Actions; database and files on Neon.
 - Operations: backups, logging and monitoring.
 
-### Out of scope (v1), unless agreed later
+### Out of scope (v1), unless the client agrees otherwise (Q12)
 
-- Online card payments and automated invoicing.
-- Live driver tracking or a driver app.
-- Automatic instant pricing. v1 pricing is quoted by a person.
-- High-availability or multi-server infrastructure.
-- Third-party service fees (hosting, Neon, email, WhatsApp/Twilio, app store accounts), which are paid separately by the client.
-
----
-
-## 5. Project history
-
-| When | Event |
+| Out of scope | Tracker items it would add |
 | --- | --- |
-| Before 2026-09 | First website generated with Base44 (`driveo-elite-flow.base44.app`), the source of company info and branding |
-| 2026-09-11 → 09-12 | Lovable prototype built (`driveo-creative-lab.lovable.app`): 3D quote experience, then email-only quotes and social links. Code in `driveo-creative/` |
-| — | Technical proposal agreed: *Technology Stack & Deployment Architecture* v1.0 (Next.js website, Capacitor apps, Django API, PostgreSQL/Redis/Celery, Docker on VPS) |
-| 2026-10-22 | `frontend/` created: Next.js rebuild of the Lovable design with the full architecture. README, `.gitignore` files and this context file added |
-| 2026-10-24 | `backend/` started: Django 6.1 + DRF project connected to Neon (Lakebase Postgres + Object Storage). The database moves off the VPS to Neon |
+| Online card payments and automated invoicing | PRD-23 |
+| Live driver tracking or a driver app | PRD-24, PRD-22 |
+| Automatic instant pricing (v1 prices are quoted by a person) | PRD-19 |
+| Customer accounts and online booking management | PRD-20, PRD-21 |
+| High-availability or multi-server infrastructure | — |
+| Third-party fees (hosting, Neon, email, Twilio, app stores): paid by the client | — |
 
----
+### Client's target feature list (added 2026-10-28)
 
-## 6. The solution at a glance
+The client shared a reference list for a full chauffeur platform. Each item is tracked in [§7](#7-feature-and-task-tracker):
 
-```
-Website (Next.js) ─┐                           ┌──► Lakebase Postgres (Neon)
-Android/iOS apps ──┼──► Shared Django REST API ─┼──► Object Storage (Neon)
-Admin dashboard ───┘                           └──► Celery + Redis ──► Email · Twilio WhatsApp
-```
-
-- **Hosting:** Cloudflare (DNS, CDN, TLS) → Nginx → containers (Next.js, Django, Celery, Redis) on one VPS.
-  The database and uploaded files live on Neon (project `driveexclusive`, branch `production`), not on the VPS.
-- **Repository layout:** `frontend/` (built; includes the content admin at `/admin`, demo mode) · `backend/` (started, includes `neon.ts` for the Neon services) · `mobile/`, `infra/` (planned) · `driveo-creative/` (reference only, separate git repo, ignored).
-- **Full stack table, diagrams and setup:** [README.md](README.md).
-
----
-
-## 7. Plan: phases and roadmap
-
-Dates are not set yet. Fill them in once scope, budget and resources are confirmed.
-
-| Phase | Goal | Main deliverables | Depends on | Status |
-| --- | --- | --- | --- | --- |
-| **0. Discovery and design** | Agree the brand, design and stack | Lovable prototype, technical proposal | — | 🟢 Done |
-| **1. Website frontend** | Production-quality website on mock data | `frontend/` Next.js app, i18n, SEO, Dockerfile | 0 | 🟡 ≈ 85 % |
-| **2. Backend API and admin** | Shared business logic and operations dashboard | Django project, data model, quote/booking API, admin, auth, OpenAPI schema | 0 | 🟡 ≈ 35 %: project on Neon, quote request API and admin |
-| **3. Notifications** | Owner alerts that never lose a request | Celery tasks, email provider, Twilio WhatsApp, retry and failure logging | 2 | 🟡 Built and tested; waits on real recipients, an email provider and Twilio credentials (Q1, Q2) |
-| **4. Integration** | Website talks to the real API | Quote form live, CORS, error handling, end-to-end tests | 1, 2 | 🟡 Quote form connected and checked in a browser locally; automated end-to-end tests pending |
-| **5. Infrastructure and CI/CD** | Repeatable, secure deployments | `infra/` docker-compose, Nginx, Cloudflare, GitHub Actions, backups, monitoring | 1, 2 | ⚪ Not started (frontend Dockerfile ready; database provisioned on Neon) |
-| **6. Mobile apps** | Android and iOS apps | `mobile/` React + Vite + Capacitor app, store listings | 2 | ⚪ Not started |
-| **7. Launch and handover** | Go live and hand over safely | Production launch, legal pages, analytics, runbook, client training | 3, 4, 5 | ⚪ Not started |
-
-**Critical path:** Phase 2 (API) → Phase 3 (notifications) and Phase 4 (integration) → Phase 5 (deploy) → launch.
-The mobile apps (Phase 6) can follow after launch, because they reuse the same API.
-
----
-
-## 8. Work objectives by workstream
-
-Each objective has a definition of done (DoD). Tick it when it's done, and update §9.
-
-### WS1: Website (`frontend/`)
-
-- [x] **W1.1 Port the design.** DoD: every Lovable section rebuilt, and section heights at 1440 px match the original within a few pixels.
-- [x] **W1.2 Internationalisation.** DoD: every language is statically generated and served at `/?lang=en|fr|bg|ar`. Bare `/` picks the language from the cookie, then Accept-Language. Old `/en` links redirect. The dropdown shows each language in its own script. Arabic is right-to-left. A missing translation key fails the build.
-- [x] **W1.3 SEO.** DoD: per-locale metadata, canonical, hreflang, sitemap, robots, LocalBusiness JSON-LD, manifest.
-- [x] **W1.4 Quote form (client side).** DoD: validation, vehicle capacity limits, hourly-hire flow, honeypot, typed API client, mock mode.
-- [x] **W1.5 Motion.** DoD: GSAP scroll reveals and hero fade plus CSS 3D parallax, all disabled under `prefers-reduced-motion`.
-- [x] **W1.6 Container.** DoD: multi-stage Dockerfile, standalone output, non-root user, healthcheck.
-- [ ] **W1.7 Legal pages.** DoD: privacy policy, terms and cookie policy in four languages, linked from the footer.
-- [ ] **W1.8 Consent and analytics.** DoD: consent banner (non-essential cookies off by default), analytics only after consent.
-- [ ] **W1.9 Performance pass.** DoD: hero videos compressed and served in modern formats, poster-first loading on mobile, Lighthouse targets from O1 met.
-- [ ] **W1.10 Automated tests.** DoD: unit tests for the schema, DTO mapping and proxy locale logic. Playwright end-to-end tests for the language switch, the fleet → quote preselection and quote submission.
-- [ ] **W1.11 Accessibility audit.** DoD: WCAG 2.1 AA check (contrast, keyboard, screen-reader labels) with issues fixed.
-- [x] **W1.12 Inner pages.** DoD: Services, Fleet, Cities and Process pages in four languages, matching the home design. Each has a page hero, its own content, and the quote form with matching pre-fill. Nav shows the active page, links are in the footer and sitemap, and each page has its own metadata and hreflang.
-
-### WS2: Backend API and admin (`backend/`)
-
-- [ ] **W2.1 Project setup.** DoD: Django + DRF project, settings per environment, `.env.example`, Dockerfile, linting (ruff), tests (pytest).
-  _Partly done (2026-10-24):_ Django 6.1 + DRF project; settings read from environment variables (all secrets in `backend/.env.local`, no fallback secret key, `DEBUG` off by default); `backend/.env.example`; `requirements.txt`; `GET /api/v1/health/`. Remaining: Dockerfile, ruff, pytest, production settings (CORS, secure cookies).
-- [ ] **W2.2 Data model.** DoD: models for City, Service, VehicleClass (with capacity), QuoteRequest/Booking (with status lifecycle and reference `DRV-XXXXXX`), Customer, PricingRule, Availability, NotificationLog.
-  _Partly done (2026-10-25):_ `QuoteRequest` (statuses new / contacted / quoted / closed, `DRV-XXXXXX` reference, staff notes) and `Notification` (the NotificationLog). City, service and vehicle are code-level choices for now. Customer, PricingRule and Availability wait on Q3 and Q5.
-- [x] **W2.3 Quote request endpoint.** DoD: `POST /api/v1/quote-requests/` matches the contract in `frontend/README.md`. It validates the capacity and hourly rules, rejects honeypot submissions silently, rate-limits, and returns `201 {reference}`. _Done 2026-10-25: also rejects past dates and cleans text the same way the website does. Rate limit: 10/hour per IP._
-- [ ] **W2.4 Admin dashboard.** DoD: staff can list, filter and update requests and manage vehicles, pricing and availability. Roles and permissions are in place.
-  _Partly done:_ staff can list, filter, search and update quote requests, see each alert's delivery status, and resend failed alerts. Vehicles, pricing, availability and roles are still to do.
-- [ ] **W2.8 Content admin (`frontend/`, `/admin`).** DoD: staff sign in and manage the website's services, fleet, cities and site settings (contact, social links, testimonials) in four languages. Changes are saved through the API, and the website reads its content from the API.
-  _Partly done (2026-10-26):_ the admin is inside the website app at `/admin`:
-  - create, edit, duplicate, publish, reorder and delete, with reference cleanup;
-  - per-language editing with completeness tracking, and right-to-left Arabic;
-  - image upload, SEO preview, a dashboard, light and dark themes, and a phone layout;
-  - saved in Postgres through the Django `content` app (`/api/v1/content/`) when `NEXT_PUBLIC_ADMIN_CONTENT_SOURCE=api`, with staff sign-in (session cookie + CSRF) and photos in the `assets` bucket. Demo mode (browser storage) stays the default.
-
-  Production builds hide `/admin` unless `ADMIN_ENABLED=true`. Remaining:
-  - the website reading fleet, cities and site settings from the API. **Services are done (2026-10-27):** the menu, home section, Services page, detail pages and sitemap show the published services within about a minute, and new services get their own page;
-  - deciding whether services added in the admin should be bookable in the quote form (today only the four built-in services are);
-  - loading the original content into the production database (Settings → "Load the website's original content", as a superuser) once the backend is deployed.
-- [ ] **W2.5 API documentation.** DoD: OpenAPI schema published (drf-spectacular) and linked from the README.
-- [ ] **W2.6 Security.** DoD: CORS limited to known origins, HTTPS-only cookies, admin protected, dependency audit clean.
-  _Partly done (2026-10-26):_ CORS limited to `CORS_ALLOWED_ORIGINS`; DRF denies by default (staff only) and only the quote form, health check and published content are public; session and CSRF cookies are Secure whenever `DEBUG` is off; staff sign-in is rate limited. Remaining: dependency audit, HTTPS settings for production (HSTS, `SECURE_PROXY_SSL_HEADER`).
-- [x] **W2.7 Database and file storage.** DoD: Neon project linked from `backend/` (`neon.ts`, `.neon`). Lakebase Postgres used through psycopg 3 (pooled connection for the app, direct connection for migrations). The private `assets` bucket is Django's default file storage. Both checked end to end: write, read and delete; signed links work and anonymous reads are refused. A project-level Neon MCP server in `.mcp.json` serves AI assistants.
-
-### WS3: Notifications
-
-- [x] **W3.1 Async pipeline.** DoD: saving a request queues a Celery task. The customer response never waits on providers.
-- [ ] **W3.2 Email.** DoD: the owner receives a formatted request email from a verified sender domain.
-  _Built:_ text + HTML email over any SMTP provider, with Reply-To set to the customer and a dashboard link. Remaining: choose the provider and verify the sender domain (Q2).
-- [ ] **W3.3 WhatsApp.** DoD: the owner receives a Twilio WhatsApp alert.
-  _Built:_ free-form text for the sandbox and approved-template support for production. Remaining: a Twilio account, a WhatsApp sender, an approved template and the owner's number (Q1).
-- [x] **W3.4 Reliability.** DoD: failures are logged in NotificationLog, retried with backoff, and staff can see them in the admin. _Done 2026-10-25: retries after 1/2/4/8/16 min, a sweep every 10 min for alerts that were never queued, and a resend action in the admin._
-
-### WS4: Infrastructure and DevOps (`infra/`)
-
-- [ ] **W4.1 Compose stack.** DoD: `docker-compose.yml` with frontend, backend, worker, Redis and Nginx, plus health checks (backend: `/api/v1/health/`). PostgreSQL is not a container: it runs on Neon.
-- [ ] **W4.2 Edge.** DoD: Cloudflare DNS, HTTPS, security headers, and caching for static media.
-- [x] **W4.3a CI/CD workflows (frontend).** DoD: `frontend-ci.yml` runs lint, typecheck, build and a Docker build check on PRs. `frontend-deploy.yml` verifies `main`, publishes the image to GHCR and deploys over SSH with a smoke test. It refuses mock-mode deploys. _Validated with actionlint._ (Dependabot was added here and removed on 2026-10-24.)
-- [ ] **W4.3b CI/CD activation.** DoD: repository pushed to GitHub, `production` environment variables and secrets set, branch protection requires "Frontend CI / Lint, typecheck & build", and the first green deploy is done.
-- [ ] **W4.3c CI for backend and mobile.** DoD: `backend-ci.yml`/`mobile-ci.yml` following the same pattern, with tests.
-- [ ] **W4.4 Backups.** DoD: Neon history retention and a snapshot schedule configured for the `production` branch, and a restore (to a new branch) tested and documented.
-- [ ] **W4.5 Monitoring.** DoD: uptime checks, error tracking and central logs, with alerts sent to the owner or developer.
-- [ ] **W4.6 Staging environment.** DoD: a separate staging deployment for review before production, using its own Neon branch (copy-on-write database and files).
-
-### WS5: Mobile apps (`mobile/`)
-
-- [ ] **W5.1 App shell.** DoD: React + Vite + TypeScript + Capacitor project with branding, four languages and right-to-left support.
-- [ ] **W5.2 Core flows.** DoD: browse services and fleet, submit a quote or booking via the shared API, see confirmation and reference.
-- [ ] **W5.3 Store release.** DoD: signed Android (AAB) and iOS builds, store listings, privacy labels.
-
-### WS6: Project management and documentation
-
-- [x] **W6.1 README.** Platform overview and setup.
-- [x] **W6.2 This context file.**
-- [x] **W6.3 Ignore rules.** Root and frontend `.gitignore`.
-- [ ] **W6.4 Version control.** DoD: git repository initialised at the root, pushed to GitHub, `main` protected, PR template.
-- [ ] **W6.5 Runbook and handover.** DoD: deploy, rollback, backup-restore and "notification failed" procedures written. Client trained on the dashboard.
-
----
-
-## 9. Current progress
-
-_Snapshot as of 2026-10-25._
-
-### Overall
-
-| Workstream | Progress | Notes |
+| Client's list item | Tracker IDs | Status today |
 | --- | --- | --- |
-| WS1 Website | ███████████████░░░ ≈ 85 % | Feature-complete on mock data. Legal, consent, performance, tests and the accessibility audit remain |
-| WS2 Backend | ████████░░░░░░░░░░ ≈ 45 % | Quote request API, content API with staff sign-in, admin and data model for requests and alerts. Foundation fixes (custom user model, settings split, CI) still pending |
-| WS2 Content admin | ███████████████░░░ ≈ 85 % | Admin saves to Postgres through the Django API with staff sign-in (or a browser-only demo). The website shows the published services; fleet, cities and settings remain (W2.8) |
-| WS3 Notifications | ██████████████░░░░ ≈ 75 % | Email and WhatsApp pipeline built and tested. Needs real recipients, an SMTP provider and Twilio credentials (Q1, Q2) |
-| WS4 Infrastructure | ████░░░░░░░░░░░░░░ ≈ 20 % | Frontend Dockerfile and CI/CD workflows written. Activation waits on git, GitHub and a server |
-| WS5 Mobile | ░░░░░░░░░░░░░░░░░░ 0 % | Waits for the API |
-| WS6 Docs and PM | ██████████░░░░░░░░ ≈ 60 % | README, context file and ignore rules done. Git not initialised |
+| Airport transfers (flight tracking, 1 h free waiting, name sign) | PRD-02, PRD-11 | ✅ Built; name sign and flight-number field to do |
+| Hourly / as-directed hire, 2–24 hours | PRD-04, PRD-12 | 🟡 Built for 2–16 hours |
+| City-to-city rides | PRD-13 | 🟡 Loosely covered by Point-to-point and Private events |
+| Chauffeur hailing (on demand) | PRD-22 | ⬜ Not started (💤 later phase) |
+| Enterprise and corporate accounts | PRD-21 | ⬜ Not started (💤 later phase) |
+| Business Class (E-Class, 5 Series, A6; up to 3) | PRD-06, PRD-14 | ✅ Built (E-Class, 4 passengers) |
+| First Class (S-Class, 7 Series, A8) | PRD-07, PRD-14 | ✅ Built (S-Class) |
+| Business Van / SUV (V-Class, Escalade, Suburban; up to 5) | PRD-08, PRD-14 | 🟡 Mercedes VLE only, 7 passengers |
+| All-inclusive upfront pricing | PRD-10, PRD-15, PRD-19 | 🟡 Guide prices in progress; final prices quoted by hand |
+| Modify or cancel bookings on web and apps | PRD-20 | ⬜ Not started (💤 later phase) |
+| Carbon offset programme | PRD-16 | ⬜ Not started |
+| Professional standards (licensed, vetted, English-speaking; amenities) | PRD-17, PRD-18 | ✅ As website copy; preferences to do |
 
-### What exists and works today
+**Summary: 4 of 12 built, 4 partly built, 4 not started.**
 
-- `frontend/` runs locally (`npm run dev`) and passes `lint`, `typecheck` and `build`.
-- Every page section, all four languages, the language switcher, the right-to-left Arabic layout, the localized 404, the sitemap, robots, manifest and JSON-LD.
-- Quote form: validation, fleet → form vehicle preselection, capacity limits, hourly-hire flow. Submission returns a mock reference (`DRV-XXXXXX`).
-- Verified in a browser: section heights match the original Lovable site at 1440 px, there is no horizontal overflow at 375 px, the console is clean, and 404 pages return status 404.
-- The content admin runs at http://localhost:3000/admin with the website's dev server, and the website passes `lint`, `typecheck` and `build` with it included. Every content type can be created, edited, duplicated, reordered, published and deleted in four languages. This was checked in a browser at desktop and phone widths, in both themes.
-- `backend/` runs locally against Neon (`runserver`). `backend/.env.local` now points at the Neon branch `dev` (created 2026-10-26, expires 2026-11-02 under the `neon.ts` policy); the `content` migration is applied there but **not yet on `production`**. `GET /api/v1/health/` returns `{"database":"ok","storage":"ok"}`, or `503` if either fails.
-- Content API: with `NEXT_PUBLIC_ADMIN_CONTENT_SOURCE=api`, the admin signs staff in and creates, edits, reorders and deletes services, vehicles, cities and settings in Postgres, with photos in the `assets` bucket. 69 backend tests pass (`manage.py test`).
+---
 
-### What does not work yet
+## 5. Solution and architecture
 
-- The website's quote form is connected to the API locally, but no real alert recipients, SMTP or Twilio credentials are configured, so nobody receives the alerts yet. Nothing is deployed. The site must not go live until alerts reach the owner in production.
-- Only **services** from the content admin reach the website so far. Fleet, cities and settings edits are saved but the website still shows its built-in copy (W2.8). In production, set `ADMIN_ENABLED=true` only together with `NEXT_PUBLIC_ADMIN_CONTENT_SOURCE=api`; demo mode has no sign-in.
-- The backend has no tests, Dockerfile or CI workflow yet, and no production settings (CORS, secure cookies, production secret key).
-- No automated tests. The CI/CD workflows exist but have never run on GitHub, and no server is configured.
-- The Docker image hasn't been built locally yet: Docker Desktop wasn't running. CI checks the build on every PR.
-- No git repository, so the workflows can't run until the project is pushed to GitHub.
+```
+Website (Next.js, incl. /admin) ─┐                           ┌──► Lakebase Postgres (Neon)
+Android/iOS apps (planned) ──────┼──► Shared Django REST API ─┼──► Object Storage (Neon, bucket "assets")
+Django admin (quote requests) ───┘          /api/v1           └──► Celery + Redis ──► Email · Twilio WhatsApp
+```
+
+- **Hosting (planned):** Cloudflare (DNS, CDN, TLS) → Nginx → containers (Next.js, Django, Celery worker and beat, Redis) on one VPS.
+  The database and files live on Neon, not on the VPS.
+- **Website ↔ API:** the quote form posts to `/api/v1/quote-requests/`; the website reads published services from
+  `/api/v1/content/published/` (cached about a minute, built-in copy as fallback).
+- **Content admin ↔ API:** with `NEXT_PUBLIC_ADMIN_CONTENT_SOURCE=api`, staff sign in (Django session cookie + CSRF token)
+  and edit content in Postgres. Otherwise it is a browser-only demo.
+- **Full stack table, diagrams, API contract and setup:** [README.md](README.md).
+
+### Repository layout
+
+| Path | What | State |
+| --- | --- | --- |
+| `frontend/` | Next.js website, plus the content admin at `/admin` | Built, in progress |
+| `backend/` | Django + DRF API: `core` (health, staff sign-in), `quotes`, `content` | Built, in progress |
+| `.github/workflows/` | Frontend CI and deploy workflows | Written; deploy paused |
+| `mobile/`, `infra/` | Capacitor apps, Compose/Nginx | Planned |
+| `driveo-creative/` | Lovable prototype | Reference only, git-ignored |
+
+### Environments
+
+| Environment | Website | API | Database (Neon branch) | State |
+| --- | --- | --- | --- | --- |
+| Local | http://localhost:3000 (`/admin` for the admin) | http://localhost:8000/api/v1 | `dev` (in `backend/.env.local`; expires 2026-11-02) | Working |
+| Staging | — | — | its own branch (OPS-08) | Not set up |
+| Production | — | — | `production` (default branch; no content tables yet, API-10) | Not deployed |
+
+---
+
+## 6. Plan: phases and milestones
+
+Dates aren't set yet (Q9). Each tracker row names its phase.
+
+| Phase | Goal | Status |
+| --- | --- | --- |
+| **0. Discovery and design** | Brand, design and stack agreed (Lovable prototype, technical proposal) | ✅ Done |
+| **1. Website frontend** | Production-quality website | 🟡 Pages done; legal, consent, performance, tests and accessibility remain |
+| **2. Backend API and admin** | Shared business logic, content admin and quote admin | 🟡 Quote and content APIs, staff sign-in; foundation fixes remain |
+| **3. Notifications** | Owner alerts that never lose a request | 🟡 Built and tested; real accounts and recipients missing (Q1, Q2) |
+| **4. Integration** | Website and admin on the real API | 🟡 Quote form and services connected; fleet, cities and tests remain |
+| **5. Infrastructure and CI/CD** | Repeatable, secure deployments | ⬜ Workflows written; server, Compose and activation remain |
+| **6. Mobile apps** | Android and iOS apps | ⬜ Not started |
+| **7. Launch and handover** | Go live and hand over | ⬜ Not started |
+| **8. Platform v2** | Client's larger target features: instant pricing, bookings and accounts, corporate, on-demand | 💤 Needs a decision (Q12) |
+
+**Critical path:** Phase 2 foundation (API-09, API-10) → Phase 3 accounts (NTF-03, NTF-05) → Phase 5 (OPS-04, OPS-05, OPS-02) → launch (M3).
+Mobile apps can follow launch because they reuse the same API.
+
+### Milestones
+
+| ID | Milestone | Done when | Status |
+| --- | --- | --- | --- |
+| M1 | Feature-complete locally | Website, quote flow, alerts and content admin work end to end on a developer machine | ✅ Reached 2026-10-26 |
+| M2 | Ready to deploy | API-09, API-10, API-12, API-14, OPS-04 and ADM-09 done; CI green (OPS-02) | ⬜ |
+| M3 | Live | Every P0 in the tracker is ✅; a real quote request reaches the owner by email and WhatsApp in production (NTF-07) | ⬜ |
+| M4 | Handover | Runbook and client training done (DOC-05, DOC-06); monitoring and backups verified (OPS-06, OPS-07) | ⬜ |
+| M5 | Apps in stores | MOB-01 to MOB-03 done | ⬜ |
+
+---
+
+## 7. Feature and task tracker
+
+The master list. Columns: **ID** · **Feature / task** · **Pri**ority · **Status** · **Ph**ase · **Depends on** · **Notes** (what exists, what remains, where).
+
+### 7.1 Product features (`PRD`): what customers get
+
+| ID | Feature / task | Pri | Status | Ph | Depends on | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| PRD-01 | Operating cities: London, Paris, Bulgaria, Dubai | P1 | ✅ Done | 1 | — | On the website and quote form; editable in the admin. City pages still use built-in copy (WEB-12) |
+| PRD-02 | Airport transfers | P1 | ✅ Done | 1 | — | Page and quote option. Flight tracking, meet and greet and 60 min free waiting are delivered by staff by hand |
+| PRD-03 | Point-to-point journeys | P1 | ✅ Done | 1 | — | Page and quote option |
+| PRD-04 | Hourly hire, 2–16 hours, 15 miles per hour in Greater London | P1 | ✅ Done | 1 | — | Rules in `frontend/src/domain/booking.ts` and `backend/quotes/choices.py`. Extension: PRD-12 |
+| PRD-05 | Private events | P1 | ✅ Done | 1 | — | Page and quote option |
+| PRD-06 | Business Class (Mercedes E-Class; 4 passengers, 3 bags) | P1 | ✅ Done | 1 | — | Alignment with the client's list: PRD-14 |
+| PRD-07 | First Class (Mercedes S-Class; 4 passengers, 3 bags) | P1 | ✅ Done | 1 | — | |
+| PRD-08 | Business Van (Mercedes VLE; 7 passengers, 8 bags) | P1 | ✅ Done | 1 | — | SUVs: PRD-14 |
+| PRD-09 | Personal fixed-price quote request with `DRV-XXXXXX` reference | P0 | ✅ Done | 2 | — | Website form + API + Django admin. Alerts: NTF-01 to NTF-07 |
+| PRD-10 | Guide "From €X" prices per service, city and vehicle class | P1 | 🟡 In progress | 2 | — | Built: admin Prices grid, `ServicePrice` model (migrations 0002–0003), website "From" price, quote-form guide price. **Not committed yet.** Remaining: commit, client enters amounts |
+| PRD-11 | Airport extras: name-sign wording and a flight-number field | P2 | ⬜ To do | 4 | — | Done when: copy mentions the name sign in 4 languages; the quote form and API have a flight-number field shown in alerts. Flight-status integration later |
+| PRD-12 | Hourly hire up to 24 hours | P2 | ⛔ Blocked | 4 | Q13 | Done when: the agreed maximum is applied in copy, quote form and API validation, with tests |
+| PRD-13 | City-to-city rides as its own service | P2 | ⬜ To do | 4 | ADM-08 | Done when: published from the admin with its own page and bookable in the quote form |
+| PRD-14 | Fleet aligned with the client's list (capacities, "or similar" models, SUVs) | P2 | ⛔ Blocked | 4 | Q13 | Ideally read capacities from the content API so admin edits drive the form and validation |
+| PRD-15 | "All-inclusive" price statement (tolls, taxes, fees, gratuity) | P2 | ⛔ Blocked | 4 | Q14 | Copy in 4 languages, only once the business confirms it |
+| PRD-16 | Carbon offset programme | P3 | ⛔ Blocked | 8 | Q14 | Needs an offset partner first; then copy and, if wanted, a per-ride estimate |
+| PRD-17 | Chauffeur standards copy (vetted, licensed, suited; car amenities) | P1 | ✅ Done | 1 | — | Operational promises, described on the website |
+| PRD-18 | "English-speaking" chauffeurs and passenger preferences (temperature, music, quiet ride) | P2 | ⬜ To do | 4 | — | Done when: copy updated where true; preferences are optional quote fields shown in alerts |
+| PRD-19 | Instant pricing: distance/time-based fixed price shown before booking | P3 | 💤 Later | 8 | Q5, Q12 | Needs pricing rules, a route/distance service and API-17 |
+| PRD-20 | Bookings and customer accounts: sign-in, booking status, modify or cancel on web and apps | P3 | 💤 Later | 8 | Q3, Q12, API-09 | Quote requests would become bookings |
+| PRD-21 | Corporate accounts: company bookers, booking for guests, consolidated invoices, account manager | P3 | 💤 Later | 8 | PRD-20, PRD-23 | |
+| PRD-22 | On-demand chauffeur hailing (immediate pickups) | P3 | 💤 Later | 8 | Q12, PRD-24 | Needs live availability and dispatch |
+| PRD-23 | Online card payments and automated invoicing | P3 | 💤 Later | 8 | Q12 | Out of v1 scope |
+| PRD-24 | Driver app and live driver tracking | P3 | 💤 Later | 8 | Q12 | Out of v1 scope |
+
+### 7.2 Website (`WEB`): `frontend/`
+
+| ID | Feature / task | Pri | Status | Ph | Depends on | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| WEB-01 | Lovable design ported (hero, services, fleet, cities, process, quote, testimonial, footer) | P1 | ✅ Done | 1 | — | Section heights match the original at 1440 px |
+| WEB-02 | Four languages at `/?lang=xx`, right-to-left Arabic, language dropdown | P0 | ✅ Done | 1 | — | Old `/en` links redirect; missing keys fail the build |
+| WEB-03 | SEO: metadata, canonical, hreflang, sitemap, robots, JSON-LD, manifest | P1 | ✅ Done | 1 | — | |
+| WEB-04 | Inner pages: Services, Fleet, Cities, Process | P1 | ✅ Done | 1 | — | Each ends in the quote form with matching pre-fill |
+| WEB-05 | Service detail pages (4 services × 4 languages) and header Services dropdown | P1 | ✅ Done | 1 | — | |
+| WEB-06 | Motion (GSAP reveals, parallax), off under reduced motion | P2 | ✅ Done | 1 | — | |
+| WEB-07 | PWA "Add to Home Screen" | P3 | ✅ Done | 1 | — | |
+| WEB-08 | Quote form: validation, capacity limits, hourly flow, honeypot, cooldown | P0 | ✅ Done | 1 | — | |
+| WEB-09 | Quote form connected to the API, with field and rate-limit errors in 4 languages | P0 | ✅ Done | 4 | API-03 | Verified locally with real submissions |
+| WEB-10 | Production Dockerfile (standalone, non-root, healthcheck) | P1 | ✅ Done | 1 | — | Not built locally yet (Docker wasn't running); CI builds it |
+| WEB-11 | Services read from the content API | P1 | ✅ Done | 4 | API-05 | Menu, home, Services page, detail pages and sitemap; cached ~1 min; built-in copy as fallback |
+| WEB-12 | Fleet and cities read from the content API | P1 | ⬜ To do | 4 | API-05 | Admin edits to fleet and cities don't reach the website yet |
+| WEB-13 | Legal pages: privacy, terms, cookies (4 languages, linked in the footer) | P0 | ⛔ Blocked | 1 | Q7 | |
+| WEB-14 | Consent banner; analytics only after consent | P1 | ⬜ To do | 1 | WEB-13 | |
+| WEB-15 | Performance pass: compress hero videos (≈3.4 MB and ≈9.9 MB), poster-first on mobile | P1 | ⬜ To do | 1 | — | Done when Lighthouse meets O1 |
+| WEB-16 | Automated tests: unit (schema, mapping, locale proxy) and Playwright end to end | P1 | ⬜ To do | 4 | — | |
+| WEB-17 | Accessibility audit (WCAG 2.1 AA) with fixes | P1 | ⬜ To do | 1 | — | |
+| WEB-18 | Replace the sample testimonial with a real, approved quote | P1 | ⛔ Blocked | 1 | Q8 | |
+| WEB-19 | Native-speaker review of FR, BG and AR copy | P1 | ⬜ To do | 1 | — | |
+| WEB-20 | Hourly-hire mileage note for cities outside London | P2 | ⛔ Blocked | 1 | Q6 | |
+| WEB-21 | Dynamic copyright year | P3 | ⬜ To do | 1 | — | `© 2026` is fixed in the dictionaries |
+
+### 7.3 Content admin (`ADM`): `frontend/src/admin/`, at `/admin`
+
+| ID | Feature / task | Pri | Status | Ph | Depends on | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| ADM-01 | Admin inside the website app at `/admin` (own root layout, production gate `ADMIN_ENABLED`) | P1 | ✅ Done | 2 | — | Turn the gate on in production only with API mode |
+| ADM-02 | Create, edit, duplicate, publish, reorder and delete services, vehicles and cities | P1 | ✅ Done | 2 | — | With reference cleanup |
+| ADM-03 | Four-language editing with completeness tracking, right-to-left Arabic | P1 | ✅ Done | 2 | — | |
+| ADM-04 | Photo upload (resized; stored in the Neon `assets` bucket in API mode) and photo library | P1 | ✅ Done | 2 | API-05 | |
+| ADM-05 | Dashboard (counts, translation progress, needs attention, recent edits) | P2 | ✅ Done | 2 | — | Redesigned 2026-10-27 |
+| ADM-06 | API mode with staff sign-in (`NEXT_PUBLIC_ADMIN_CONTENT_SOURCE=api`) | P0 | ✅ Done | 2 | API-05, API-06 | Demo mode (browser storage) is the default |
+| ADM-07 | Site settings screen (company, contacts, social links, testimonials) | P2 | ➖ Dropped | 2 | — | Removed 2026-10-27: site information stays in `frontend/src/config/site.ts`. The backend model and endpoint remain unused (API-19) |
+| ADM-08 | Services added in the admin are bookable in the quote form | P2 | ⛔ Blocked | 4 | decision | Today only the four built-in services are bookable. Needed for PRD-13 |
+| ADM-09 | Load the website's original content into the production database | P0 | ⬜ To do | 5 | API-10 | The admin's "Load original content" button went with the settings screen. `POST /api/v1/content/import/` (superusers) still exists; add a management command or button |
+| ADM-10 | Warn about unsaved changes when moving between admin pages | P3 | ⬜ To do | 2 | — | Closing or reloading the tab already warns |
+| ADM-11 | Narrower editor permissions (Django groups) | P3 | ⬜ To do | 2 | — | Today any staff account edits all content |
+
+### 7.4 Backend API (`API`): `backend/`
+
+| ID | Feature / task | Pri | Status | Ph | Depends on | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| API-01 | Django 6.1 + DRF project, settings from environment, `GET /api/v1/health/` | P0 | ✅ Done | 2 | — | Secrets only in `backend/.env.local` |
+| API-02 | Neon Lakebase Postgres (pooled + direct) and private `assets` bucket as default storage | P0 | ✅ Done | 2 | — | Checked end to end |
+| API-03 | `POST /api/v1/quote-requests/`: validation, honeypot, 10/hour rate limit | P0 | ✅ Done | 2 | — | Contract in `frontend/README.md#backend-contract` |
+| API-04 | Django admin for quote requests: status, staff notes, alert log, reply links, resend | P1 | ✅ Done | 2 | — | |
+| API-05 | Content API `/api/v1/content/` (services, vehicles, cities, reorder, snapshot, import, images, published) | P1 | ✅ Done | 2 | — | Translations as JSON per field; camelCase JSON |
+| API-06 | Staff sign-in API `/api/v1/auth/` (session cookie + CSRF, rate limited) | P0 | ✅ Done | 2 | — | Website and API must share a site (KI-08) |
+| API-07 | Security defaults: DRF deny-by-default, CORS allow-list, Secure cookies when `DEBUG` is off | P0 | ✅ Done | 2 | — | |
+| API-08 | Backend test suite (Django `TestCase`, run on a Neon test database) | P1 | ✅ Done | 2 | — | 79 tests (content 50, quotes 29). Last full green run: 2026-10-26 (69 tests); rerun after PRD-10 |
+| API-09 | Custom user model (`AUTH_USER_MODEL`) | P0 | ⬜ To do | 2 | — | Do it before the first real user; `production` has none, `dev` has one test superuser |
+| API-10 | Apply all migrations on the `production` branch (`migrate --database direct`) | P0 | ⬜ To do | 5 | API-09 | Content migrations 0001–0003 are only on `dev` |
+| API-11 | Settings split (development / production) | P1 | ⬜ To do | 2 | — | |
+| API-12 | Backend Dockerfile (web, Celery worker and beat) | P0 | ⬜ To do | 5 | — | |
+| API-13 | ruff linting and pytest | P2 | ⬜ To do | 2 | — | |
+| API-14 | Production HTTPS settings: HSTS, `SECURE_PROXY_SSL_HEADER`, real client IP and shared Redis cache for rate limits | P0 | ⬜ To do | 5 | OPS-05 | See KI-03 |
+| API-15 | Dependency audit (pip and npm) | P1 | ⬜ To do | 5 | — | |
+| API-16 | OpenAPI schema (drf-spectacular) linked from the README | P2 | ⬜ To do | 2 | — | |
+| API-17 | Data model for Customer, Booking, PricingRule, Availability | P3 | 💤 Later | 8 | Q3, Q5, Q12 | Basis for PRD-19 to PRD-21 |
+| API-18 | Delete content photos from the bucket when no record uses them | P3 | ⬜ To do | 2 | — | |
+| API-19 | Remove (or reuse) the unused `SiteSettings` model and endpoint | P3 | ⬜ To do | 2 | — | Left over from ADM-07 |
+
+### 7.5 Notifications (`NTF`)
+
+| ID | Feature / task | Pri | Status | Ph | Depends on | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| NTF-01 | Async pipeline: a saved request queues Celery tasks (Redis broker) | P0 | ✅ Done | 3 | — | The customer never waits on providers |
+| NTF-02 | Owner email alert (HTML + text, customer as Reply-To, reply buttons) over any SMTP provider | P0 | ✅ Done | 3 | — | |
+| NTF-03 | Email provider chosen and sender domain verified | P0 | ⛔ Blocked | 3 | Q2 | |
+| NTF-04 | Owner WhatsApp alert via Twilio (sandbox text and approved-template support) | P0 | ✅ Done | 3 | — | |
+| NTF-05 | Twilio account, WhatsApp sender, approved template, owner's number | P0 | ⛔ Blocked | 3 | Q1 | Production needs a Meta-approved template (KI-04) |
+| NTF-06 | Reliability: retries (1/2/4/8/16 min), delivery log, 10-minute sweep, resend in admin | P0 | ✅ Done | 3 | — | |
+| NTF-07 | Real alert test in production: a quote reaches the owner by email and WhatsApp | P0 | ⬜ To do | 7 | NTF-03, NTF-05, OPS-04 | Launch gate (M3) |
+
+### 7.6 Infrastructure and DevOps (`OPS`)
+
+| ID | Feature / task | Pri | Status | Ph | Depends on | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| OPS-01 | Frontend CI/CD workflows (lint, typecheck, build, Docker check; GHCR image; SSH deploy) | P1 | ✅ Done | 5 | — | Deploy job is paused in `frontend-deploy.yml` |
+| OPS-02 | Activate CI/CD: production environment and secrets, branch protection, resume deploy | P0 | ⬜ To do | 5 | OPS-05 | |
+| OPS-03 | Backend CI workflow (tests) | P1 | ⬜ To do | 5 | — | Tests need a Neon test database or a Postgres service |
+| OPS-04 | Docker Compose stack: frontend, backend, worker, beat, Redis, Nginx, health checks | P0 | ⬜ To do | 5 | API-12 | |
+| OPS-05 | VPS, production domain, Cloudflare DNS/TLS and security headers | P0 | ⛔ Blocked | 5 | Q4 | |
+| OPS-06 | Backups: Neon history retention, snapshots, a tested restore | P0 | ⬜ To do | 5 | Q11 | |
+| OPS-07 | Monitoring: uptime checks, error tracking, central logs, alerts | P1 | ⬜ To do | 5 | OPS-05 | |
+| OPS-08 | Staging environment on its own Neon branch | P2 | ⬜ To do | 5 | OPS-04 | |
+| OPS-09 | Neon `dev` branch for local work | P1 | ✅ Done | 2 | — | Created 2026-10-26, expires 2026-11-02: recreate with `neon checkout dev --create`, then migrate |
+| OPS-10 | Neon account ownership and paid plan for production | P1 | ⛔ Blocked | 5 | Q11 | |
+
+### 7.7 Mobile apps (`MOB`): `mobile/`
+
+| ID | Feature / task | Pri | Status | Ph | Depends on | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| MOB-01 | App shell: React + Vite + TypeScript + Capacitor, branding, 4 languages, RTL | P2 | ⬜ To do | 6 | — | |
+| MOB-02 | Core flows: browse services and fleet, request a quote through the API, see the reference | P2 | ⬜ To do | 6 | MOB-01 | Booking management needs PRD-20 |
+| MOB-03 | Store release: signed Android and iOS builds, listings, privacy labels | P2 | ⛔ Blocked | 6 | Q10 | |
+
+### 7.8 Documentation and project management (`DOC`)
+
+| ID | Feature / task | Pri | Status | Ph | Depends on | Notes |
+| --- | --- | --- | --- | --- | --- | --- |
+| DOC-01 | README: overview, setup, API contract, decision log, changelog | P1 | ✅ Done | — | — | Keep current with every change |
+| DOC-02 | This project context file with the tracker | P1 | ✅ Done | — | — | |
+| DOC-03 | Ignore rules (root and frontend `.gitignore`) | P1 | ✅ Done | — | — | |
+| DOC-04 | GitHub repository and pull-request workflow | P1 | ✅ Done | — | — | Branch protection is part of OPS-02 |
+| DOC-05 | Runbook: deploy, rollback, backup restore, "alert failed" | P1 | ⬜ To do | 7 | OPS-04 | |
+| DOC-06 | Client handover and training (Django admin, content admin) | P1 | ⬜ To do | 7 | — | |
+| DOC-07 | Phase dates and budget | P1 | ⛔ Blocked | — | Q9 | |
+
+---
+
+## 8. Progress
+
+_Snapshot as of 2026-10-29. Percent = (done + half of in progress) ÷ items in v1 scope (excludes 💤 Later and ➖ Dropped).
+It counts items, not effort: the remaining items include the larger ones (deployment, tests, mobile apps)._
+
+| Area | Progress | ✅ Done | 🟡 In progress | ⛔ Blocked | ⬜ To do | 💤 Later | ➖ Dropped | Total |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Product features (`PRD`) | ██████████░░░░░░░░ 58 % | 10 | 1 | 4 | 3 | 6 | 0 | 24 |
+| Website (`WEB`) | █████████░░░░░░░░░ 52 % | 11 | 0 | 3 | 7 | 0 | 0 | 21 |
+| Content admin (`ADM`) | ███████████░░░░░░░ 60 % | 6 | 0 | 1 | 3 | 0 | 1 | 11 |
+| Backend API (`API`) | ████████░░░░░░░░░░ 44 % | 8 | 0 | 0 | 10 | 1 | 0 | 19 |
+| Notifications (`NTF`) | ██████████░░░░░░░░ 57 % | 4 | 0 | 2 | 1 | 0 | 0 | 7 |
+| Infrastructure (`OPS`) | ████░░░░░░░░░░░░░░ 20 % | 2 | 0 | 2 | 6 | 0 | 0 | 10 |
+| Mobile apps (`MOB`) | ░░░░░░░░░░░░░░░░░░ 0 % | 0 | 0 | 1 | 2 | 0 | 0 | 3 |
+| Docs and PM (`DOC`) | ██████████░░░░░░░░ 57 % | 4 | 0 | 1 | 2 | 0 | 0 | 7 |
+| **All** | █████████░░░░░░░░░ **48 %** | **45** | **1** | **14** | **34** | **7** | **1** | **102** |
+
+**Open launch blockers (P0 not done): 13** · WEB-13, ADM-09, API-09, API-10, API-12, API-14, NTF-03, NTF-05, NTF-07, OPS-02, OPS-04, OPS-05, OPS-06
+
+### What works today
+
+- **Website** (`npm run dev`): every page in four languages with right-to-left Arabic, SEO, PWA, service detail pages.
+  Services come from the API. Passes `lint`, `typecheck` and `build`.
+- **Quote flow:** website form → API → Postgres → Celery → owner email, checked locally with real submissions.
+  The WhatsApp alert code is built and tested, but no Twilio account is connected yet.
+- **Content admin:** at `/admin`, full editing of services, fleet, cities and guide prices in four languages; in API mode
+  with staff sign-in and photos in the bucket.
+- **Backend:** runs locally on the Neon `dev` branch with all migrations applied there. The health endpoint reports
+  database and storage.
+
+### What doesn't work yet
+
+- Nothing is deployed (OPS-04, OPS-05). Alerts have no real recipients, email provider or Twilio account (NTF-03, NTF-05).
+- The `production` database has no content tables and no content (API-10, ADM-09).
+- Admin edits to fleet and cities don't reach the website (WEB-12).
+- Guide prices are not committed and have no amounts (PRD-10).
+- No website tests, no backend CI, no monitoring and no tested backups.
+- From the client's list: no bookings or accounts, instant pricing, corporate accounts, on-demand hailing or carbon offset (Phase 8).
 
 ### Recently completed
 
-- 2026-10-26: Content API for the admin. A Django `content` app (services, vehicles, cities, site settings; translations as JSON per field), DRF endpoints for every admin operation, photo upload to the `assets` bucket, staff sign-in with a session cookie and CSRF token, and DRF deny-by-default. The admin switches to it with `NEXT_PUBLIC_ADMIN_CONTENT_SOURCE=api` and gets a sign-in screen. 40 new tests (69 total). Development moved to the Neon branch `dev`.
-- 2026-10-26: Website quote form connected to the Django API (CORS, localized field and rate-limit errors). Alerts built for the client's manual replies: the customer's name as sender, Reply by email / WhatsApp / Call buttons, and the same links in the admin. Checked in a browser: two real submissions saved and emailed, and the rate-limit message shown.
-- 2026-10-26: Content admin moved into the website app at `/admin`, with its own root layout and a production gate (`ADMIN_ENABLED`). The separate `admin/` app is retired.
-- 2026-10-25: Content admin (Next.js) in demo mode. Services, fleet, cities and site settings get full create, update and delete in four languages, plus a dashboard, image upload, SEO preview and light and dark themes. Content is seeded from the website's dictionaries.
-- 2026-10-25: Quote request system in the backend: endpoint, validation, rate limit, admin, and owner alerts by email and Twilio WhatsApp through Celery + Redis, with retries and a delivery log. 27 tests pass, and the full flow was checked locally (request → Neon → Redis → worker → email).
-- 2026-10-24: Backend started. Django 6.1 + DRF project connected to Neon: Lakebase Postgres and the private `assets` bucket, both tested end to end. All secrets moved to `backend/.env.local`.
-- 2026-10-24: Neon tooling for AI assistants: plugin and skills checked, plus a project-level MCP server (`.mcp.json`, OAuth, pinned to this project).
-- 2026-10-24: Service detail pages for all four services in four languages, with the form pre-filled per service and vehicle.
-- 2026-10-24: Services dropdown in the header (Naymul Hasan). Fixed the phone nav row wrapping in Bulgarian and French, which made the header cover the homepage logo.
-- 2026-10-23: Services, Fleet, Cities and Process pages (four languages, quote pre-fill per service, vehicle and city).
-- 2026-10-23: Language dropdown (endonyms, matches the button, keyboard support, keeps scroll position). Public URLs switched to `/?lang=xx`.
-- 2026-10-23: Git repository set up on GitHub (`NHasan143/driveo-creative`); `main` now holds the new platform.
-- 2026-10-22: GitHub Actions CI/CD for the website (PR checks, GHCR image, SSH deploy with safety rails) and Dependabot.
-- 2026-10-22: Next.js frontend built, verified and documented. Root README, `.gitignore` files and this file added.
-
-### Next up (in priority order)
-
-1. Activate CI/CD: `production` environment, secrets, branch protection on `main` (W4.3b, W6.4).
-2. Resolve the open questions in §12 that block the backend (notification recipients, email provider, accounts in v1).
-3. Backend foundation fixes: custom user model (do it before the first real user; the `dev` branch has one test superuser, `production` has none), settings split, pytest and ruff (W2.1, W2.6). Then apply the `content` migration on `production`.
-4. Configure alert recipients, SMTP and Twilio (Q1, Q2) and test a real email and WhatsApp alert, then add end-to-end tests (Phase 4, W1.10).
-5. The website reads its content from `GET /api/v1/content/published/` instead of its dictionaries, with uploaded photos allowed in `next/image` (W2.8).
-6. Write the legal pages and consent banner (W1.7–W1.8), then do the performance pass (W1.9).
+- 2026-10-29: This file restructured into one tracker (IDs, priorities, statuses, milestones).
+- 2026-10-28: Client's target feature list added (PRD-11 to PRD-24); backend packages installed in the conda environment `driveexclusive`.
+- 2026-10-27: Website reads services from the API (WEB-11); site settings screen dropped (ADM-07); admin dashboard redesigned; guide prices built (PRD-10, uncommitted).
+- 2026-10-26: Content API and staff sign-in (API-05, API-06, ADM-06); quote form connected to the API (WEB-09); admin moved into the website at `/admin` (ADM-01); Neon `dev` branch (OPS-09).
+- 2026-10-25: Quote request API, Django admin and email/WhatsApp alerts with retries (API-03, API-04, NTF-01 to NTF-06); content admin in demo mode.
+- 2026-10-24: Backend on Neon (API-01, API-02); service detail pages and header dropdown (WEB-05).
+- 2026-10-23: Inner pages and language dropdown (WEB-04, WEB-02); repository on GitHub (DOC-04).
+- 2026-10-22: Next.js website, CI/CD workflows, README and this file (WEB-01, OPS-01, DOC-01).
 
 ---
 
-## 10. Risks, concerns and known issues
+## 9. Next up
+
+In order. If an item is blocked, take the next one.
+
+| # | ID | Task | Why now |
+| --- | --- | --- | --- |
+| 1 | PRD-10 | Commit guide prices; rerun the backend tests | Finished work sitting uncommitted |
+| 2 | API-09 | Custom user model | Must happen before the first real user (M2) |
+| 3 | API-10, ADM-09 | Migrate `production`; add a way to load the original content | The production database is empty (M2) |
+| 4 | WEB-12 | Website reads fleet and cities from the API | Admin edits otherwise don't show (Phase 4) |
+| 5 | API-12, OPS-04 | Backend Dockerfile and Compose stack | Deployment path (M2) |
+| 6 | API-14, API-11 | Production settings | Deployment path (M2) |
+| 7 | Client | Answer Q1, Q2, Q4, Q7 | They block the P0 items NTF-03, NTF-05, OPS-05 and WEB-13 |
+| 8 | OPS-02, OPS-03 | Activate CI/CD; backend CI | Quality gate before launch |
+| 9 | WEB-15, WEB-16, WEB-17 | Performance, tests, accessibility | O1 and O7 before launch |
+| 10 | Client | Answer Q12–Q14 | Unblocks the quick wins PRD-11 to PRD-15 and PRD-18, and the Phase 8 plan |
+
+---
+
+## 10. Risks and known issues
 
 ### Risks
 
-| Risk | Impact | Likelihood | Mitigation |
-| --- | --- | --- | --- |
-| Website launched before the backend is live, so leads are lost | High | Low | Mock mode is for development only. The deploy pipeline refuses mock-mode builds unless `ALLOW_MOCK_DEPLOY=true` (preview only). The launch checklist also requires a working end-to-end test |
-| Single-VPS hosting has no high availability | Medium | Low–Medium | Accepted for launch (per proposal). Containers make it easy to move to bigger or separate hosts. Backups and monitoring are required |
-| Notification provider outage | Medium | Medium | Save first, notify later. Retries with backoff and failure logs visible in the admin |
-| Spam or abuse of the quote form | Medium | Medium | Honeypot, client throttle, server validation and a 10/hour per-IP rate limit (W2.3). Add CAPTCHA only if needed |
-| Personal-data compliance (UK GDPR/GDPR) | High | Medium | Privacy policy, consent banner, data minimisation, retention policy, access restricted to staff |
-| Third-party costs not budgeted (hosting, Neon, Twilio, email, app stores) | Medium | Medium | Listed as client costs in scope (§4). Confirm budget before Phase 3, 5 and 6 |
-| Scope creep (payments, driver app, instant pricing) | Medium | Medium | Out of scope for v1 (§4). New requests go through a recorded decision |
-| Translations not reviewed by native speakers | Medium | Medium | Get FR, BG and AR copy reviewed by native speakers before launch |
-| Dependence on Neon (outage, pricing or plan limits) for the database and files | Medium | Low | It's standard Postgres and S3-compatible storage, so data can move with `pg_dump` and S3 tools. Confirm the plan and costs before launch (Q11) |
-| Leaked credentials (database, storage, Django secret key) | High | Low | Secrets live only in `.env.local` (gitignored) or the server's environment. `settings.py` contains none. Rotate the Neon credentials if exposed |
+| ID | Risk | Impact | Likelihood | Mitigation |
+| --- | --- | --- | --- | --- |
+| R-01 | Website launched before alerts work, so leads are lost | High | Low | Deploys refuse mock mode; NTF-07 is a launch gate (M3) |
+| R-02 | Single VPS has no high availability | Medium | Low–Medium | Accepted for launch. Containers can move hosts; backups and monitoring required (OPS-06, OPS-07) |
+| R-03 | Notification provider outage | Medium | Medium | Save first, notify later; retries and failure log (NTF-06) |
+| R-04 | Spam or abuse of the quote form | Medium | Medium | Honeypot, client cooldown, validation, 10/hour per-IP limit. CAPTCHA only if needed |
+| R-05 | Personal-data compliance (UK GDPR/GDPR) | High | Medium | Privacy policy and consent (WEB-13, WEB-14), data minimisation, staff-only access |
+| R-06 | Third-party costs not budgeted | Medium | Medium | Client costs (§4). Confirm the budget (Q9) |
+| R-07 | Scope creep from the target feature list (payments, driver app, instant pricing, corporate) | High | High | Phase 8 items stay 💤 until Q12 is decided and recorded in §11 |
+| R-08 | Translations not reviewed by native speakers | Medium | Medium | WEB-19 before launch |
+| R-09 | Dependence on Neon (outage, pricing, plan limits) | Medium | Low | Standard Postgres and S3: data can move with `pg_dump` and S3 tools. Q11 |
+| R-10 | Leaked credentials | High | Low | Secrets only in `.env.local` or the server environment; rotate Neon credentials if exposed |
+| R-11 | The website promises things the business doesn't do (flight tracking, all-inclusive, carbon offset) | Medium | Medium | Change copy only after the client confirms (Q14) |
 
 ### Known issues and technical debt
 
-- **No automated dependency updates** since Dependabot was removed. Run `npm outdated` monthly and update deliberately. Pending: align `@types/node` (now `^20`) with the Node 24 runtime, and plan the move to Node 26 LTS.
-- **Large hero videos** (≈ 3.4 MB and ≈ 9.9 MB MP4): slow on mobile data. Fix in W1.9.
-- **Rate limit behind a proxy:** the server rate limit uses the connecting IP and a per-process cache. Behind Nginx/Cloudflare it needs the real client IP (`NUM_PROXIES` / forwarded headers) and a shared Redis cache before launch. The stored `ip_address` has the same limitation.
-- **WhatsApp templates:** production alerts need a Meta-approved template; free-form messages only work in the sandbox or within 24 hours of the owner's last message.
-- **Placeholder copy:** the testimonial is the design's sample quote. Replace it with a real, approved client quote.
-- **The hourly-hire note** mentions Greater London only. Confirm the rule for the other cities (§12).
-- **Copyright year** (`© 2026`) is fixed in the dictionaries. Make it dynamic or update it yearly.
-- **Neon accounts on the developer machine:** the Neon CLI must be signed in to the account in org `org-super-hill-79285047`. The user-level Neon MCP key belongs to another org (GlowHaat); the project's `.mcp.json` overrides it here.
-- **Backend Python environment:** run the backend from `backend/.venv` (Django 6.1). The global Anaconda Python has Django 4.2.
-- **Content photos are never deleted** from the bucket when a record is deleted or its photo replaced. Add a cleanup job once storage use matters.
-- **Content permissions are all-or-nothing:** any staff account can edit all content; only superusers can replace everything (import). Use Django groups/permissions if editors need narrower rights.
-- **Sign-in cookies need one site:** the website and API must be on the same site (e.g. `driveoexclusive.com` + `api.driveoexclusive.com`, or `/api` on one domain) or browsers won't send the staff session cookie.
-- **Arabic typography:** Fraunces has no Arabic glyphs, so Arabic headings fall back to Noto Kufi Arabic. Get a designer to review.
+| ID | Issue | Tracker |
+| --- | --- | --- |
+| KI-01 | No automated dependency updates since Dependabot was removed. Run `npm outdated` monthly; align `@types/node` (`^20`) with Node 24 | API-15 |
+| KI-02 | Large hero videos (≈3.4 MB and ≈9.9 MB) are slow on mobile data | WEB-15 |
+| KI-03 | Rate limits use the connecting IP and a per-process cache; behind Nginx/Cloudflare they need the real client IP and a shared Redis cache | API-14 |
+| KI-04 | Production WhatsApp alerts need a Meta-approved template; free-form messages only work in the sandbox or within 24 hours | NTF-05 |
+| KI-05 | The testimonial is the design's sample quote | WEB-18 |
+| KI-06 | Uploaded content photos are never deleted from the bucket | API-18 |
+| KI-07 | Any staff account can edit all content; only superusers can import | ADM-11 |
+| KI-08 | Staff sign-in needs the website and API on one site (e.g. `driveoexclusive.com` + `api.driveoexclusive.com`), or browsers won't send the session cookie | OPS-05 |
+| KI-09 | The `dev` Neon branch expires on 2026-11-02 with its data (test superuser, content, test photo) | OPS-09 |
+| KI-10 | Python environments: use `backend/.venv` (Python 3.12) or the conda env `driveexclusive` (Python 3.15; tests not yet run there). Base Anaconda has Django 4.2 and fails with `No module named 'dj_database_url'` | — |
+| KI-11 | The Neon CLI must be signed in to org `org-super-hill-79285047`; the user-level Neon MCP key belongs to another org, so `.mcp.json` pins this project | — |
+| KI-12 | Arabic headings fall back to Noto Kufi Arabic (Fraunces has no Arabic glyphs); needs a designer review | WEB-19 |
+| KI-13 | The copyright year is fixed in the dictionaries | WEB-21 |
+| KI-14 | Unused `SiteSettings` model and `/api/v1/content/settings/` endpoint after the settings screen was dropped | API-19 |
 
 ---
 
-## 11. Decisions made
+## 11. Decisions
 
-Newest first. The README has the same log for developers. Keep the two in sync.
+Newest first. The README has the same log for developers; keep both in sync.
 
-| Date | Decision | Why | Alternatives considered |
-| --- | --- | --- | --- |
-| 2026-10-26 | Staff sign in to the content admin with Django's session cookie + CSRF token | HttpOnly cookie, so no page script (or XSS) can read a credential; sign-out and deactivation work at once; reuses Django users and `is_staff`. Needs the website and API on one site | DRF tokens or JWT kept in browser storage (readable by scripts, harder to revoke); Neon Auth (a second user store next to Django's) |
-| 2026-10-26 | Translated content stored as JSON per field (`{"en","fr","bg","ar"}`); the content API speaks camelCase to match the admin's types | Lists of translated items (facts, features, steps) fit naturally; a new language needs no migration; records go to the forms without mapping | A column per language (django-modeltranslation); separate translation tables |
-| 2026-10-26 | Content photos stored as references and served through a redirect endpoint | The bucket is private and its presigned links expire, so records keep the key and the API hands out one stable URL | A public-read bucket; saving presigned links |
-| 2026-10-26 | The content admin lives in the website app at `/admin` (a second root layout), hidden in production unless `ADMIN_ENABLED=true` | Client preference: one app to run and deploy. Admin code and CSS never load on website pages. The gate keeps an unauthenticated admin off the live site | A separate `admin/` Next.js app (built first, then retired) |
-| 2026-10-25 | The content admin was built first against browser storage, behind a `ContentRepository` interface | The client asked for the admin frontend first. Screens never touch storage directly, so connecting the Django API swaps one implementation. It matches the website's stack and design quality | Django's built-in admin for content (kept for quote requests); building the API first |
-| 2026-10-24 | All local backend secrets in one file, `backend/.env.local` (template: `backend/.env.example`), with the Neon link (`neon.ts`, `.neon`) in `backend/` too so the Neon CLI writes there. `settings.py` has no secrets and no fallback key | One place to manage them. `neon env pull` updates only its own variables there. The app fails fast if a secret is missing | A separate `backend/.env` for Django-only values |
-| 2026-10-24 | Database and uploaded files on Neon (Lakebase Postgres + Object Storage) instead of PostgreSQL in a container on the VPS. Supersedes that part of proposal v1.0 | Managed backups and point-in-time restore. The database and files branch together for staging and previews. One fewer stateful service on the VPS | PostgreSQL container on the VPS (proposal v1.0); AWS RDS + S3 |
-| 2026-10-22 | CI/CD on GitHub Actions: GHCR images, SSH + `docker compose` deploy, mock-mode deploys blocked | No paid CI/CD or registry services; fits the Docker/VPS plan; protects against launching without a backend | Self-hosted runner on the VPS; a PaaS (e.g. Vercel) for the website |
-| 2026-10-22 | `driveo-creative/` kept as a read-only reference and git-ignored | Separate repository and stack; avoids accidental commits | Git submodule (unnecessary for a reference) |
-| 2026-10-22 | Website rebuilt in Next.js, not extended from Lovable | Matches the agreed stack; better SEO and maintainability | Keep TanStack Start + Supabase |
-| 2026-10-24 | Removed Dependabot; dependencies are updated manually | Automated PRs were noisy, and some were unsuitable (EOL Node 25, TypeScript 7 unsupported by the linter) | Keep it in a quieter mode (monthly, minor/patch only); security-only updates |
-| 2026-10-23 | Public language URLs use a query parameter (`/?lang=en`) instead of `/en` paths | Client preference. Pages stay prerendered (proxy rewrite) and indexable via canonical/hreflang. Old `/en` links redirect | Keep `/en` path URLs (Google's general recommendation) |
-| 2026-10-22 | Language in the URL with a cookie to remember the choice | Each language can be indexed by search engines; shareable links | Client-only language switch (prototype approach) |
-| 2026-10-22 | API uses stable snake_case ids; labels live in translations | Labels can change or be translated without breaking data | Sending display text (prototype approach) |
-| 2026-10-22 | Frontend mock mode until the API exists | Frontend and backend can be built in parallel | Wait for the backend |
-| 2026-10-22 | Styling: Tailwind for layout, CSS Modules for complex effects, tokens as CSS variables | Faithful port of the custom design while staying maintainable | Rewrite every effect as Tailwind utilities |
-| Proposal v1.0 | Django + DRF shared API; PostgreSQL, Redis, Celery; Docker on VPS | Proven, secure, one place for business rules | — |
-
----
-
-## 12. Open questions and blockers
-
-| # | Question | Blocks | Owner | Status |
+| ID | Date | Decision | Why | Alternatives considered |
 | --- | --- | --- | --- | --- |
-| Q1 | Who receives quote alerts? The prototype used email only to `driveolimited@gmail.com`; the proposal says email and WhatsApp. Confirm the address(es) and WhatsApp number | W3.2, W3.3 | Client | Open |
-| Q2 | Which transactional email provider and sender domain? | W3.2 | Client + dev | Open |
-| Q3 | Do customers need accounts in v1, or only anonymous requests? | W2.2, W5.2 | Client | Open |
-| Q4 | Production domain, VPS provider and Cloudflare account access | W4.1, W4.2 | Client | Open |
-| Q5 | Pricing rules: what may the system calculate vs. what is always quoted by hand? | W2.2 | Client | Open |
-| Q6 | Hourly-hire mileage allowance outside London | Website copy, W2.2 | Client | Open |
-| Q7 | Legal copy (privacy, terms, cookies). Who writes and approves it? | W1.7 | Client | Open |
-| Q8 | Real client testimonial(s) approved for publication | Website copy | Client | Open |
-| Q9 | Budget and timeline per phase | §7 dates | Client | Open |
-| Q10 | Apple and Google developer accounts (owned by the business) | W5.3 | Client | Open |
-| Q11 | Neon account ownership and plan: should the org move to a business-owned account, and which paid plan does production need? | W4.4, launch | Client + dev | Open |
+| D-18 | 2026-10-28 | The client's target feature list is tracked as PRD-11 to PRD-24; items outside v1 scope stay 💤 until Q12 | Keeps v1 shippable while recording what the client wants | Adding everything to v1 |
+| D-17 | 2026-10-27 | Guide prices in euros per service, city and vehicle class (hourly hire per hour), shown as "from" prices; the final price is still quoted by hand | Answers Q5 in part: customers see a starting point without automatic pricing | Instant pricing (PRD-19) |
+| D-16 | 2026-10-27 | No site settings screen in the admin; site information stays in `frontend/src/config/site.ts` | Rarely changes; simpler admin | A settings screen (built, then dropped: ADM-07) |
+| D-15 | 2026-10-26 | Staff sign in to the content admin with Django's session cookie + CSRF token | HttpOnly cookie no script can read; instant sign-out; reuses Django users and `is_staff`. Needs one site for website and API | DRF tokens or JWT in browser storage; Neon Auth |
+| D-14 | 2026-10-26 | Translated content stored as JSON per field (`{"en","fr","bg","ar"}`); the content API speaks camelCase | Lists of translated items fit naturally; new languages need no migration; matches the admin's types | A column per language; translation tables |
+| D-13 | 2026-10-26 | Content photos stored as references, served through a redirect endpoint | The bucket is private and presigned links expire | Public bucket; saving presigned links |
+| D-12 | 2026-10-26 | The content admin lives in the website app at `/admin`, hidden in production unless `ADMIN_ENABLED=true` | One app to run and deploy; admin code never loads on website pages | A separate `admin/` app (built, then retired) |
+| D-11 | 2026-10-25 | Content admin built first against browser storage behind a `ContentRepository` interface | Client wanted the admin UI first; swapping storage is one implementation | Django admin for content; API first |
+| D-10 | 2026-10-24 | All local backend secrets in `backend/.env.local`; no secrets or fallback key in `settings.py` | One place; `neon env pull` only touches its own lines; fails fast | A separate `backend/.env` |
+| D-09 | 2026-10-24 | Database and files on Neon instead of a Postgres container on the VPS (supersedes that part of proposal v1.0) | Managed backups, branches for dev and staging, one fewer stateful service | Postgres container; AWS RDS + S3 |
+| D-08 | 2026-10-24 | Dependabot removed; dependencies updated manually | Too many unsuitable automated PRs | Quieter Dependabot settings |
+| D-07 | 2026-10-23 | Public language URLs use `/?lang=en` instead of `/en` paths | Client preference; pages stay prerendered and indexable | `/en` paths |
+| D-06 | 2026-10-22 | CI/CD on GitHub Actions: GHCR images, SSH + Compose deploy, mock-mode deploys blocked | No paid services; fits the VPS plan | Self-hosted runner; Vercel |
+| D-05 | 2026-10-22 | `driveo-creative/` kept as a read-only, git-ignored reference | Separate repository and stack | Git submodule |
+| D-04 | 2026-10-22 | Website rebuilt in Next.js, not extended from Lovable | Agreed stack; better SEO and maintainability | TanStack Start + Supabase |
+| D-03 | 2026-10-22 | API values are stable snake_case ids; labels live in translations | Labels can change without breaking data | Sending display text |
+| D-02 | 2026-10-22 | Frontend mock mode until the API exists; styling with Tailwind, CSS Modules and CSS variables | Parallel work; faithful port of the design | Waiting for the backend; utilities only |
+| D-01 | Proposal v1.0 | Django + DRF shared API; Redis and Celery; Docker on a VPS | Proven, secure, one place for business rules | — |
+
+---
+
+## 12. Open questions
+
+| ID | Question | Blocks | Owner | Status |
+| --- | --- | --- | --- | --- |
+| Q1 | Who receives quote alerts (email addresses, WhatsApp number)? | NTF-05 | Client | Open |
+| Q2 | Which email provider and sender domain? | NTF-03 | Client + dev | Open |
+| Q3 | Do customers need accounts in v1, or only anonymous requests? | PRD-20, API-17 | Client | Open |
+| Q4 | Production domain, VPS provider and Cloudflare access | OPS-05 | Client | Open |
+| Q5 | Pricing: what may the system calculate vs. what is always quoted by hand? | PRD-19 | Client | Partly answered (D-17); amounts still to be entered |
+| Q6 | Hourly-hire mileage allowance outside London | WEB-20 | Client | Open |
+| Q7 | Legal copy (privacy, terms, cookies): who writes and approves it? | WEB-13 | Client | Open |
+| Q8 | Real client testimonial(s) approved for publication | WEB-18 | Client | Open |
+| Q9 | Budget and timeline per phase | DOC-07, §6 | Client | Open |
+| Q10 | Apple and Google developer accounts owned by the business | MOB-03 | Client | Open |
+| Q11 | Neon account ownership and production plan | OPS-06, OPS-10 | Client + dev | Open |
+| Q12 | Which items from the target feature list join v1 (instant pricing, bookings and accounts, corporate, on-demand, payments, driver app)? | PRD-19 to PRD-24, Phase 8 | Client | Open |
+| Q13 | Hourly hire 2–16 h (today) or 2–24 h? Business Class 4 or 3 passengers; Business Van 7 or 5? Add SUVs and non-Mercedes models? | PRD-12, PRD-14 | Client | Open |
+| Q14 | Are prices really all-inclusive (tolls, taxes, fees, gratuity)? Is there a carbon-offset partner? | PRD-15, PRD-16 | Client | Open |
 
 ---
 
@@ -405,17 +581,42 @@ Newest first. The README has the same log for developers. Keep the two in sync.
 | What | Where |
 | --- | --- |
 | Website code | `frontend/` (guide: [`frontend/README.md`](frontend/README.md)) |
-| Content admin | `frontend/src/admin/` + routes in `frontend/src/app/admin/` (guide: [`frontend/README.md#content-admin-admin`](frontend/README.md#content-admin-admin)) · content model: `frontend/src/admin/lib/content/types.ts` |
-| Domain rules (cities, services, vehicles, capacity) | `frontend/src/domain/booking.ts` |
+| Content admin | `frontend/src/admin/`, routes in `frontend/src/app/admin/` · content model: `frontend/src/admin/lib/content/types.ts` |
+| Website content loader (services from the API) | `frontend/src/lib/content/site-services.ts` |
+| Booking rules (cities, services, vehicles, capacity, hire hours) | `frontend/src/domain/booking.ts` and `backend/quotes/choices.py` (keep in sync) |
 | Translations | `frontend/src/i18n/dictionaries/{en,fr,bg,ar}.ts` |
 | Company contact, social links, media | `frontend/src/config/site.ts` |
-| Backend code and settings | `backend/` · settings: `backend/config/settings.py` · content API: `backend/content/` · staff sign-in: `backend/core/auth_views.py` |
-| Neon services (Postgres, `assets` bucket) | `backend/neon.ts` (run `neon` commands from `backend/`) · project `driveexclusive` (`icy-block-59285110`), branches `production` (default) and `dev` (local work) |
-| Local secrets | `backend/.env.local` (gitignored), template [`backend/.env.example`](backend/.env.example) |
-| Quote API contract (payload and response) | [`frontend/README.md#backend-contract`](frontend/README.md#backend-contract) |
-| Design reference code | `driveo-creative/` · live: https://driveo-creative-lab.lovable.app |
+| Backend | `backend/` · settings `backend/config/settings.py` · apps `core` (health, staff sign-in), `quotes`, `content` |
+| Neon services | `backend/neon.ts` (run `neon` commands from `backend/`) |
+| Local secrets | `backend/.env.local` (gitignored), template `backend/.env.example`; `frontend/.env.local`, template `frontend/.env.example` |
+| API contract | README [API contract](README.md#api-contract); quote payload in `frontend/README.md#backend-contract` |
+| CI/CD | `.github/workflows/frontend-ci.yml`, `frontend-deploy.yml` |
+| Design reference | `driveo-creative/` · https://driveo-creative-lab.lovable.app |
 | Original company site | https://driveo-elite-flow.base44.app |
 | Technical proposal | *Technology Stack & Deployment Architecture, DriveExclusive* (PDF, v1.0) |
+
+### Everyday commands
+
+| Task | Command (from the folder shown) |
+| --- | --- |
+| Run the website and admin | `frontend/`: `npm run dev` → http://localhost:3000, admin at `/admin` |
+| Check the website | `frontend/`: `npm run lint`, `npm run typecheck`, `npm run build` |
+| Run the API | `backend/`: `.venv/Scripts/python manage.py runserver` (or `python manage.py runserver` after `conda activate driveexclusive`) |
+| Backend tests | `backend/`: `.venv/Scripts/python manage.py test` (creates a test database on Neon; several minutes) |
+| Migrate | `backend/`: `.venv/Scripts/python manage.py migrate --database direct` |
+| Switch Neon branch | `backend/`: `neon checkout dev` or `neon checkout production` (rewrites `.env.local`) |
+| Alerts worker | `backend/`: `.venv/Scripts/celery -A config worker -l info --pool=solo` (needs Redis) |
+
+### Key configuration flags
+
+| Flag | Where | Meaning |
+| --- | --- | --- |
+| `NEXT_PUBLIC_API_BASE_URL` | frontend | Django API base, e.g. `http://localhost:8000/api` |
+| `NEXT_PUBLIC_API_MOCK` | frontend | `true` fakes API responses |
+| `NEXT_PUBLIC_ADMIN_CONTENT_SOURCE` | frontend | `local` (demo, browser storage) or `api` (Postgres, staff sign-in) |
+| `ADMIN_ENABLED` | frontend (runtime) | Production shows `/admin` only when `true`; use only with API mode |
+| `CORS_ALLOWED_ORIGINS`, `CSRF_TRUSTED_ORIGINS`, `SESSION_COOKIE_SAMESITE` | backend | Which website origins may call the API and sign staff in |
+| `CELERY_TASK_ALWAYS_EAGER` | backend | `true` sends alerts inside the request (local work without Redis) |
 
 ### Glossary
 
@@ -423,41 +624,41 @@ Newest first. The README has the same log for developers. Keep the two in sync.
 | --- | --- |
 | **Quote request** | A customer's journey details sent for a personal fixed-price quote |
 | **Reference** | Request id shown to the customer, format `DRV-XXXXXX` |
-| **Mock mode** | Frontend setting that fakes API responses (`NEXT_PUBLIC_API_MOCK=true`) |
+| **Guide price** | A "From €X" starting price per service, city and vehicle class; the real price is still quoted |
+| **Mock mode** | Frontend setting that fakes API responses |
+| **Demo mode** | Content admin storing content only in the browser |
 | **Locale** | Language version of the site: `en`, `fr`, `bg`, `ar` |
 | **RTL** | Right-to-left layout, used for Arabic |
-| **Honeypot** | Hidden form field that only bots fill in, used to drop spam silently |
+| **Honeypot** | Hidden form field only bots fill in, used to drop spam silently |
 | **DRF** | Django REST Framework |
-| **Capacitor** | Tool that packages a web app as native Android and iOS apps |
-| **Celery / Redis** | Background job system and its message broker, used for notifications and retries |
-| **PWA** | Progressive Web App: the site can be "installed" to a phone's home screen |
-| **Neon** | Managed cloud provider for the database (Lakebase Postgres) and file storage |
-| **Neon branch** | An instant copy-on-write copy of the database and files, used for staging, previews and feature work |
-| **Pooled / direct connection** | Neon provides two database URLs: pooled (`DATABASE_URL`) for app traffic and direct (`DATABASE_URL_UNPOOLED`) for migrations |
+| **Celery / Redis** | Background job system and its broker, used for alerts and retries |
+| **Capacitor** | Packages a web app as native Android and iOS apps |
+| **PWA** | Progressive Web App: the site can be installed to a phone's home screen |
+| **Neon / Neon branch** | Managed Postgres and file storage; a branch is an instant copy-on-write copy for dev or staging |
+| **Pooled / direct connection** | `DATABASE_URL` (app traffic) and `DATABASE_URL_UNPOOLED` (migrations) |
 
 ### Working agreements
 
 - **Documentation:** update this file and the README in the same change as the work.
-- **Commits:** Conventional Commits with scopes `frontend`, `backend`, `mobile`, `infra`, `docs`.
-- **Branches:** `main` is deployable. Work happens on `feature/*` or `fix/*` through pull requests.
-- **Quality gate:** lint, typecheck and build (plus tests, once they exist) must pass before merge.
-- **Design:** the Lovable prototype is the visual reference. Agree new designs before building them.
+- **Commits:** Conventional Commits with scopes `frontend`, `backend`, `mobile`, `infra`, `docs`, plus the tracker ID.
+- **Branches:** `main` is deployable; work on feature branches through pull requests.
+- **Quality gate:** lint, typecheck, build and tests must pass before merge.
+- **Design:** the Lovable prototype is the visual reference; agree new designs before building them.
 
 ---
 
 ## 14. How to maintain this file
 
-Keep it **true, short and current**. When something changes, edit the matching section and bump
-**Last updated** at the top.
+Keep it **true, short and current**, and bump **Last updated** at the top.
 
 | When… | Update |
 | --- | --- |
-| A task is finished | Tick it in §8, adjust §9 (progress bars, "Recently completed", "Next up") |
-| A phase starts or ends | §7 status, header "Current phase" and "Next milestone" |
-| A decision is made | Add a row to §11 (and to the README decision log) |
-| A question is answered | Close it in §12 and record the outcome in §11 |
-| A new risk or issue appears | Add it to §10 |
-| Scope changes | Update §4 and record the decision in §11 |
-| Business facts change (services, fleet, cities, contact) | §1, plus the code locations in §13 |
+| Work starts or finishes | Its status in §7; recount §8 and the header totals; "Recently completed" in §8; §9 |
+| New work is identified | Add a row in §7 with the next free ID in its area, a priority and a status |
+| A phase or milestone changes | §6 and the header |
+| A decision is made | A new `D-xx` row at the top of §11 (and the README decision log) |
+| A question is answered | Close it in §12, record the outcome as a decision, unblock the items it named |
+| A new risk or issue appears | A new `R-xx` or `KI-xx` row in §10, linked to a tracker ID if there is one |
+| Business facts change (services, fleet, cities, contact) | §2, and the code locations in §13 |
 
-Progress bars use 18 blocks: each `█` is about 5.5 %.
+Progress bars use 18 blocks; each `█` is about 5.5 %.

@@ -10,8 +10,7 @@ from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
 from rest_framework import serializers
 
-from quotes.choices import Locale
-from quotes.models import QuoteRequest
+from bookings.choices import Locale
 
 from .models import User
 
@@ -140,26 +139,3 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         attrs["user"] = user
         return attrs
 
-
-class CustomerQuoteRequestSerializer(serializers.ModelSerializer):
-    """A quote request as its customer sees it (no staff notes, no IP)."""
-
-    class Meta:
-        model = QuoteRequest
-        fields = [
-            "reference",
-            "status",
-            "created_at",
-            "city",
-            "service_type",
-            "vehicle_class",
-            "pickup_location",
-            "destination",
-            "hire_hours",
-            "journey_date",
-            "journey_time",
-            "passengers",
-            "luggage",
-            "notes",
-        ]
-        read_only_fields = fields

@@ -2,7 +2,7 @@ import { Plus } from "lucide-react";
 import { ArrowLink } from "@/components/ui/arrow-link";
 import { CheckList } from "@/components/ui/check-list";
 import { FromPrice } from "@/components/ui/from-price";
-import { RequestQuoteButton } from "@/features/quote";
+import { BookButton } from "@/features/booking";
 import { localePath, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import type { SiteService } from "@/lib/content/site-services";
@@ -42,9 +42,9 @@ export function ServiceDetails({ locale, title, services, page, viewDetails, pri
                 <ArrowLink href={localePath(locale, item.path)} className={styles.detailsLink}>
                   {viewDetails}
                 </ArrowLink>
-                <RequestQuoteButton preset={item.bookingType ? { service: item.bookingType } : {}} variant="secondary">
-                  {page.quoteCta}
-                </RequestQuoteButton>
+                <BookButton preset={item.bookingType ? { service: item.bookingType } : {}} variant="secondary">
+                  {page.bookCta}
+                </BookButton>
                 {item.included.length > 0 && (
                   <details className={styles.inclusions}>
                     <summary>{page.includedLabel}<Plus aria-hidden="true" /></summary>

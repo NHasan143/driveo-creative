@@ -3,22 +3,22 @@ import { Reveal } from "@/components/motion/reveal";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import type { Locale } from "@/i18n/config";
 import { getDictionary, type Dictionary } from "@/i18n/get-dictionary";
-import { getGuidePrices } from "@/lib/content/site-services";
-import { QUOTE_SECTION_ID } from "../quote-preset-context";
-import { QuoteForm } from "./quote-form";
-import styles from "./quote-section.module.css";
+import { getServicePrices } from "@/lib/content/site-services";
+import { BOOKING_SECTION_ID } from "../booking-preset-context";
+import { BookingForm } from "./booking-form";
+import styles from "./booking-section.module.css";
 
-interface QuoteSectionProps {
+interface BookingSectionProps {
   locale: Locale;
-  quote: Dictionary["quote"];
+  booking: Dictionary["booking"];
   cityNames: Dictionary["cities"]["names"];
 }
 
-export async function QuoteSection({ locale, quote, cityNames }: QuoteSectionProps) {
-  const [{ pricing }, guidePrices] = await Promise.all([getDictionary(locale), getGuidePrices()]);
+export async function BookingSection({ locale, booking, cityNames }: BookingSectionProps) {
+  const [{ pricing }, prices] = await Promise.all([getDictionary(locale), getServicePrices()]);
 
   return (
-    <section id={QUOTE_SECTION_ID} className={styles.band}>
+    <section id={BOOKING_SECTION_ID} className={styles.band}>
       <div className={styles.orbit} aria-hidden="true">
         <i />
         <i />
@@ -27,13 +27,13 @@ export async function QuoteSection({ locale, quote, cityNames }: QuoteSectionPro
 
       <div className={`site-shell ${styles.layout}`}>
         <Reveal className={styles.intro}>
-          <Eyebrow>{quote.eyebrow}</Eyebrow>
-          <h2>{quote.title}</h2>
-          <p className={styles.lead}>{quote.intro}</p>
+          <Eyebrow>{booking.eyebrow}</Eyebrow>
+          <h2>{booking.title}</h2>
+          <p className={styles.lead}>{booking.intro}</p>
           <div className={styles.seal}>
             <BrandMark />
             <span>
-              {quote.seal.map((line) => (
+              {booking.seal.map((line) => (
                 <span key={line} className="block">
                   {line}
                 </span>
@@ -43,12 +43,12 @@ export async function QuoteSection({ locale, quote, cityNames }: QuoteSectionPro
         </Reveal>
 
         <Reveal y={56}>
-          <QuoteForm
+          <BookingForm
             locale={locale}
-            labels={quote}
+            labels={booking}
             cityNames={cityNames}
             pricing={pricing}
-            guidePrices={guidePrices}
+            prices={prices}
           />
         </Reveal>
       </div>

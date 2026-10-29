@@ -6,7 +6,7 @@ import { HeroSection } from "@/features/home/hero/hero-section";
 import { ProcessSection } from "@/features/home/process-section";
 import { ServicesSection } from "@/features/home/services-section";
 import { TestimonialSection } from "@/features/home/testimonial-section";
-import { QuoteSection } from "@/features/quote";
+import { BookingSection } from "@/features/booking";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 import { getSiteServices } from "@/lib/content/site-services";
 import { LocalBusinessJsonLd } from "@/lib/seo/json-ld";
@@ -39,7 +39,7 @@ export default async function HomePage() {
       <FleetSection locale={locale} fleet={t.fleet} more={t.pages.links.fleet} />
       <CitiesSection locale={locale} cities={t.cities} more={t.pages.links.cities} />
       <ProcessSection locale={locale} process={t.process} more={t.pages.links.process} />
-      <QuoteSection locale={locale} quote={t.quote} cityNames={t.cities.names} />
+      <BookingSection locale={locale} booking={t.booking} cityNames={t.cities.names} />
       <TestimonialSection testimonial={t.testimonial} />
     </main>
   );

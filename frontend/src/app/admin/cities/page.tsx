@@ -13,7 +13,7 @@ export default function CitiesPage() {
     <AuthGate>
       <PageHeader
         title="Cities"
-        description="Where Driveo operates. Published cities appear on the website and as pickup options in the quote form."
+        description="Where Driveo operates. Published cities appear on the website and as pickup options in the booking form."
         actions={
           <Button asChild>
             <Link href="/admin/cities/new">

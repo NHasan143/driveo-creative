@@ -26,7 +26,7 @@ export function ServicesHero({ locale, page, home, cta }: ServicesHeroProps) {
         </h1>
         <div className={styles.heroAside}>
           <div className={styles.heroActions}>
-            <a href="#quote" className={buttonClassName({ size: "lg" }, styles.heroCta)}>
+            <a href="#book" className={buttonClassName({ size: "lg" }, styles.heroCta)}>
               {cta} <ArrowRight aria-hidden="true" className="rtl:-scale-x-100" />
             </a>
           </div>

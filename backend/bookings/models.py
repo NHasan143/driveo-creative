@@ -1,16 +1,12 @@
 import secrets
+import zoneinfo
+from datetime import datetime
 
 from django.conf import settings
 from django.db import IntegrityError, models, transaction
+from django.utils import timezone
 
-from .choices import (
-    HIRE_HOURS_MAX,
-    HIRE_HOURS_MIN,
-    City,
-    Locale,
-    ServiceType,
-    VehicleClass,
-)
+from .choices import CITY_TIMEZONES, DEFAULT_TIMEZONE, HIRE_HOURS_MAX, HIRE_HOURS_MIN, Locale
 
 # No 0/O or 1/I, so a reference read out over the phone is unambiguous.
 REFERENCE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
@@ -22,47 +18,81 @@ def generate_reference():
     return f"{REFERENCE_PREFIX}{suffix}"
 
 
-class QuoteRequest(models.Model):
+def generate_manage_token():
+    return secrets.token_urlsafe(24)
+
+
+class Booking(models.Model):
+    """A chauffeur booking at a fixed price from the admin's price grid.
+
+    The customer pays later (the chauffeur or an invoice). Staff confirm each
+    booking once a chauffeur and car are assigned.
+    """
+
     class Status(models.TextChoices):
-        NEW = "new", "New"
-        CONTACTED = "contacted", "Contacted"
-        QUOTED = "quoted", "Quoted"
-        CLOSED = "closed", "Closed"
+        PENDING = "pending", "Awaiting confirmation"
+        CONFIRMED = "confirmed", "Confirmed"
+        COMPLETED = "completed", "Completed"
+        CANCELLED = "cancelled", "Cancelled"
+
+    class PriceUnit(models.TextChoices):
+        TRIP = "trip", "Per journey"
+        HOUR = "hour", "Per hour"
+
+    class CancelledBy(models.TextChoices):
+        CUSTOMER = "customer", "Customer"
+        STAFF = "staff", "Driveo"
 
     reference = models.CharField(max_length=10, unique=True, editable=False)
-    status = models.CharField(
-        max_length=20, choices=Status.choices, default=Status.NEW, db_index=True
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING, db_index=True)
+    # Lets a guest open, change or cancel the booking from the link in their email.
+    manage_token = models.CharField(max_length=64, unique=True, default=generate_manage_token, editable=False)
+    # The customer who was signed in when booking; they also see it under My account.
+    customer = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="bookings"
     )
 
     first_name = models.CharField(max_length=60)
     last_name = models.CharField(max_length=60)
     email = models.EmailField(max_length=254)
     phone = models.CharField(max_length=40)
+    locale = models.CharField(max_length=2, choices=Locale.choices, default=Locale.EN)
 
-    city = models.CharField(max_length=20, choices=City.choices)
-    service_type = models.CharField(max_length=20, choices=ServiceType.choices)
-    vehicle_class = models.CharField(max_length=20, choices=VehicleClass.choices)
+    # Content ids (backend/content/), e.g. "airport_transfer", "london", "first_class".
+    service = models.CharField(max_length=64)
+    city = models.CharField(max_length=64)
+    vehicle = models.CharField(max_length=64)
     pickup_location = models.CharField(max_length=300)
     destination = models.CharField(max_length=300, blank=True)
     hire_hours = models.PositiveSmallIntegerField(null=True, blank=True)
+    flight_number = models.CharField(max_length=12, blank=True)
     journey_date = models.DateField()
     journey_time = models.TimeField()
     passengers = models.PositiveSmallIntegerField()
     luggage = models.PositiveSmallIntegerField()
     notes = models.TextField(max_length=1500, blank=True)
-    locale = models.CharField(max_length=2, choices=Locale.choices, default=Locale.EN)
-    # The customer who was signed in when sending it; they see it under My account.
-    customer = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name="quote_requests",
+
+    # The price when booked (or last changed), from the price grid. Kept as it was,
+    # even if the grid changes later.
+    currency = models.CharField(max_length=3, default="EUR")
+    price_unit = models.CharField(max_length=4, choices=PriceUnit.choices)
+    unit_price = models.DecimalField(max_digits=8, decimal_places=2)
+    total_price = models.DecimalField(max_digits=9, decimal_places=2)
+
+    # Filled in by staff when confirming; shared with the customer.
+    chauffeur_name = models.CharField(max_length=100, blank=True)
+    chauffeur_phone = models.CharField(max_length=40, blank=True)
+    vehicle_details = models.CharField(
+        max_length=100, blank=True, help_text="E.g. black S-Class, registration AB12 CDE."
     )
+    staff_notes = models.TextField(blank=True)
+
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    cancelled_at = models.DateTimeField(null=True, blank=True)
+    cancelled_by = models.CharField(max_length=10, choices=CancelledBy.choices, blank=True)
 
     # Kept to investigate abuse of the public form.
     ip_address = models.GenericIPAddressField(null=True, blank=True)
-    staff_notes = models.TextField(blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -70,13 +100,11 @@ class QuoteRequest(models.Model):
     class Meta:
         ordering = ["-created_at"]
         constraints = [
-            models.CheckConstraint(
-                condition=models.Q(passengers__gte=1), name="quote_passengers_min_1"
-            ),
+            models.CheckConstraint(condition=models.Q(passengers__gte=1), name="booking_passengers_min_1"),
             models.CheckConstraint(
                 condition=models.Q(hire_hours__isnull=True)
                 | models.Q(hire_hours__gte=HIRE_HOURS_MIN, hire_hours__lte=HIRE_HOURS_MAX),
-                name="quote_hire_hours_range",
+                name="booking_hire_hours_range",
             ),
         ]
 
@@ -86,6 +114,26 @@ class QuoteRequest(models.Model):
     @property
     def full_name(self):
         return f"{self.first_name} {self.last_name}"
+
+    @property
+    def is_hourly(self):
+        return self.price_unit == self.PriceUnit.HOUR
+
+    @property
+    def starts_at(self):
+        """Pickup as an aware datetime, in the city's own time zone."""
+        tz = zoneinfo.ZoneInfo(CITY_TIMEZONES.get(self.city, DEFAULT_TIMEZONE))
+        return datetime.combine(self.journey_date, self.journey_time, tzinfo=tz)
+
+    @property
+    def is_open(self):
+        return self.status in (self.Status.PENDING, self.Status.CONFIRMED)
+
+    def can_change(self, now=None):
+        """Customers may change or cancel until BOOKING_CANCEL_NOTICE_HOURS before pickup."""
+        now = now or timezone.now()
+        notice = settings.BOOKING_CANCEL_NOTICE_HOURS * 3600
+        return self.is_open and (self.starts_at - now).total_seconds() >= notice
 
     def save(self, *args, **kwargs):
         if self.reference:
@@ -98,13 +146,23 @@ class QuoteRequest(models.Model):
                 with transaction.atomic():
                     return super().save(*args, **kwargs)
             except IntegrityError:
-                taken = QuoteRequest.objects.filter(reference=self.reference).exists()
+                taken = Booking.objects.filter(reference=self.reference).exists()
                 if not taken or attempt == 4:
                     raise
 
 
 class Notification(models.Model):
-    """One alert to one recipient about one quote request, with its delivery log."""
+    """One message to one recipient about one booking event, with its delivery log."""
+
+    class Event(models.TextChoices):
+        CREATED = "created", "New booking"
+        CHANGED = "changed", "Booking changed"
+        CONFIRMED = "confirmed", "Booking confirmed"
+        CANCELLED = "cancelled", "Booking cancelled"
+
+    class Audience(models.TextChoices):
+        OWNER = "owner", "Driveo"
+        CUSTOMER = "customer", "Customer"
 
     class Channel(models.TextChoices):
         EMAIL = "email", "Email"
@@ -116,14 +174,12 @@ class Notification(models.Model):
         FAILED = "failed", "Failed"
         SKIPPED = "skipped", "Skipped"
 
-    quote_request = models.ForeignKey(
-        QuoteRequest, on_delete=models.CASCADE, related_name="notifications"
-    )
+    booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name="notifications")
+    event = models.CharField(max_length=10, choices=Event.choices, default=Event.CREATED)
+    audience = models.CharField(max_length=10, choices=Audience.choices, default=Audience.OWNER)
     channel = models.CharField(max_length=10, choices=Channel.choices)
     recipient = models.CharField(max_length=254, blank=True)
-    status = models.CharField(
-        max_length=10, choices=Status.choices, default=Status.PENDING, db_index=True
-    )
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING, db_index=True)
     attempts = models.PositiveSmallIntegerField(default=0)
     provider_message_id = models.CharField(max_length=100, blank=True)
     error = models.TextField(blank=True)
@@ -133,12 +189,7 @@ class Notification(models.Model):
 
     class Meta:
         ordering = ["created_at"]
-        constraints = [
-            models.UniqueConstraint(
-                fields=["quote_request", "channel", "recipient"],
-                name="notification_unique_per_recipient",
-            )
-        ]
 
     def __str__(self):
-        return f"{self.get_channel_display()} to {self.recipient or '-'}: {self.status}"
+        target = self.recipient or "—"
+        return f"{self.get_event_display()} {self.get_channel_display()} to {target}: {self.get_status_display()}"

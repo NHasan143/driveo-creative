@@ -2,7 +2,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models.functions import Lower
 
-from quotes.choices import Locale
+from bookings.choices import Locale
 
 
 class User(AbstractUser):

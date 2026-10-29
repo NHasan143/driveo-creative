@@ -22,7 +22,7 @@ interface RequestOptions {
 
 /**
  * Thin JSON client for the shared Django REST API.
- * Paths are relative to `NEXT_PUBLIC_API_BASE_URL`, e.g. `/v1/quote-requests/`.
+ * Paths are relative to `NEXT_PUBLIC_API_BASE_URL`, e.g. `/v1/bookings/`.
  */
 export async function apiRequest<TResponse>(
   path: string,

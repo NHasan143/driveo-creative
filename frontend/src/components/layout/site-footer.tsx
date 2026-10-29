@@ -33,7 +33,7 @@ export function SiteFooter({ locale, nav, footer, install, cityNames }: SiteFoot
               <span className="font-mono text-xs tracking-[0.28em] uppercase">{siteConfig.legalName}</span>
             </div>
             <p className="mt-6 max-w-sm font-display text-3xl">{footer.tagline}</p>
-            <ButtonLink href="#quote" className="mt-7">
+            <ButtonLink href="#book" className="mt-7">
               {footer.cta} <span aria-hidden="true">↗</span>
             </ButtonLink>
           </div>

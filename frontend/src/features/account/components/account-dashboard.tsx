@@ -4,33 +4,30 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/eyebrow";
+import { listMyBookings, type BookingDto } from "@/features/booking/api/bookings";
+import { manageBookingHref } from "@/features/booking/components/booking-form";
+import Link from "next/link";
 import { localeMeta, localePath, locales, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/get-dictionary";
+import { formatPrice } from "@/lib/format-price";
 import { setAccountUser, useAccount } from "../account-store";
 import {
   changePassword,
-  listMyQuoteRequests,
   signOut,
   updateProfile,
   type AccountUser,
-  type CustomerQuoteRequest,
 } from "../api";
 import { accountErrorKey, type AccountErrorKey } from "../errors";
-import { QUOTE_SENT_EVENT } from "../events";
+import { BOOKING_MADE_EVENT } from "../events";
 import styles from "./account.module.css";
 import { AccountField, FormMessage, SubmitButton } from "./form-parts";
 
 interface AccountDashboardProps {
   locale: Locale;
   t: Dictionary["account"];
-  serviceNames: Dictionary["quote"]["serviceOptions"];
-  vehicleNames: Dictionary["quote"]["vehicleOptions"];
-  cityNames: Dictionary["cities"]["names"];
 }
 
-type Names = Pick<AccountDashboardProps, "serviceNames" | "vehicleNames" | "cityNames">;
-
-export function AccountDashboard({ locale, t, ...names }: AccountDashboardProps) {
+export function AccountDashboard({ locale, t }: AccountDashboardProps) {
   const router = useRouter();
   const { status, user } = useAccount();
 
@@ -64,7 +61,7 @@ export function AccountDashboard({ locale, t, ...names }: AccountDashboardProps)
         <p className={styles.intro}>{t.dashboard.intro}</p>
       </header>
       <div className={styles.dashboard}>
-        <QuoteRequests locale={locale} t={t} names={names} />
+        <Bookings locale={locale} t={t} />
         <div className="grid gap-8">
           <ProfileForm user={user} t={t} />
           <PasswordForm t={t} />
@@ -77,74 +74,74 @@ export function AccountDashboard({ locale, t, ...names }: AccountDashboardProps)
   );
 }
 
-function QuoteRequests({ locale, t, names }: { locale: Locale; t: Dictionary["account"]; names: Names }) {
-  const [requests, setRequests] = useState<CustomerQuoteRequest[] | null>(null);
+function Bookings({ locale, t }: { locale: Locale; t: Dictionary["account"] }) {
+  const [bookings, setBookings] = useState<BookingDto[] | null>(null);
   const [error, setError] = useState<AccountErrorKey | null>(null);
 
   const load = useCallback(() => {
-    listMyQuoteRequests()
-      .then(setRequests)
+    listMyBookings()
+      .then(setBookings)
       .catch((caught) => setError(accountErrorKey(caught)));
   }, []);
 
   useEffect(() => {
     load();
-    // A request sent from the quote form on this page appears straight away.
-    window.addEventListener(QUOTE_SENT_EVENT, load);
-    return () => window.removeEventListener(QUOTE_SENT_EVENT, load);
+    // A booking made with the form on this page appears straight away.
+    window.addEventListener(BOOKING_MADE_EVENT, load);
+    return () => window.removeEventListener(BOOKING_MADE_EVENT, load);
   }, [load]);
 
   const date = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
+  const name = (names: BookingDto["service_name"], fallback: string) => names?.[locale] || names?.en || fallback;
 
   return (
-    <section className={styles.card} aria-labelledby="requests-title">
-      <h2 id="requests-title" className={styles.cardTitle}>
-        {t.dashboard.requestsTitle}
+    <section className={styles.card} aria-labelledby="bookings-title">
+      <h2 id="bookings-title" className={styles.cardTitle}>
+        {t.dashboard.bookingsTitle}
       </h2>
       <FormMessage error={error && t.errors[error]} />
-      {requests?.length === 0 && <p className={styles.notice}>{t.dashboard.requestsEmpty}</p>}
-      {requests && requests.length > 0 && (
+      {bookings?.length === 0 && <p className={styles.notice}>{t.dashboard.bookingsEmpty}</p>}
+      {bookings && bookings.length > 0 && (
         <ul className={styles.requests}>
-          {requests.map((request) => (
-            <li key={request.reference} className={styles.request}>
+          {bookings.map((booking) => (
+            <li key={booking.reference} className={styles.request}>
               <div className={styles.requestTop}>
                 <span className={styles.reference} dir="ltr">
-                  {request.reference}
+                  {booking.reference}
                 </span>
-                <span className={styles.status} data-status={request.status}>
-                  {t.dashboard.statuses[request.status]}
+                <span className={styles.status} data-status={booking.status}>
+                  {t.dashboard.statuses[booking.status]}
                 </span>
               </div>
               <div className={styles.requestBody}>
                 <strong>
-                  {label(names.serviceNames, request.service_type)} · {label(names.cityNames, request.city)}
+                  {name(booking.service_name, booking.service)} · {name(booking.city_name, booking.city)}
                 </strong>
                 <span>
-                  {t.dashboard.journey}: {date.format(new Date(`${request.journey_date}T00:00`))},{" "}
-                  <span dir="ltr">{request.journey_time.slice(0, 5)}</span> ·{" "}
-                  {label(names.vehicleNames, request.vehicle_class)}
+                  {date.format(new Date(`${booking.journey_date}T00:00`))},{" "}
+                  <span dir="ltr">{booking.journey_time.slice(0, 5)}</span> ·{" "}
+                  {name(booking.vehicle_name, booking.vehicle)}
                 </span>
                 <span>
-                  {request.pickup_location}
-                  {request.destination && ` → ${request.destination}`}
+                  {booking.pickup_location}
+                  {booking.destination && ` → ${booking.destination}`}
                 </span>
                 <span>
-                  {t.dashboard.sent}: {date.format(new Date(request.created_at))}
+                  {t.dashboard.price}: {formatPrice(Number(booking.total_price), locale)}
                 </span>
               </div>
+              <Link className={styles.inlineLink} href={manageBookingHref(locale, booking.reference)}>
+                {t.dashboard.manage}
+              </Link>
             </li>
           ))}
         </ul>
       )}
       <p className={styles.cardLinks}>
-        <a href="#quote">{t.dashboard.requestQuote}</a>
+        <a href="#book">{t.dashboard.bookNow}</a>
       </p>
     </section>
   );
-}
-
-function label(names: Record<string, string>, id: string) {
-  return names[id] ?? id;
 }
 
 function ProfileForm({ user, t }: { user: AccountUser; t: Dictionary["account"] }) {

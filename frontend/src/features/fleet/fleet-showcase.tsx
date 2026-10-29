@@ -3,7 +3,7 @@ import { ParallaxSurface } from "@/components/motion/parallax-surface";
 import { Reveal } from "@/components/motion/reveal";
 import { CheckList } from "@/components/ui/check-list";
 import { FLEET_VEHICLES, getVehicleCapacity } from "@/domain/booking";
-import { RequestQuoteButton } from "@/features/quote";
+import { BookButton } from "@/features/booking";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import { cn } from "@/lib/cn";
 import { FleetFrame } from "./fleet-frame";
@@ -64,9 +64,9 @@ export function FleetShowcase({ fleet, page }: FleetShowcaseProps) {
                 <p className="mono-label mt-8 mb-4">{page.featuresLabel}</p>
                 <CheckList items={page.features[vehicle]} className="sm:grid-cols-2 sm:gap-x-8" />
 
-                <RequestQuoteButton preset={{ vehicle }} className="mt-9">
+                <BookButton preset={{ vehicle }} className="mt-9">
                   {fleet.button}
-                </RequestQuoteButton>
+                </BookButton>
               </div>
             </Reveal>
           );

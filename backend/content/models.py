@@ -117,9 +117,10 @@ class City(Entry):
 
 
 class ServicePrice(models.Model):
-    """A guide price in euros for one service with one vehicle class in one city.
+    """The price in euros of one service with one vehicle class in one city.
 
-    The website shows it as a "from" price; customers still get a fixed quote.
+    Bookings are priced from it (backend/bookings/pricing.py); the website also
+    shows the lowest one as a "from" price.
     Deleting the city or vehicle removes its prices.
     """
 

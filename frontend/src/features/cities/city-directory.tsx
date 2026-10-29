@@ -1,16 +1,16 @@
 import { Reveal } from "@/components/motion/reveal";
 import { siteConfig } from "@/config/site";
 import { CITIES, SERVICE_TYPES } from "@/domain/booking";
-import { RequestQuoteButton } from "@/features/quote";
+import { BookButton } from "@/features/booking";
 import type { Dictionary } from "@/i18n/get-dictionary";
 
 interface CityDirectoryProps {
   cityNames: Dictionary["cities"]["names"];
-  serviceNames: Dictionary["quote"]["serviceOptions"];
+  serviceNames: Dictionary["booking"]["serviceOptions"];
   page: Dictionary["pages"]["cities"];
 }
 
-/** One large panel per city, each with the services offered and a pre-filled quote action. */
+/** One large panel per city, each with the services offered and a pre-filled booking action. */
 export function CityDirectory({ cityNames, serviceNames, page }: CityDirectoryProps) {
   return (
     <section className="section-band bg-background">
@@ -52,7 +52,7 @@ export function CityDirectory({ cityNames, serviceNames, page }: CityDirectoryPr
               </ul>
 
               <div className="mt-auto pt-10">
-                <RequestQuoteButton preset={{ city }}>{page.quoteCta}</RequestQuoteButton>
+                <BookButton preset={{ city }}>{page.bookCta}</BookButton>
               </div>
             </article>
           ))}

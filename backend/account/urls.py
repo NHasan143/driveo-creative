@@ -8,7 +8,6 @@ from .staff_views import (
     StaffUserPasswordView,
 )
 from .views import (
-    MyQuoteRequestsView,
     PasswordResetConfirmView,
     PasswordResetView,
     PasswordView,
@@ -29,7 +28,6 @@ urlpatterns = [
         PasswordResetConfirmView.as_view(),
         name="account-password-reset-confirm",
     ),
-    path("account/quote-requests/", MyQuoteRequestsView.as_view(), name="account-quote-requests"),
     # Staff (content admin)
     path("staff/customers/", CustomerListView.as_view(), name="staff-customers"),
     path("staff/customers/<int:pk>/", CustomerDetailView.as_view(), name="staff-customer"),

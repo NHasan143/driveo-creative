@@ -10,7 +10,7 @@ export default function CustomersPage() {
     <AuthGate>
       <PageHeader
         title="Customers"
-        description="People with an account on the website, and the quote requests they sent while signed in."
+        description="People with an account on the website, and the bookings they made while signed in."
       />
       <CustomersList />
     </AuthGate>

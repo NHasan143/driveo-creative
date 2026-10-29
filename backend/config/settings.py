@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 
 import dj_database_url
+from corsheaders.defaults import default_headers
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -42,7 +43,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "storages",
     "core",
-    "quotes",
+    "bookings",
     "content",
     "account",
 ]
@@ -206,7 +207,7 @@ SECURE_REDIRECT_EXEMPT = [r"^api/v1/health/$"]
 SECURE_HSTS_SECONDS = int(os.environ.get("DJANGO_HSTS_SECONDS") or 0)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("DJANGO_HSTS_INCLUDE_SUBDOMAINS")
 
-# Rate limits (and the IP stored with quote requests) use the visitor's IP.
+# Rate limits (and the IP stored with bookings) use the visitor's IP.
 # Behind proxies REMOTE_ADDR is the proxy's, so DRF reads X-Forwarded-For
 # instead: set this to the number of proxies in front of Django (Cloudflare +
 # Nginx = 2). Leave it empty when nothing sits in front of Django.
@@ -265,12 +266,12 @@ CELERY_TASK_IGNORE_RESULT = True
 CELERY_TASK_ACKS_LATE = True
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
-# A failed publish (Redis down) fails fast; the quote is already saved.
+# A failed publish (Redis down) fails fast; the booking is already saved.
 CELERY_BROKER_TRANSPORT_OPTIONS = {"max_retries": 1, "socket_connect_timeout": 2}
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_BEAT_SCHEDULE = {
     "requeue-stale-notifications": {
-        "task": "quotes.tasks.requeue_stale_notifications_task",
+        "task": "bookings.tasks.requeue_stale_notifications_task",
         "schedule": 600.0,
     },
 }
@@ -278,7 +279,7 @@ CELERY_BEAT_SCHEDULE = {
 
 # DRF
 
-# Deny by default: a view is staff-only unless it opts out (the public quote
+# Deny by default: a view is staff-only unless it opts out (the public booking
 # form and health check set AllowAny). Session auth only, see core/auth_views.py.
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -288,7 +289,7 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAdminUser",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "quote_requests": os.environ.get("QUOTE_REQUESTS_RATE") or "10/hour",
+        "bookings": os.environ.get("BOOKINGS_RATE") or "10/hour",
         "staff_sign_in": os.environ.get("STAFF_SIGN_IN_RATE") or "20/hour",
         # Customer accounts (account app), per IP.
         "account_sign_in": os.environ.get("ACCOUNT_SIGN_IN_RATE") or "20/hour",
@@ -305,6 +306,8 @@ CORS_URLS_REGEX = r"^/api/.*$"
 # The content admin (/admin on the website) signs staff in with the session
 # cookie, so allowed origins may send cookies.
 CORS_ALLOW_CREDENTIALS = True
+# Guests open their booking with the private token from their email (bookings/views.py).
+CORS_ALLOW_HEADERS = (*default_headers, "x-booking-token")
 
 # Staff sessions for the content admin (core/auth_views.py).
 # The admin's origin must be trusted for CSRF; it is the website's origin.
@@ -321,11 +324,18 @@ CSRF_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_AGE = 60 * 60 * 12
 
 
-# Quote request alerts (quotes app)
+# Bookings (bookings app)
 
-# Comma-separated lists. An empty list skips that channel (logged in the admin).
-QUOTE_ALERT_EMAILS = env_list("QUOTE_ALERT_EMAILS")
-QUOTE_ALERT_WHATSAPP = env_list("QUOTE_ALERT_WHATSAPP")  # E.164, e.g. +447700900123
+# Who hears about new, changed and cancelled bookings. Comma-separated; an
+# empty list skips that channel (logged in the admin). The QUOTE_ALERT_* names
+# from before bookings replaced quote requests still work.
+BOOKING_ALERT_EMAILS = env_list("BOOKING_ALERT_EMAILS") or env_list("QUOTE_ALERT_EMAILS")
+# E.164, e.g. +447700900123
+BOOKING_ALERT_WHATSAPP = env_list("BOOKING_ALERT_WHATSAPP") or env_list("QUOTE_ALERT_WHATSAPP")
+# Customers change or cancel online until this many hours before pickup.
+BOOKING_CANCEL_NOTICE_HOURS = int(os.environ.get("BOOKING_CANCEL_NOTICE_HOURS") or 24)
+# A new booking needs at least this much notice (city time); urgent ones are by phone.
+BOOKING_MIN_NOTICE_HOURS = int(os.environ.get("BOOKING_MIN_NOTICE_HOURS") or 3)
 
 TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "")
 TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "")
@@ -352,6 +362,6 @@ LOGGING = {
     "handlers": {"console": {"class": "logging.StreamHandler"}},
     "root": {"handlers": ["console"], "level": "WARNING"},
     "loggers": {
-        "quotes": {"handlers": ["console"], "level": "INFO", "propagate": False},
+        "bookings": {"handlers": ["console"], "level": "INFO", "propagate": False},
     },
 }

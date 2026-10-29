@@ -22,8 +22,8 @@ export interface SiteService {
   /** Public path of the detail page, without `?lang=`. */
   path: string;
   /**
-   * The quote form's service id, for the four services the booking rules know
-   * (`airport_transfer`, …). Null for services added in the admin: their quote
+   * The booking form's service id, for the four services the booking rules know
+   * (`airport_transfer`, …). Null for services added in the admin: their booking
    * form starts without a service selected.
    */
   bookingType: ServiceType | null;
@@ -143,24 +143,28 @@ export function toNavServices(services: SiteService[]): NavService[] {
   return services.map(({ slug, path, title, icon }) => ({ slug, path, title, icon }));
 }
 
-/** A guide price key for the quote form, e.g. "london:first_class". */
-export type GuidePriceKey = `${City}:${FleetVehicle}`;
+/** A price key for the booking form, e.g. "london:first_class". */
+export type PriceKey = `${City}:${FleetVehicle}`;
 
-/** Guide prices per quote-form service, for the cities and vehicles the form offers. Plain data for the client. */
-export type GuidePrices = Partial<Record<ServiceType, { unit: PriceUnit; amounts: Partial<Record<GuidePriceKey, number>> }>>;
+/**
+ * The admin's price grid per bookable service, for the cities and vehicles the
+ * booking form offers. Plain data for the client. The API prices every booking
+ * itself from the same grid (backend/bookings/pricing.py).
+ */
+export type ServicePrices = Partial<Record<ServiceType, { unit: PriceUnit; amounts: Partial<Record<PriceKey, number>> }>>;
 
-export async function getGuidePrices(): Promise<GuidePrices> {
-  const guide: GuidePrices = {};
+export async function getServicePrices(): Promise<ServicePrices> {
+  const grid: ServicePrices = {};
   for (const service of await loadPublishedServices()) {
     const type = bookingTypeOf(service.id);
     if (!type) continue;
-    const amounts: Partial<Record<GuidePriceKey, number>> = {};
+    const amounts: Partial<Record<PriceKey, number>> = {};
     for (const price of service.prices ?? []) {
       const city = CITIES.find((id) => id === price.cityId);
       const vehicle = FLEET_VEHICLES.find((id) => id === price.vehicleId);
       if (city && vehicle) amounts[`${city}:${vehicle}`] = price.amount;
     }
-    guide[type] = { unit: service.priceUnit ?? "trip", amounts };
+    grid[type] = { unit: service.priceUnit ?? "trip", amounts };
   }
-  return guide;
+  return grid;
 }

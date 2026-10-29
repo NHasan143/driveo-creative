@@ -49,14 +49,16 @@ npm run dev                  # http://localhost:3000 → redirects to /?lang=en
 src/
 ├── app/                      # Routing only: layouts, pages, metadata routes
 │   ├── [locale]/             # Root layout per language (en, fr, bg, ar), statically generated
-│   │   ├── (site)/           # Public pages sharing header, footer and quote pre-fill state
-│   │   │   ├── layout.tsx    # SiteHeader + SiteFooter + QuotePresetProvider
+│   │   ├── (site)/           # Public pages sharing header, footer and booking pre-fill state
+│   │   │   ├── layout.tsx    # SiteHeader + SiteFooter + BookingPresetProvider
 │   │   │   ├── page.tsx      # Home  → /?lang=xx
 │   │   │   ├── services/     # /services?lang=xx
 │   │   │   │   └── [service]/  # /services/airport-transfer?lang=xx … (4 detail pages)
 │   │   │   ├── fleet/        # /fleet?lang=xx
 │   │   │   ├── cities/       # /cities?lang=xx
-│   │   │   └── process/      # /process?lang=xx
+│   │   │   ├── process/      # /process?lang=xx
+│   │   │   ├── booking/      # /booking?lang=xx&ref=…&token=… (view, change, cancel; noindex)
+│   │   │   └── account/      # Customer accounts (see below)
 │   │   ├── not-found.tsx     # Localized 404 (outside (site), no header)
 │   │   └── [...rest]/        # Sends unknown paths to the 404
 │   ├── admin/                # Content admin: its own root layout (no languages), /admin/...
@@ -76,7 +78,8 @@ src/
 │   ├── fleet/                # Fleet cards, showcase, comparison table, media config
 │   ├── cities/               # Cities page: city directory
 │   ├── process/              # Process page: timeline, request checklist
-│   ├── quote/                # Quote form: schema, API client, hooks, pre-fill context, UI
+│   ├── booking/              # Booking form, manage page: schema, API clients, hooks, pre-fill context, UI
+│   ├── account/              # Customer accounts
 │   └── pwa/                  # "Add to Home Screen"
 ├── domain/booking.ts         # Cities, services, vehicles, capacity rules (stable API ids)
 ├── i18n/                     # Locale config + typed dictionaries
@@ -87,16 +90,16 @@ src/
 
 ## Customer accounts (`/account`)
 
-Customers create an account, sign in, reset a forgotten password and see their quote requests, in all four
+Customers create an account, sign in, reset a forgotten password and see their bookings, in all four
 languages. Code: `src/features/account/`, pages in `src/app/[locale]/(site)/account/`.
 
-- **Pages:** `/account` (My account: requests, details, password, sign out), `/account/sign-in`,
+- **Pages:** `/account` (My account: bookings, details, password, sign out), `/account/sign-in`,
   `/account/register`, `/account/forgot-password`, `/account/reset-password?uid=…&token=…` (from the email).
-  They are client-rendered, never indexed (`robots.ts`, `noindex`) and, like every page, end with the quote form.
+  They are client-rendered, never indexed (`robots.ts`, `noindex`) and, like every page, end with the booking form.
 - **Session:** `src/lib/api/session-client.ts` sends the API's session cookie (`credentials: "include"`) and keeps
   the CSRF token from JSON responses in memory. `account-store.ts` shares who is signed in across the page.
-- **Quote form:** a signed-in customer's details are filled in, the request is linked to their account, and
-  My account lists it straight away (`QUOTE_SENT_EVENT`). The form always sends the CSRF token.
+- **Booking form:** a signed-in customer's details are filled in, the booking is linked to their account, and
+  My account lists it straight away (`BOOKING_MADE_EVENT`). The form always sends the CSRF token.
 - **Errors:** the API's messages are English, so the pages map them to translated ones (`errors.ts`).
 - **Header:** an Account link from 640px; phones reach it through the footer.
 - **Mock mode** (`NEXT_PUBLIC_API_MOCK=true`): accounts are unavailable and the forms say so.
@@ -140,9 +143,10 @@ the admin has no Site settings screen. Every editable customer-facing text has E
   - The language tabs switch every text field at once and show how complete each language is.
   - Non-English fields show the English text as a reference. Arabic fields are right-to-left.
   - If a save fails validation, the editor jumps to the first problem, switching language if needed.
-  - A service's **Prices** card holds guide prices in euros for each city and vehicle class, per journey or
-    per hour. The website shows the lowest as "From €X" (`components/ui/from-price.tsx`), and the quote form
-    shows the one for the chosen car and city (`getGuidePrices()` in `lib/content/site-services.ts`).
+  - A service's **Prices** card holds the prices in euros that bookings cost, for each city and vehicle class,
+    per journey or per hour. The website shows the lowest as "From €X" (`components/ui/from-price.tsx`), and
+    the booking form shows the exact price for the chosen car and city (`getServicePrices()` in
+    `lib/content/site-services.ts`). An empty cell means that car can't be booked there.
   - Closing or reloading the tab with unsaved changes asks first. Moving to another admin page doesn't yet.
 - **Images:** upload or drag in a photo, which is resized to at most 1920px and saved as JPEG, or pick one from `public/media`.
   In `api` mode the photo is uploaded to the Neon `assets` bucket when the record is saved.
@@ -180,7 +184,7 @@ src/admin/
     and `cacheTag("content")`, and falls back to `seed.services` in mock mode or when the API fails.
   - Server code may set `API_INTERNAL_BASE_URL`, for example a Docker service name, in place of the
     public API URL.
-  - Built-in services keep their booking id (`airport_transfer`, …), so their quote buttons pre-select
+  - Built-in services keep their booking id (`airport_transfer`, …), so their book buttons pre-select
     the service. Services added in the admin open the form with none selected.
   - **Still to do:** connect fleet and cities to their published API records.
   - Fixed site information continues to render from the frontend dictionaries and configuration.
@@ -190,7 +194,7 @@ src/admin/
 ### Conventions
 
 - **Server Components by default.** Interactivity lives in small client islands, such as the
-  language switcher, hero video, quote form and parallax surfaces. Each island receives only
+  language switcher, hero video, booking form and parallax surfaces. Each island receives only
   the dictionary slice it needs as props.
 - **Styling.** Design tokens are CSS variables exposed to Tailwind via `@theme`. Use Tailwind
   utilities for layout. Use co-located CSS Modules for complex effects such as 3D planes,
@@ -217,8 +221,8 @@ src/admin/
     keyboard navigation (arrow keys, Home/End, Escape) and keeps the scroll position when the
     language changes.
 - **Adding a page:**
-  1. Create `app/[locale]/(site)/<segment>/page.tsx`. Start with `<PageHero>` and end with `<QuoteSection>`,
-     so the header's "Request quote" link always has a target.
+  1. Create `app/[locale]/(site)/<segment>/page.tsx`. Start with `<PageHero>` and end with `<BookingSection>`,
+     so the header's "Book now" link always has a target.
   2. Add its copy under `pages.<key>` in every dictionary. The compiler flags missing keys.
   3. Export `generateMetadata` using `buildPageMetadata(locale, meta, "/<segment>")`.
   4. Add it to `SITE_PAGES` in `config/navigation.ts`. The header, footer and sitemap pick it up from there.
@@ -236,14 +240,14 @@ src/admin/
     heroes' top padding assumes the resulting 126px header. The row can't scroll sideways either, because
     that would clip the Services dropdown. Its text size is `clamp(0.55rem, 2.6vw, 0.6rem)` with tight
     tracking so Bulgarian fits at 320px.
-  - **Buttons:** the language switcher and the header quote button (`size="compact"`) share the same height,
+  - **Buttons:** the language switcher and the header book button (`size="compact"`) share the same height,
     type size and tracking. Change them together.
   - **Phones:** below 640px only the logo shows; the company name appears from `sm`.
   - **Fonts:** mono labels fall back to IBM Plex Mono for Cyrillic, because Space Mono has none.
   - If you add a nav item or a longer translation, re-check 320px, 1024px and 1280px in every language.
-- **Quote pre-fill:** `<RequestQuoteButton preset={{ vehicle | city | service }}>` fills the form and
+- **Booking pre-fill:** `<BookButton preset={{ vehicle | city | service }}>` fills the form and
   scrolls to it. Next.js keeps recently visited pages mounted but hidden (React `<Activity>`), so
-  there can be several `#quote` sections; the scroll targets the visible one.
+  there can be several `#book` sections; the scroll targets the visible one.
 - **Domain ids vs labels.** Values sent to the API are stable snake_case ids from
   `domain/booking.ts`. Labels come from the dictionaries.
 - **Motion.** GSAP runs only under `prefers-reduced-motion: no-preference`. The server-rendered
@@ -251,35 +255,38 @@ src/admin/
 
 ## Backend contract
 
-The quote form sends `POST {NEXT_PUBLIC_API_BASE_URL}/v1/quote-requests/` with JSON:
+The booking form sends `POST {NEXT_PUBLIC_API_BASE_URL}/v1/bookings/` with JSON:
 
 ```json
 {
   "first_name": "Ada", "last_name": "Lovelace", "email": "ada@example.com", "phone": "+44 20 7946 0000",
-  "city": "london", "service_type": "airport_transfer", "vehicle_class": "first_class",
-  "pickup_location": "Heathrow T5", "destination": "Mayfair", "hire_hours": null,
+  "city": "london", "service": "airport_transfer", "vehicle": "first_class",
+  "pickup_location": "Heathrow T5", "destination": "Mayfair", "hire_hours": null, "flight_number": "BA117",
   "journey_date": "2026-11-02", "journey_time": "09:30",
-  "passengers": 2, "luggage": 2, "notes": "BA117", "locale": "en", "honeypot": ""
+  "passengers": 2, "luggage": 2, "notes": "", "locale": "en", "honeypot": ""
 }
 ```
 
-- Enums: `city` ∈ london | paris | bulgaria | dubai. `service_type` ∈ airport_transfer |
-  point_to_point | hourly_hire | private_event. `vehicle_class` ∈ business_class |
-  first_class | business_van | please_advise.
-- For `hourly_hire`, `hire_hours` is 2–16 and `destination` is empty.
-- Capacity: business_van takes 7 passengers and 8 luggage items. Every other class takes 4 and 3.
-- A non-empty `honeypot` means a bot. Reject it silently.
-- Expected response: `201 { "reference": "DRV-XXXXXX" }`. The form shows that reference.
-- CORS must allow the website origin (backend `CORS_ALLOWED_ORIGINS`).
-- Errors the form understands (see `src/features/quote/hooks/use-quote-submission.ts`):
+- Ids: `city`, `service` and `vehicle` are content ids (london, airport_transfer, first_class, …).
+- For `hourly_hire`, `hire_hours` is 2–16 and `destination` is empty. `flight_number` is for airport transfers.
+- Capacity comes from the vehicle: business_van takes 7 passengers and 8 luggage items, the others 4 and 3.
+- The API prices the booking itself; the form only shows the same price from the grid.
+- A non-empty `honeypot` means a bot; the API answers like a success and stores nothing.
+- Response: `201` with the booking and `manage_token`. The success screen links to
+  `/booking?lang=…&ref=…&token=…`, the same link as in the customer's email.
+- The booking page (`features/booking/components/manage-booking.tsx`) reads, changes and cancels it with the
+  token in an `X-Booking-Token` header, or with the session for the signed-in owner (`api/bookings.ts`).
+  `409 {"code": "too_late" | "closed"}` means it can no longer be changed online.
+- CORS must allow the website origin (backend `CORS_ALLOWED_ORIGINS`) and the `X-Booking-Token` header.
+- Errors the form understands (see `src/features/booking/hooks/use-booking-submission.ts`):
   - `400` with DRF field errors, e.g. `{"passengers": ["..."]}`. The form lists the matching field labels
     in the visitor's language.
   - `429`: the "too many requests" message.
   - Anything else (network, 5xx): the generic error with the contact email.
 - To work on the website without the backend, set `NEXT_PUBLIC_API_MOCK=true` in `.env.local`.
 
-Types and the mapping live in `src/features/quote/api/submit-quote-request.ts`.
-The client-side rules live in `src/features/quote/schema.ts`.
+Types and the mapping live in `src/features/booking/api/create-booking.ts`.
+The client-side rules live in `src/features/booking/schema.ts`.
 
 ## Docker
 

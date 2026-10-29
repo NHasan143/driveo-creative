@@ -1,18 +1,18 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { QUOTE_SENT_EVENT } from "@/features/account/events";
+import { BOOKING_MADE_EVENT } from "@/features/account/events";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import { ApiError } from "@/lib/api/http-client";
-import { submitQuoteRequest } from "../api/submit-quote-request";
-import { quoteRequestSchema, type QuoteRequestInput } from "../schema";
+import { createBooking, type CreatedBookingDto } from "../api/create-booking";
+import { bookingRequestSchema, type BookingRequestInput } from "../schema";
 
 export type SubmissionStatus = "idle" | "sending" | "sent" | "error";
 
 /** Dictionary keys of the form's field labels. */
 type FieldLabel = keyof Pick<
-  Dictionary["quote"],
+  Dictionary["booking"],
   | "firstName"
   | "lastName"
   | "email"
@@ -23,6 +23,7 @@ type FieldLabel = keyof Pick<
   | "pickup"
   | "destination"
   | "hoursField"
+  | "flightNumber"
   | "date"
   | "time"
   | "passengers"
@@ -49,15 +50,15 @@ const FIELD_LABELS: Record<string, FieldLabel> = {
   email: "email",
   phone: "phone",
   city: "city",
-  service_type: "service",
-  serviceType: "service",
-  vehicle_class: "vehicle",
-  vehicleClass: "vehicle",
+  service: "service",
+  vehicle: "vehicle",
   pickup_location: "pickup",
   pickupLocation: "pickup",
   destination: "destination",
   hire_hours: "hoursField",
   hireHours: "hoursField",
+  flight_number: "flightNumber",
+  flightNumber: "flightNumber",
   journey_date: "date",
   journeyDate: "date",
   journey_time: "time",
@@ -87,10 +88,10 @@ function describeFailure(error: unknown): SubmissionError {
   return { kind: "failed" };
 }
 
-export function useQuoteSubmission(locale: Locale) {
+export function useBookingSubmission(locale: Locale) {
   const [status, setStatus] = useState<SubmissionStatus>("idle");
   const [error, setError] = useState<SubmissionError>({ kind: "failed" });
-  const [reference, setReference] = useState("");
+  const [booking, setBooking] = useState<CreatedBookingDto | null>(null);
   const lastSentAt = useRef(0);
   const sentCount = useRef(0);
 
@@ -100,13 +101,13 @@ export function useQuoteSubmission(locale: Locale) {
     return false;
   }
 
-  async function submit(input: QuoteRequestInput): Promise<boolean> {
+  async function submit(input: BookingRequestInput): Promise<boolean> {
     if (status === "sending") return false;
     const throttled =
       Date.now() - lastSentAt.current < COOLDOWN_MS || sentCount.current >= MAX_SUBMISSIONS_PER_VISIT;
     if (throttled) return fail({ kind: "rateLimited" });
 
-    const parsed = quoteRequestSchema.safeParse(input);
+    const parsed = bookingRequestSchema.safeParse(input);
     if (!parsed.success) {
       const fields = toLabels(parsed.error.issues.map((issue) => issue.path[0] ?? ""));
       return fail(fields.length > 0 ? { kind: "invalid", fields } : { kind: "failed" });
@@ -114,11 +115,11 @@ export function useQuoteSubmission(locale: Locale) {
 
     setStatus("sending");
     try {
-      const response = await submitQuoteRequest(parsed.data, locale);
+      const created = await createBooking(parsed.data, locale);
       lastSentAt.current = Date.now();
       sentCount.current += 1;
-      window.dispatchEvent(new Event(QUOTE_SENT_EVENT));
-      setReference(response.reference);
+      window.dispatchEvent(new Event(BOOKING_MADE_EVENT));
+      setBooking(created);
       setStatus("sent");
       return true;
     } catch (caught) {
@@ -126,5 +127,5 @@ export function useQuoteSubmission(locale: Locale) {
     }
   }
 
-  return { status, error, reference, submit, reset: () => setStatus("idle") };
+  return { status, error, booking, submit, reset: () => setStatus("idle") };
 }

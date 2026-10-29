@@ -7,14 +7,14 @@ import { getVehicleCapacity, type FleetVehicle } from "@/domain/booking";
 import { FleetFrame } from "@/features/fleet/fleet-frame";
 import { fleetMedia } from "@/features/fleet/fleet-media";
 import fleetStyles from "@/features/fleet/fleet-section.module.css";
-import { RequestQuoteButton, type QuotePreset } from "@/features/quote";
+import { BookButton, type BookingPreset } from "@/features/booking";
 import { localePath, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/get-dictionary";
 
 interface ServiceFleetProps {
   locale: Locale;
-  /** Pre-fill for this service's quote buttons (empty for services the booking rules don't know). */
-  preset: Partial<QuotePreset>;
+  /** Pre-fill for this service's book buttons (empty for services the booking rules don't know). */
+  preset: Partial<BookingPreset>;
   vehicles: readonly FleetVehicle[];
   heading: { eyebrow: string; title: string; more: string };
   fleet: Dictionary["fleet"];
@@ -55,9 +55,9 @@ export function ServiceFleet({ locale, preset, vehicles, heading, fleet, capacit
                     {capacity.luggage}: {capacity.upTo} {limits.luggage}
                   </li>
                 </ul>
-                <RequestQuoteButton preset={{ ...preset, vehicle }} className={fleetStyles.button}>
+                <BookButton preset={{ ...preset, vehicle }} className={fleetStyles.button}>
                   {fleet.button}
-                </RequestQuoteButton>
+                </BookButton>
               </ParallaxSurface>
             );
           })}

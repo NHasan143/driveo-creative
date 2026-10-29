@@ -3,7 +3,7 @@ import { SectionHeading } from "@/components/page/section-heading";
 import { CheckList } from "@/components/ui/check-list";
 import type { Dictionary } from "@/i18n/get-dictionary";
 
-/** What the quote form asks for, so visitors can prepare before they start. */
+/** What the booking form asks for, so visitors can prepare before they start. */
 export function RequestChecklist({ page }: { page: Dictionary["pages"]["process"] }) {
   return (
     <section className="section-band bg-secondary">

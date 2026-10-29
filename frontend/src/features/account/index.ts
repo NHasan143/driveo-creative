@@ -6,4 +6,4 @@ export { ForgotPasswordForm } from "./components/forgot-password-form";
 export { RegisterForm } from "./components/register-form";
 export { ResetPasswordForm } from "./components/reset-password-form";
 export { SignInForm } from "./components/sign-in-form";
-export { QUOTE_SENT_EVENT } from "./events";
+export { BOOKING_MADE_EVENT } from "./events";

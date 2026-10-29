@@ -36,13 +36,13 @@ export function SiteHeader({ locale, nav, services, allServices }: SiteHeaderPro
           className="hidden shrink-0 items-center gap-8 xl:flex"
         />
 
-        {/* The language switcher and quote button share one size so they read as a pair. */}
+        {/* The language switcher and book button share one size so they read as a pair. */}
         <div className="flex shrink-0 items-center gap-2">
           <AccountLink locale={locale} label={nav.account} />
           <LanguageSwitcher locale={locale} label={nav.language} />
-          {/* Every page ends with the quote form, so this anchor always resolves. */}
-          <ButtonLink href="#quote" size="compact">
-            {nav.quote} <span aria-hidden="true">↘</span>
+          {/* Every page ends with the booking form, so this anchor always resolves. */}
+          <ButtonLink href="#book" size="compact">
+            {nav.book} <span aria-hidden="true">↘</span>
           </ButtonLink>
         </div>
       </div>

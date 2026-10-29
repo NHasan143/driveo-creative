@@ -3,7 +3,7 @@ import { PageHero } from "@/components/page/page-hero";
 import { AssuranceSection } from "@/features/home/assurance-section";
 import { ProcessTimeline } from "@/features/process/process-timeline";
 import { RequestChecklist } from "@/features/process/request-checklist";
-import { QuoteSection } from "@/features/quote";
+import { BookingSection } from "@/features/booking";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
@@ -38,7 +38,7 @@ export default async function ProcessPage() {
         items={t.assurance}
         heading={{ eyebrow: page.commitmentsEyebrow, title: page.commitmentsTitle }}
       />
-      <QuoteSection locale={locale} quote={t.quote} cityNames={t.cities.names} />
+      <BookingSection locale={locale} booking={t.booking} cityNames={t.cities.names} />
     </main>
   );
 }

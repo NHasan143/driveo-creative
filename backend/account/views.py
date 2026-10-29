@@ -19,7 +19,6 @@ from .emails import send_password_reset
 from .models import User
 from .serializers import (
     EMAIL_TAKEN,
-    CustomerQuoteRequestSerializer,
     PasswordChangeSerializer,
     PasswordResetConfirmSerializer,
     PasswordResetSerializer,
@@ -29,8 +28,6 @@ from .serializers import (
     UserSerializer,
 )
 
-# A customer sees their most recent requests; older ones stay with staff.
-MY_QUOTE_REQUESTS_LIMIT = 100
 
 
 def session_payload(request, user):
@@ -176,12 +173,3 @@ class PasswordResetConfirmView(AnonymousWriteView):
         user.save(update_fields=["password"])  # Also invalidates the link.
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
-class MyQuoteRequestsView(APIView):
-    """GET /api/v1/account/quote-requests/ → the signed-in customer's requests, newest first."""
-
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        requests = request.user.quote_requests.order_by("-created_at")[:MY_QUOTE_REQUESTS_LIMIT]
-        return Response(CustomerQuoteRequestSerializer(requests, many=True).data)

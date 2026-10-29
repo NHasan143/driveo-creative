@@ -16,23 +16,6 @@ export interface AccountUser {
   is_superuser: boolean;
 }
 
-export interface CustomerQuoteRequest {
-  reference: string;
-  status: "new" | "contacted" | "quoted" | "closed";
-  created_at: string;
-  city: string;
-  service_type: string;
-  vehicle_class: string;
-  pickup_location: string;
-  destination: string;
-  hire_hours: number | null;
-  journey_date: string;
-  journey_time: string;
-  passengers: number;
-  luggage: number;
-  notes: string;
-}
-
 export interface ProfileInput {
   email: string;
   first_name: string;
@@ -109,9 +92,4 @@ export async function confirmPasswordReset(uid: string, token: string, newPasswo
     method: "POST",
     body: { uid, token, new_password: newPassword },
   });
-}
-
-export function listMyQuoteRequests() {
-  requireApi();
-  return sessionRequest<CustomerQuoteRequest[]>("/v1/account/quote-requests/");
 }

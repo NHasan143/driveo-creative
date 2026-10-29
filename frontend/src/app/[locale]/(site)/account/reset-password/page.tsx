@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AccountPage, ResetPasswordForm } from "@/features/account";
 import { accountMetadata } from "@/features/account/metadata";
-import { QuoteSection } from "@/features/quote";
+import { BookingSection } from "@/features/booking";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -22,7 +22,7 @@ export default async function ResetPasswordPage() {
           <ResetPasswordForm locale={locale} t={t.account} />
         </Suspense>
       </AccountPage>
-      <QuoteSection locale={locale} quote={t.quote} cityNames={t.cities.names} />
+      <BookingSection locale={locale} booking={t.booking} cityNames={t.cities.names} />
     </>
   );
 }

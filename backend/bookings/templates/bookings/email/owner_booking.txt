@@ -1,24 +1,23 @@
-{% autoescape off %}New quote request {{ reference }}
+{% autoescape off %}{{ heading }} {{ reference }}
 
 Service:    {{ service }}
 When:       {{ when }}
 Route:      {{ route }}
 Vehicle:    {{ vehicle }}
+Price:      {{ price }}
 
-Customer:   {{ quote.full_name }}
-Phone:      {{ quote.phone }}
-Email:      {{ quote.email }}
-Language:   {{ quote.get_locale_display }}
-{% if quote.notes %}
+Customer:   {{ booking.full_name }}
+Phone:      {{ booking.phone }}
+Email:      {{ booking.email }}
+Language:   {{ booking.get_locale_display }}
+{% if booking.notes %}
 Notes:
-{{ quote.notes }}
+{{ booking.notes }}
 {% endif %}
-REPLY TO {{ quote.first_name|upper }}
-Nothing has been sent to the customer. Reply personally:
-- Email: just reply to this email (it goes to {{ quote.email }})
-{% if reply_whatsapp_url %}- WhatsApp: {{ reply_whatsapp_url }}
-{% endif %}- Phone: {{ quote.phone }}
-
-Open in the dashboard (set the status to "Contacted" once you've replied):
-{{ admin_url }}
+{% if event == "cancelled" %}The customer cancelled this booking. Release the chauffeur and car.
+{% else %}NEXT STEP
+Assign a chauffeur and car, then confirm the booking in the dashboard. The customer gets an email with the details.
+{% if reply_whatsapp_url %}WhatsApp the customer: {{ reply_whatsapp_url }}
+{% endif %}{% endif %}
+Dashboard: {{ admin_url }}
 {% endautoescape %}

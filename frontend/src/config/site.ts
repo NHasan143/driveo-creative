@@ -11,7 +11,7 @@ export const siteConfig = {
     phoneHref: "tel:+443300430976",
     email: "info@driveoexclusive.com",
     whatsappHref:
-      "https://wa.me/443300430976?text=Hello%20Driveo%2C%20I%27d%20like%20to%20request%20a%20quote.",
+      "https://wa.me/443300430976?text=Hello%20Driveo%2C%20I%27d%20like%20to%20book%20a%20chauffeur.",
   },
   social: {
     linkedin: "https://www.linkedin.com/company/driveo-exclusive/",

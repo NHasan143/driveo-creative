@@ -5,7 +5,7 @@ import { getSession, type AccountUser } from "./api";
 
 /**
  * Who is signed in, shared by every component on the page (account pages, the
- * quote form). Loaded once per page load; sign in/out updates it directly.
+ * booking form). Loaded once per page load; sign in/out updates it directly.
  */
 
 interface AccountState {

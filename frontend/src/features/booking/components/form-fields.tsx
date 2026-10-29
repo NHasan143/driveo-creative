@@ -1,7 +1,7 @@
 import { ChevronDown, Minus, Plus } from "lucide-react";
 import type { ReactNode, SelectHTMLAttributes } from "react";
 import { cn } from "@/lib/cn";
-import styles from "./quote-form.module.css";
+import styles from "./booking-form.module.css";
 
 interface FieldProps {
   label: string;

@@ -1,6 +1,6 @@
 """People management for the content admin: /api/v1/staff/.
 
-Customers: any staff member can look them up and see their quote requests.
+Customers: any staff member can look them up and see their bookings.
 Staff accounts: superusers only.
 """
 
@@ -13,7 +13,7 @@ from rest_framework.permissions import BasePermission, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from quotes.models import QuoteRequest
+from bookings.models import Booking
 
 from .models import User
 from .serializers import EMAIL_TAKEN, PHONE_VALIDATOR, check_password_strength, email_taken
@@ -29,8 +29,8 @@ class CustomerPagination(PageNumberPagination):
 
 
 class CustomerSerializer(serializers.ModelSerializer):
-    quote_count = serializers.IntegerField(read_only=True)
-    last_request_at = serializers.DateTimeField(read_only=True)
+    booking_count = serializers.IntegerField(read_only=True)
+    last_booking_at = serializers.DateTimeField(read_only=True)
 
     class Meta:
         model = User
@@ -44,35 +44,37 @@ class CustomerSerializer(serializers.ModelSerializer):
             "is_active",
             "date_joined",
             "last_login",
-            "quote_count",
-            "last_request_at",
+            "booking_count",
+            "last_booking_at",
         ]
         # Staff may only switch a customer's account on or off.
         read_only_fields = [name for name in fields if name != "is_active"]
 
 
-class StaffQuoteRequestSerializer(serializers.ModelSerializer):
+class StaffBookingSerializer(serializers.ModelSerializer):
     class Meta:
-        model = QuoteRequest
+        model = Booking
         fields = [
             "id",
             "reference",
             "status",
             "created_at",
+            "service",
             "city",
-            "service_type",
-            "vehicle_class",
+            "vehicle",
             "journey_date",
             "journey_time",
             "pickup_location",
             "destination",
+            "total_price",
+            "currency",
         ]
         read_only_fields = fields
 
 
 def customers():
     return User.objects.filter(is_staff=False).annotate(
-        quote_count=Count("quote_requests"), last_request_at=Max("quote_requests__created_at")
+        booking_count=Count("bookings"), last_booking_at=Max("bookings__created_at")
     )
 
 
@@ -97,7 +99,7 @@ class CustomerListView(generics.ListAPIView):
 
 
 class CustomerDetailView(generics.RetrieveUpdateAPIView):
-    """GET → the customer and their quote requests · PATCH {"is_active"}."""
+    """GET → the customer and their bookings · PATCH {"is_active"}."""
 
     permission_classes = [IsAdminUser]
     serializer_class = CustomerSerializer
@@ -109,8 +111,8 @@ class CustomerDetailView(generics.RetrieveUpdateAPIView):
     def retrieve(self, request, *args, **kwargs):
         customer = self.get_object()
         data = self.get_serializer(customer).data
-        requests = customer.quote_requests.order_by("-created_at")
-        data["quote_requests"] = StaffQuoteRequestSerializer(requests, many=True).data
+        bookings = customer.bookings.order_by("-journey_date", "-journey_time")
+        data["bookings"] = StaffBookingSerializer(bookings, many=True).data
         return Response(data)
 
 

@@ -6,7 +6,7 @@ from django.urls import reverse
 from .views import HealthView
 
 HEALTH = reverse("health")
-QUOTES = reverse("quote-request-create")
+BOOKINGS = reverse("booking-create")
 
 PRODUCTION = {
     "SECURE_SSL_REDIRECT": True,
@@ -24,12 +24,12 @@ class HttpsTests(TestCase):
         self.client = Client()
 
     def test_plain_http_is_redirected_to_https(self):
-        response = self.client.get(QUOTES)
+        response = self.client.get(BOOKINGS)
         self.assertEqual(response.status_code, 301)
         self.assertTrue(response["Location"].startswith("https://"))
 
     def test_https_from_the_proxy_is_trusted(self):
-        response = self.client.get(QUOTES, headers={"X-Forwarded-Proto": "https"})
+        response = self.client.get(BOOKINGS, headers={"X-Forwarded-Proto": "https"})
         self.assertNotEqual(response.status_code, 301)
         self.assertEqual(response["Strict-Transport-Security"], "max-age=3600")
 

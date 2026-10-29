@@ -1,7 +1,10 @@
 from django.urls import path
 
-from .views import QuoteRequestCreateView
+from .views import BookingCancelView, BookingCreateView, BookingDetailView, MyBookingsView
 
 urlpatterns = [
-    path("quote-requests/", QuoteRequestCreateView.as_view(), name="quote-request-create"),
+    path("bookings/", BookingCreateView.as_view(), name="booking-create"),
+    path("bookings/<str:reference>/", BookingDetailView.as_view(), name="booking-detail"),
+    path("bookings/<str:reference>/cancel/", BookingCancelView.as_view(), name="booking-cancel"),
+    path("account/bookings/", MyBookingsView.as_view(), name="account-bookings"),
 ]

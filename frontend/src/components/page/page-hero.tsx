@@ -83,7 +83,7 @@ export function PageHero({
           <p className="mt-6 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">{intro}</p>
 
           <div className="mt-9 flex flex-wrap gap-3">
-            <a href="#quote" className={buttonClassName({ size: "lg" })}>
+            <a href="#book" className={buttonClassName({ size: "lg" })}>
               {cta} <span aria-hidden="true">↘</span>
             </a>
             <a

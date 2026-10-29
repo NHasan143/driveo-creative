@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { QuoteSection } from "@/features/quote";
+import { BookingSection } from "@/features/booking";
 import { ServiceDetails } from "@/features/services/service-details";
 import { ServicesHero } from "@/features/services/services-hero";
 import { ServicesGallery } from "@/features/services/services-gallery";
@@ -49,7 +49,7 @@ export default async function ServicesPage() {
         items={t.assurance}
         title={page.standardTitle}
       />
-      <QuoteSection locale={locale} quote={t.quote} cityNames={t.cities.names} />
+      <BookingSection locale={locale} booking={t.booking} cityNames={t.cities.names} />
     </main>
   );
 }

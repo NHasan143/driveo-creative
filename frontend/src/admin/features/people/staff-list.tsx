@@ -223,7 +223,7 @@ function AddStaffDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (
       open={open}
       onOpenChange={onOpenChange}
       title="Add a staff member"
-      description="They can sign in to this admin and to Django's admin for quote requests."
+      description="They can sign in to this admin and to Django's admin, where bookings are handled."
     >
       <form onSubmit={onSubmit} className="mt-5 grid gap-4">
         <div className="grid gap-4 sm:grid-cols-2">

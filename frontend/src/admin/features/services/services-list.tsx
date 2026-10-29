@@ -15,7 +15,7 @@ export function ServicesList() {
       noun="service"
       basePath="/admin/services"
       emptyIcon={<Sparkles />}
-      emptyDescription="Services appear on the website's Services page, menu and quote form."
+      emptyDescription="Services appear on the website's Services page, menu and booking form."
       searchText={(service) => `${service.title.en} ${service.label.en} ${service.slug}`}
       displayName={(service) => service.title.en || "Untitled service"}
       duplicate={duplicateService}

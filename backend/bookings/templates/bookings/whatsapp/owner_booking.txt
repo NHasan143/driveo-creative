@@ -1,13 +1,11 @@
-{% autoescape off %}*New quote request {{ reference }}*
+{% autoescape off %}*{{ heading }} {{ reference }}*
 {{ service }}
 {{ when }}
 {{ route }}
 {{ vehicle }}
+{{ price }}
 
 {{ customer }}
-
-*Reply to the customer* (replies to this chat don't reach them):
-{% if reply_whatsapp_url %}WhatsApp: {{ reply_whatsapp_url }}
-{% endif %}Email: {{ reply_email_url }}
-
+{% if reply_whatsapp_url %}Customer on WhatsApp: {{ reply_whatsapp_url }}
+{% endif %}
 Dashboard: {{ admin_url }}{% endautoescape %}

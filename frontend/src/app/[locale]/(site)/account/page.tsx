@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { AccountDashboard, AccountPage } from "@/features/account";
 import { accountMetadata } from "@/features/account/metadata";
-import { QuoteSection } from "@/features/quote";
+import { BookingSection } from "@/features/booking";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 
 export function generateMetadata(): Promise<Metadata> {
@@ -15,15 +15,9 @@ export default async function AccountHomePage() {
   return (
     <>
       <AccountPage eyebrow={t.account.eyebrow} wide>
-        <AccountDashboard
-          locale={locale}
-          t={t.account}
-          serviceNames={t.quote.serviceOptions}
-          vehicleNames={t.quote.vehicleOptions}
-          cityNames={t.cities.names}
-        />
+        <AccountDashboard locale={locale} t={t.account} />
       </AccountPage>
-      <QuoteSection locale={locale} quote={t.quote} cityNames={t.cities.names} />
+      <BookingSection locale={locale} booking={t.booking} cityNames={t.cities.names} />
     </>
   );
 }

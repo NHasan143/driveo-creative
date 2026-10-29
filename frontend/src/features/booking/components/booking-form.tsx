@@ -1,37 +1,38 @@
 "use client";
 
 import { ArrowRight, Check, LoaderCircle } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClassName } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { useAccount } from "@/features/account";
 import {
   CITIES,
+  FLEET_VEHICLES,
   getVehicleCapacity,
   HIRE_HOURS,
   SERVICE_TYPES,
-  VEHICLE_CLASSES,
   type City,
+  type FleetVehicle,
   type ServiceType,
-  type VehicleClass,
 } from "@/domain/booking";
-import type { Locale } from "@/i18n/config";
+import { localePath, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import { cn } from "@/lib/cn";
-import type { GuidePrices } from "@/lib/content/site-services";
+import type { ServicePrices } from "@/lib/content/site-services";
 import { formatPrice } from "@/lib/format-price";
-import { useQuoteSubmission } from "../hooks/use-quote-submission";
-import { useQuotePreset } from "../quote-preset-context";
-import type { QuoteRequestInput } from "../schema";
+import { useBookingPreset } from "../booking-preset-context";
+import { useBookingSubmission } from "../hooks/use-booking-submission";
+import type { BookingRequestInput } from "../schema";
 import { Field, NumberStepper, Select } from "./form-fields";
-import styles from "./quote-form.module.css";
+import styles from "./booking-form.module.css";
 
-interface QuoteFormProps {
+interface BookingFormProps {
   locale: Locale;
-  labels: Dictionary["quote"];
+  labels: Dictionary["booking"];
   cityNames: Dictionary["cities"]["names"];
   pricing: Dictionary["pricing"];
-  guidePrices: GuidePrices;
+  prices: ServicePrices;
 }
 
 const HOUR_OPTIONS = Array.from(
@@ -45,11 +46,17 @@ function todayIso() {
   return now.toISOString().slice(0, 10);
 }
 
-export function QuoteForm({ locale, labels, cityNames, pricing, guidePrices }: QuoteFormProps) {
+/** The private page where a guest views, changes or cancels their booking. */
+export function manageBookingHref(locale: Locale, reference: string, token?: string) {
+  const query = new URLSearchParams({ ref: reference, ...(token && { token }) });
+  return `${localePath(locale, "/booking")}&${query}`;
+}
+
+export function BookingForm({ locale, labels, cityNames, pricing, prices }: BookingFormProps) {
   // Vehicle, city and service can be pre-filled from elsewhere on the page.
-  const { preset, update: updatePreset, reset: resetPreset } = useQuotePreset();
-  const { vehicle, city, service: serviceType } = preset;
-  const { status, error, reference, submit, reset } = useQuoteSubmission(locale);
+  const { preset, update: updatePreset, reset: resetPreset } = useBookingPreset();
+  const { vehicle, city, service } = preset;
+  const { status, error, booking, submit, reset } = useBookingSubmission(locale);
   const { user } = useAccount();
   const [passengers, setPassengers] = useState(1);
   const [luggage, setLuggage] = useState(0);
@@ -64,26 +71,29 @@ export function QuoteForm({ locale, labels, cityNames, pricing, guidePrices }: Q
   const capacity = getVehicleCapacity(vehicle);
   const passengerCount = Math.min(passengers, capacity.passengers);
   const luggageCount = Math.min(luggage, capacity.luggage);
-  const isHourly = serviceType === "hourly_hire";
+  const isHourly = service === "hourly_hire";
+  const isAirport = service === "airport_transfer";
   const stepperLabels = { increase: labels.increase, decrease: labels.decrease, max: labels.max };
 
-  const guide = serviceType ? guidePrices[serviceType] : undefined;
-  const guideAmount =
-    guide && city && vehicle !== "please_advise" ? guide.amounts[`${city}:${vehicle}`] : undefined;
-  let guideText: string | null = null;
-  if (guide && guideAmount !== undefined) {
-    if (guide.unit === "trip") guideText = formatPrice(guideAmount, locale);
-    else if (isHourly)
-      guideText = pricing.guideHours
-        .replace("{price}", formatPrice(guideAmount * hours, locale))
-        .replace("{hours}", String(hours));
-    else guideText = `${formatPrice(guideAmount, locale)} ${pricing.perHour}`;
+  // The price from the admin's grid; the API prices the booking again from the same grid.
+  const grid = service ? prices[service] : undefined;
+  const unitPrice = grid && city && vehicle ? grid.amounts[`${city}:${vehicle}`] : undefined;
+  const chosen = Boolean(service && city && vehicle);
+  const unavailable = chosen && unitPrice === undefined;
+  let priceText: string | null = null;
+  if (unitPrice !== undefined) {
+    priceText =
+      grid?.unit === "hour"
+        ? pricing.hoursTotal
+            .replace("{price}", formatPrice(unitPrice * (isHourly ? hours : 1), locale))
+            .replace("{hours}", String(isHourly ? hours : 1))
+        : formatPrice(unitPrice, locale);
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
-    if (!form.reportValidity()) return;
+    if (!form.reportValidity() || unavailable) return;
 
     const data = new FormData(form);
     const text = (name: string) => String(data.get(name) ?? "");
@@ -93,12 +103,13 @@ export function QuoteForm({ locale, labels, cityNames, pricing, guidePrices }: Q
       lastName: text("lastName"),
       email: text("email"),
       phone: text("phone"),
-      city: text("city") as QuoteRequestInput["city"],
-      serviceType: text("serviceType") as QuoteRequestInput["serviceType"],
-      vehicleClass: vehicle,
+      city: text("city") as BookingRequestInput["city"],
+      service: text("service") as BookingRequestInput["service"],
+      vehicle: text("vehicle") as BookingRequestInput["vehicle"],
       pickupLocation: text("pickupLocation"),
       destination: text("destination"),
       hireHours: isHourly ? Number(data.get("hireHours")) : null,
+      flightNumber: text("flightNumber"),
       journeyDate: text("journeyDate"),
       journeyTime: text("journeyTime"),
       passengers: passengerCount,
@@ -115,7 +126,8 @@ export function QuoteForm({ locale, labels, cityNames, pricing, guidePrices }: Q
     }
   }
 
-  if (status === "sent") {
+  if (status === "sent" && booking) {
+    const total = booking.total_price ? formatPrice(Number(booking.total_price), locale) : null;
     return (
       <div className={cn(styles.card, styles.success)} role="status">
         <span className={styles.successIcon}>
@@ -124,11 +136,30 @@ export function QuoteForm({ locale, labels, cityNames, pricing, guidePrices }: Q
         <Eyebrow>{labels.successEyebrow}</Eyebrow>
         <h3>{labels.successTitle}</h3>
         <p>
-          {labels.successBodyBefore}
-          <strong>{reference}</strong>
-          {labels.successBodyAfter}
+          {labels.successReference} <strong dir="ltr">{booking.reference}</strong>
+          <br />
+          {labels.successNext}
+          {total && (
+            <>
+              <br />
+              {labels.successPrice.replace("{price}", total)}
+            </>
+          )}
         </p>
-        <Button className={styles.submit} onClick={reset}>
+        <div className="flex flex-wrap items-center gap-4">
+          <Link
+            className={buttonClassName({}, styles.submit)}
+            href={manageBookingHref(locale, booking.reference, booking.manage_token)}
+          >
+            {labels.manageLink}
+          </Link>
+          {user && (
+            <Link className="underline underline-offset-4" href={localePath(locale, "/account")}>
+              {labels.accountLink}
+            </Link>
+          )}
+        </div>
+        <Button className="mt-6" variant="secondary" onClick={reset}>
           {labels.again}
         </Button>
       </div>
@@ -209,18 +240,18 @@ export function QuoteForm({ locale, labels, cityNames, pricing, guidePrices }: Q
             <option value="" disabled>
               {labels.selectCity}
             </option>
-            {CITIES.map((city) => (
-              <option key={city} value={city}>
-                {cityNames[city]}
+            {CITIES.map((option) => (
+              <option key={option} value={option}>
+                {cityNames[option]}
               </option>
             ))}
           </Select>
         </Field>
         <Field label={labels.service}>
           <Select
-            name="serviceType"
+            name="service"
             required
-            value={serviceType}
+            value={service}
             onChange={(event) => updatePreset({ service: event.target.value as ServiceType })}
           >
             <option value="" disabled>
@@ -236,12 +267,15 @@ export function QuoteForm({ locale, labels, cityNames, pricing, guidePrices }: Q
 
         <Field label={labels.vehicle} wide>
           <Select
-            name="vehicleClass"
+            name="vehicle"
             required
             value={vehicle}
-            onChange={(event) => updatePreset({ vehicle: event.target.value as VehicleClass })}
+            onChange={(event) => updatePreset({ vehicle: event.target.value as FleetVehicle })}
           >
-            {VEHICLE_CLASSES.map((option) => (
+            <option value="" disabled>
+              {labels.selectVehicle}
+            </option>
+            {FLEET_VEHICLES.map((option) => (
               <option key={option} value={option}>
                 {labels.vehicleOptions[option]}
               </option>
@@ -249,11 +283,17 @@ export function QuoteForm({ locale, labels, cityNames, pricing, guidePrices }: Q
           </Select>
         </Field>
 
-        {guideText && (
+        {(priceText || unavailable) && (
           <div className={cn(styles.guide, styles.spanTwo)} role="status">
-            <span className={styles.label}>{pricing.guide}</span>
-            <strong>{guideText}</strong>
-            <p className={styles.hint}>{pricing.guideNote}</p>
+            {priceText ? (
+              <>
+                <span className={styles.label}>{labels.price}</span>
+                <strong>{priceText}</strong>
+                <p className={styles.hint}>{labels.priceNote}</p>
+              </>
+            ) : (
+              <p className={styles.hint}>{labels.unavailable}</p>
+            )}
           </div>
         )}
 
@@ -275,9 +315,9 @@ export function QuoteForm({ locale, labels, cityNames, pricing, guidePrices }: Q
               value={String(hours)}
               onChange={(event) => setHours(Number(event.target.value))}
             >
-              {HOUR_OPTIONS.map((hours) => (
-                <option key={hours} value={hours}>
-                  {hours} {labels.hoursUnit}
+              {HOUR_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option} {labels.hoursUnit}
                 </option>
               ))}
             </Select>
@@ -294,7 +334,19 @@ export function QuoteForm({ locale, labels, cityNames, pricing, guidePrices }: Q
           </Field>
         )}
 
-        <Field label={labels.date}>
+        {isAirport && (
+          <Field label={labels.flightNumber} wide>
+            <input
+              name="flightNumber"
+              maxLength={12}
+              pattern="[A-Za-z0-9 ]*"
+              placeholder={labels.flightNumberPlaceholder}
+              dir="ltr"
+            />
+          </Field>
+        )}
+
+        <Field label={labels.date} hint={labels.dateHint}>
           <input name="journeyDate" type="date" required min={minDate} />
         </Field>
         <Field label={labels.time}>
@@ -332,7 +384,7 @@ export function QuoteForm({ locale, labels, cityNames, pricing, guidePrices }: Q
             <span className="mt-1 block">{labels.signedInAs.replace("{name}", user.first_name || user.email)}</span>
           )}
         </p>
-        <Button type="submit" className={styles.submit} disabled={status === "sending"}>
+        <Button type="submit" className={styles.submit} disabled={status === "sending" || unavailable}>
           {status === "sending" ? (
             <>
               <LoaderCircle aria-hidden="true" className={styles.spinner} /> {labels.sending}

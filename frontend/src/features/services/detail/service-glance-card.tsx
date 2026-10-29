@@ -1,6 +1,6 @@
 import { serviceIcons } from "@/components/icons/service-icons";
 import { FromPrice } from "@/components/ui/from-price";
-import { RequestQuoteButton } from "@/features/quote";
+import { BookButton } from "@/features/booking";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import type { SiteService } from "@/lib/content/site-services";
@@ -13,7 +13,7 @@ interface ServiceGlanceCardProps {
   pricing: Dictionary["pricing"];
 }
 
-/** Frosted summary card floated in the hero: three key facts and a quote action. */
+/** Frosted summary card floated in the hero: three key facts and a booking action. */
 export function ServiceGlanceCard({ service, heading, cta, locale, pricing }: ServiceGlanceCardProps) {
   const Icon = serviceIcons[service.icon];
 
@@ -37,12 +37,12 @@ export function ServiceGlanceCard({ service, heading, cta, locale, pricing }: Se
         ))}
       </dl>
 
-      <RequestQuoteButton
+      <BookButton
         preset={service.bookingType ? { service: service.bookingType } : {}}
         className="mt-6 w-full"
       >
         {cta}
-      </RequestQuoteButton>
+      </BookButton>
     </aside>
   );
 }

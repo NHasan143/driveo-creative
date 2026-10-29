@@ -3,7 +3,7 @@ import { Reveal } from "@/components/motion/reveal";
 import { ArrowLink } from "@/components/ui/arrow-link";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { FLEET_VEHICLES } from "@/domain/booking";
-import { RequestQuoteButton } from "@/features/quote";
+import { BookButton } from "@/features/booking";
 import { localePath, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import { FleetFrame } from "./fleet-frame";
@@ -41,9 +41,9 @@ export function FleetSection({ locale, fleet, more }: FleetSectionProps) {
                 />
                 <h3 className="card-title mt-5">{item.title}</h3>
                 <p className="body-muted">{item.copy}</p>
-                <RequestQuoteButton preset={{ vehicle }} className={styles.button}>
+                <BookButton preset={{ vehicle }} className={styles.button}>
                   {fleet.button}
-                </RequestQuoteButton>
+                </BookButton>
               </ParallaxSurface>
             );
           })}

@@ -1,9 +1,15 @@
-"""Owner alerts for new quote requests: email and Twilio WhatsApp.
+"""Booking messages: owner alerts (email and Twilio WhatsApp) and customer emails.
 
-Flow: the view saves the request, then `queue_quote_notifications` creates one
+Flow: the view saves the booking, then `queue_booking_notifications` creates one
 `Notification` row per recipient and queues a Celery task for each. The task
 calls `deliver`, which records every attempt on the row, so the admin always
 shows what was sent, what failed and why.
+
+Who hears about what:
+  created    owner (email + WhatsApp) and customer (email, with the manage link)
+  changed    owner and customer
+  cancelled  owner (when the customer cancelled) and customer
+  confirmed  customer (with the chauffeur's details)
 """
 
 import json
@@ -12,18 +18,18 @@ import re
 import smtplib
 from datetime import timedelta
 from email.utils import formataddr, parseaddr
-from urllib.parse import quote as quote_url
 
 from django.conf import settings
-from django.core.mail import EmailMultiAlternatives
+from django.core.mail import EmailMessage, EmailMultiAlternatives
 from django.db import transaction
 from django.template.defaultfilters import pluralize
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
 
-from .choices import ServiceType
-from .models import Notification, QuoteRequest
+from . import customer_emails
+from .models import Booking, Notification
+from .pricing import english_name
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +37,9 @@ logger = logging.getLogger(__name__)
 # Longer than the task's whole retry schedule, so a row waiting for a retry is
 # never queued twice.
 STALE_AFTER = timedelta(minutes=45)
+
+Event = Notification.Event
+Audience = Notification.Audience
 
 
 class RetryableDeliveryError(Exception):
@@ -44,9 +53,21 @@ class PermanentDeliveryError(Exception):
 # ---- Queueing ---------------------------------------------------------------
 
 
-def queue_quote_notifications(quote):
-    """Create the alert rows for a new quote request and queue their delivery."""
-    rows = _plan_notifications(quote)
+def queue_booking_notifications(booking, event, *, owner=True, customer=True):
+    """Create the message rows for a booking event and queue their delivery."""
+    rows = []
+    if owner and event != Event.CONFIRMED:
+        rows += _plan_owner_alerts(booking, event)
+    if customer:
+        rows.append(
+            Notification.objects.create(
+                booking=booking,
+                event=event,
+                audience=Audience.CUSTOMER,
+                channel=Notification.Channel.EMAIL,
+                recipient=booking.email,
+            )
+        )
     for row in rows:
         if row.status == Notification.Status.PENDING:
             enqueue(row)
@@ -64,9 +85,7 @@ def enqueue(notification):
 
 def requeue_stale_notifications():
     cutoff = timezone.now() - STALE_AFTER
-    stale = Notification.objects.filter(
-        status=Notification.Status.PENDING, updated_at__lt=cutoff
-    )
+    stale = Notification.objects.filter(status=Notification.Status.PENDING, updated_at__lt=cutoff)
     count = 0
     for row in stale:
         row.save(update_fields=["updated_at"])  # Restart the stale clock.
@@ -75,11 +94,11 @@ def requeue_stale_notifications():
     return count
 
 
-def _plan_notifications(quote):
+def _plan_owner_alerts(booking, event):
     rows = []
     for channel, recipients, setting_name in (
-        (Notification.Channel.EMAIL, settings.QUOTE_ALERT_EMAILS, "QUOTE_ALERT_EMAILS"),
-        (Notification.Channel.WHATSAPP, settings.QUOTE_ALERT_WHATSAPP, "QUOTE_ALERT_WHATSAPP"),
+        (Notification.Channel.EMAIL, settings.BOOKING_ALERT_EMAILS, "BOOKING_ALERT_EMAILS"),
+        (Notification.Channel.WHATSAPP, settings.BOOKING_ALERT_WHATSAPP, "BOOKING_ALERT_WHATSAPP"),
     ):
         skip_reason = None
         if not recipients:
@@ -89,10 +108,11 @@ def _plan_notifications(quote):
 
         if skip_reason:
             # A visible row in the admin instead of a silent gap.
-            logger.warning("Quote %s: %s alert skipped. %s", quote.reference, channel, skip_reason)
+            logger.warning("Booking %s: %s alert skipped. %s", booking.reference, channel, skip_reason)
             rows.append(
                 Notification.objects.create(
-                    quote_request=quote,
+                    booking=booking,
+                    event=event,
                     channel=channel,
                     status=Notification.Status.SKIPPED,
                     error=skip_reason,
@@ -102,9 +122,7 @@ def _plan_notifications(quote):
 
         for recipient in recipients:
             rows.append(
-                Notification.objects.create(
-                    quote_request=quote, channel=channel, recipient=recipient
-                )
+                Notification.objects.create(booking=booking, event=event, channel=channel, recipient=recipient)
             )
     return rows
 
@@ -118,19 +136,15 @@ def deliver(notification_id, *, final_attempt):
     Raises RetryableDeliveryError when the caller should try again later.
     """
     with transaction.atomic():
-        row = (
-            Notification.objects.select_for_update()
-            .select_related("quote_request")
-            .get(pk=notification_id)
-        )
+        row = Notification.objects.select_for_update().select_related("booking").get(pk=notification_id)
         if row.status != Notification.Status.PENDING:
             return row  # Already sent, skipped or given up on.
         row.attempts += 1
         row.save(update_fields=["attempts", "updated_at"])
 
-    sender = SENDERS[row.channel]
+    sender = SENDERS[(row.audience, row.channel)]
     try:
-        row.provider_message_id = sender(row.quote_request, row.recipient) or ""
+        row.provider_message_id = sender(row.booking, row.recipient, row.event) or ""
     except PermanentDeliveryError as exc:
         _record_failure(row, exc, give_up=True)
         return row
@@ -149,8 +163,9 @@ def deliver(notification_id, *, final_attempt):
 
 def _record_failure(row, exc, *, give_up):
     logger.warning(
-        "Quote %s: %s to %s failed (attempt %s): %s",
-        row.quote_request.reference,
+        "Booking %s: %s %s to %s failed (attempt %s): %s",
+        row.booking.reference,
+        row.event,
         row.channel,
         row.recipient,
         row.attempts,
@@ -164,9 +179,15 @@ def _record_failure(row, exc, *, give_up):
 
 # ---- Message content --------------------------------------------------------
 
+OWNER_HEADINGS = {
+    Event.CREATED: "New booking",
+    Event.CHANGED: "Booking changed by the customer",
+    Event.CANCELLED: "Booking cancelled by the customer",
+}
 
-def admin_url(quote):
-    path = reverse("admin:quotes_quoterequest_change", args=[quote.pk])
+
+def admin_url(booking):
+    path = reverse("admin:bookings_booking_change", args=[booking.pk])
     return f"{settings.BACKEND_BASE_URL.rstrip('/')}{path}"
 
 
@@ -184,57 +205,45 @@ def whatsapp_chat_url(phone):
     return f"https://wa.me/{digits}" if len(digits) >= 8 else None
 
 
-def reply_email_url(quote):
-    subject = quote_url(f"Your Driveo Exclusive quote {quote.reference}")
-    return f"mailto:{quote.email}?subject={subject}"
-
-
-def summary_lines(quote: QuoteRequest):
+def summary_lines(booking: Booking):
     """The facts the owner needs, shared by every channel."""
-    when = f"{quote.journey_date:%a %d %b %Y}, {quote.journey_time:%H:%M}"
-    if quote.service_type == ServiceType.HOURLY_HIRE:
-        route = f"From {quote.pickup_location} · {quote.hire_hours} hours"
+    from content.models import City, Service, Vehicle
+
+    def name(model, pk):
+        record = model.objects.filter(pk=pk).first()
+        return english_name(record) if record else pk
+
+    when = f"{booking.journey_date:%a %d %b %Y}, {booking.journey_time:%H:%M}"
+    if booking.is_hourly:
+        route = f"From {booking.pickup_location} · {booking.hire_hours} hours"
     else:
-        route = f"{quote.pickup_location} → {quote.destination}"
+        route = f"{booking.pickup_location} → {booking.destination}"
+    if booking.flight_number:
+        route += f" · flight {booking.flight_number}"
+    price = f"{booking.total_price} {booking.currency}"
+    if booking.is_hourly:
+        price += f" ({booking.unit_price} per hour)"
     return {
-        "reference": quote.reference,
-        "service": f"{quote.get_service_type_display()} · {quote.get_city_display()}",
+        "reference": booking.reference,
+        "service": f"{name(Service, booking.service)} · {name(City, booking.city)}",
         "when": when,
         "route": route,
         "vehicle": (
-            f"{quote.get_vehicle_class_display()} · "
-            f"{quote.passengers} passenger{pluralize(quote.passengers)} · "
-            f"{quote.luggage} luggage"
+            f"{name(Vehicle, booking.vehicle)} · "
+            f"{booking.passengers} passenger{pluralize(booking.passengers)} · "
+            f"{booking.luggage} luggage"
         ),
-        "customer": f"{quote.full_name} · {quote.phone} · {quote.email}",
-        "admin_url": admin_url(quote),
-        # The owner answers every request personally; nothing goes to the customer automatically.
-        "reply_whatsapp_url": whatsapp_chat_url(quote.phone) or "",
-        "reply_email_url": reply_email_url(quote),
+        "price": f"{price}, paid later",
+        "customer": f"{booking.full_name} · {booking.phone} · {booking.email}",
+        "admin_url": admin_url(booking),
+        "reply_whatsapp_url": whatsapp_chat_url(booking.phone) or "",
     }
 
 
 # ---- Channels ---------------------------------------------------------------
 
 
-def send_email(quote, recipient):
-    facts = summary_lines(quote)
-    context = {"quote": quote, **facts}
-    # "Ada Lovelace via Driveo Exclusive": the customer is recognisable in the
-    # inbox, and Reply goes straight to them. The sending address is unchanged.
-    sender_name, sender_address = parseaddr(settings.DEFAULT_FROM_EMAIL)
-    message = EmailMultiAlternatives(
-        subject=f"New quote request {quote.reference}: {facts['service']}, {facts['when']}",
-        body=render_to_string("quotes/email/new_quote_request.txt", context),
-        from_email=formataddr(
-            (f"{quote.full_name} via {sender_name or 'Driveo Exclusive'}", sender_address)
-        ),
-        to=[recipient],
-        reply_to=[quote.email],
-    )
-    message.attach_alternative(
-        render_to_string("quotes/email/new_quote_request.html", context), "text/html"
-    )
+def _send(message):
     try:
         message.send()
     except (
@@ -248,12 +257,38 @@ def send_email(quote, recipient):
     return ""
 
 
-def twilio_configured():
-    return bool(
-        settings.TWILIO_ACCOUNT_SID
-        and settings.TWILIO_AUTH_TOKEN
-        and settings.TWILIO_WHATSAPP_FROM
+def send_owner_email(booking, recipient, event):
+    facts = summary_lines(booking)
+    context = {"booking": booking, "heading": OWNER_HEADINGS[event], "event": event, **facts}
+    # "Ada Lovelace via Driveo Exclusive": the customer is recognisable in the
+    # inbox, and Reply goes straight to them. The sending address is unchanged.
+    sender_name, sender_address = parseaddr(settings.DEFAULT_FROM_EMAIL)
+    message = EmailMultiAlternatives(
+        subject=f"{OWNER_HEADINGS[event]} {booking.reference}: {facts['service']}, {facts['when']}",
+        body=render_to_string("bookings/email/owner_booking.txt", context),
+        from_email=formataddr((f"{booking.full_name} via {sender_name or 'Driveo Exclusive'}", sender_address)),
+        to=[recipient],
+        reply_to=[booking.email],
     )
+    message.attach_alternative(render_to_string("bookings/email/owner_booking.html", context), "text/html")
+    return _send(message)
+
+
+def send_customer_email(booking, recipient, event):
+    subject, body = customer_emails.render(booking, event)
+    alert_addresses = settings.BOOKING_ALERT_EMAILS
+    message = EmailMessage(
+        subject=subject,
+        body=body,
+        to=[recipient],
+        # Replies reach the business, not a no-reply mailbox.
+        reply_to=alert_addresses[:1] or None,
+    )
+    return _send(message)
+
+
+def twilio_configured():
+    return bool(settings.TWILIO_ACCOUNT_SID and settings.TWILIO_AUTH_TOKEN and settings.TWILIO_WHATSAPP_FROM)
 
 
 def _whatsapp_address(number):
@@ -261,19 +296,19 @@ def _whatsapp_address(number):
     return number if number.startswith("whatsapp:") else f"whatsapp:{number}"
 
 
-def send_whatsapp(quote, recipient):
+def send_owner_whatsapp(booking, recipient, event):
     from twilio.base.exceptions import TwilioException, TwilioRestException
     from twilio.rest import Client
 
-    facts = summary_lines(quote)
+    facts = summary_lines(booking)
     params = {
         "from_": _whatsapp_address(settings.TWILIO_WHATSAPP_FROM),
         "to": _whatsapp_address(recipient),
     }
-    if settings.TWILIO_WHATSAPP_CONTENT_SID:
+    if settings.TWILIO_WHATSAPP_CONTENT_SID and event == Event.CREATED:
         # Approved template, required for business-initiated messages outside
         # WhatsApp's 24-hour customer-service window. See README for the
-        # placeholder order.
+        # placeholder order. Changes and cancellations go as free-form text.
         params["content_sid"] = settings.TWILIO_WHATSAPP_CONTENT_SID
         params["content_variables"] = json.dumps(
             {
@@ -283,11 +318,12 @@ def send_whatsapp(quote, recipient):
                 "4": facts["route"],
                 "5": facts["customer"],
                 "6": facts["admin_url"],
-                "7": facts["reply_whatsapp_url"] or quote.phone,
+                "7": facts["reply_whatsapp_url"] or booking.phone,
             }
         )
     else:
-        params["body"] = render_to_string("quotes/whatsapp/new_quote_request.txt", facts)[:1600]
+        context = {"heading": OWNER_HEADINGS[event], **facts}
+        params["body"] = render_to_string("bookings/whatsapp/owner_booking.txt", context)[:1600]
 
     client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
     try:
@@ -303,6 +339,7 @@ def send_whatsapp(quote, recipient):
 
 
 SENDERS = {
-    Notification.Channel.EMAIL: send_email,
-    Notification.Channel.WHATSAPP: send_whatsapp,
+    (Audience.OWNER, Notification.Channel.EMAIL): send_owner_email,
+    (Audience.OWNER, Notification.Channel.WHATSAPP): send_owner_whatsapp,
+    (Audience.CUSTOMER, Notification.Channel.EMAIL): send_customer_email,
 }

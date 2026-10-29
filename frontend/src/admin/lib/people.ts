@@ -18,26 +18,28 @@ export interface Customer {
   is_active: boolean;
   date_joined: string;
   last_login: string | null;
-  quote_count: number;
-  last_request_at: string | null;
+  booking_count: number;
+  last_booking_at: string | null;
 }
 
-export interface CustomerQuoteRequest {
+export interface CustomerBooking {
   id: number;
   reference: string;
-  status: "new" | "contacted" | "quoted" | "closed";
+  status: "pending" | "confirmed" | "completed" | "cancelled";
   created_at: string;
+  service: string;
   city: string;
-  service_type: string;
-  vehicle_class: string;
+  vehicle: string;
   journey_date: string;
   journey_time: string;
   pickup_location: string;
   destination: string;
+  total_price: string;
+  currency: string;
 }
 
 export interface CustomerDetail extends Customer {
-  quote_requests: CustomerQuoteRequest[];
+  bookings: CustomerBooking[];
 }
 
 interface Page<T> {

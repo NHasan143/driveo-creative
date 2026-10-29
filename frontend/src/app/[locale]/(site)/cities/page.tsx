@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { PageHero } from "@/components/page/page-hero";
 import { CityDirectory } from "@/features/cities/city-directory";
 import { AssuranceSection } from "@/features/home/assurance-section";
-import { QuoteSection } from "@/features/quote";
+import { BookingSection } from "@/features/booking";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
@@ -31,12 +31,12 @@ export default async function CitiesPage() {
         cta={t.hero.cta}
         whatsappLabel={t.hero.whatsapp}
       />
-      <CityDirectory cityNames={t.cities.names} serviceNames={t.quote.serviceOptions} page={page} />
+      <CityDirectory cityNames={t.cities.names} serviceNames={t.booking.serviceOptions} page={page} />
       <AssuranceSection
         items={t.assurance}
         heading={{ eyebrow: page.standardEyebrow, title: page.standardTitle }}
       />
-      <QuoteSection locale={locale} quote={t.quote} cityNames={t.cities.names} />
+      <BookingSection locale={locale} booking={t.booking} cityNames={t.cities.names} />
     </main>
   );
 }

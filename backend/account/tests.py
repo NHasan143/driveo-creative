@@ -9,8 +9,8 @@ from django.db import IntegrityError
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from quotes.models import QuoteRequest
-from quotes.tests import payload as quote_payload
+from bookings.models import Booking
+from bookings.tests import make_content, payload as booking_payload
 
 from .models import User
 
@@ -18,7 +18,7 @@ PASSWORD = "Silent-Mercedes-42"
 SESSION = reverse("account-session")
 REGISTER = reverse("account-register")
 PROFILE = reverse("account-profile")
-QUOTES = reverse("quote-request-create")
+BOOKINGS = reverse("booking-create")
 
 
 class UserModelTests(TestCase):
@@ -211,23 +211,27 @@ class PasswordResetTests(WebsiteClientTestCase):
         self.assertIn("token", response.json())
 
 
-class MyQuoteRequestsTests(SignedInTestCase):
-    URL = reverse("account-quote-requests")
+class MyBookingsTests(SignedInTestCase):
+    URL = reverse("account-bookings")
 
-    def test_requests_sent_while_signed_in_are_listed(self):
-        self.assertEqual(self.send("post", QUOTES, quote_payload()).status_code, 201)
+    def setUp(self):
+        super().setUp()
+        make_content()
+
+    def test_bookings_made_while_signed_in_are_listed(self):
+        self.assertEqual(self.send("post", BOOKINGS, booking_payload()).status_code, 201)
         anonymous = Client(enforce_csrf_checks=True)
-        anonymous.post(QUOTES, quote_payload(notes="Not mine"), content_type="application/json")
+        anonymous.post(BOOKINGS, booking_payload(notes="Not mine"), content_type="application/json")
 
         listed = self.client.get(self.URL).json()
         self.assertEqual(len(listed), 1)
-        self.assertEqual(listed[0]["reference"], QuoteRequest.objects.get(customer=self.user).reference)
+        self.assertEqual(listed[0]["reference"], Booking.objects.get(customer=self.user).reference)
         self.assertNotIn("staff_notes", listed[0])
 
-    def test_signed_in_quote_requests_need_the_csrf_token(self):
-        response = self.client.post(QUOTES, quote_payload(), content_type="application/json")
+    def test_signed_in_bookings_need_the_csrf_token(self):
+        response = self.client.post(BOOKINGS, booking_payload(), content_type="application/json")
         self.assertEqual(response.status_code, 403)
-        self.assertFalse(QuoteRequest.objects.exists())
+        self.assertFalse(Booking.objects.exists())
 
 
 class StaffApiTests(TestCase):
@@ -238,16 +242,17 @@ class StaffApiTests(TestCase):
         self.owner = User.objects.create_superuser("owner", "owner@example.com", PASSWORD)
         self.editor = User.objects.create_user("editor", "editor@example.com", PASSWORD, is_staff=True)
         self.customer = User.objects.create_user("ada@example.com", "ada@example.com", PASSWORD, first_name="Ada")
-        QuoteRequest.objects.create(**{**quote_payload_fields(), "customer": self.customer})
+        make_content()
+        Booking.objects.create(**{**booking_fields(), "customer": self.customer})
 
     def test_staff_see_customers_with_their_requests(self):
         self.client.force_login(self.editor)
         listing = self.client.get(self.CUSTOMERS, {"search": "ADA"}).json()
         self.assertEqual(listing["count"], 1)
-        self.assertEqual(listing["results"][0]["quote_count"], 1)
+        self.assertEqual(listing["results"][0]["booking_count"], 1)
 
         detail = self.client.get(reverse("staff-customer", args=[self.customer.pk])).json()
-        self.assertEqual(len(detail["quote_requests"]), 1)
+        self.assertEqual(len(detail["bookings"]), 1)
 
         response = self.client.patch(
             reverse("staff-customer", args=[self.customer.pk]), {"is_active": False}, content_type="application/json"
@@ -292,9 +297,7 @@ class StaffApiTests(TestCase):
         self.assertTrue(self.editor.check_password("Quiet-Arrival-77"))
 
 
-def quote_payload_fields():
-    """A saved QuoteRequest's fields (the API payload without its extras)."""
-    data = quote_payload()
-    data.pop("honeypot")
-    data["journey_time"] = "09:30"
-    return {**data, "reference": "DRV-TEST01"}
+def booking_fields():
+    """A saved Booking's fields (the API payload without its extras, plus a price)."""
+    data = {k: v for k, v in booking_payload().items() if k != "honeypot"}
+    return {**data, "price_unit": "trip", "unit_price": "120.00", "total_price": "120.00"}

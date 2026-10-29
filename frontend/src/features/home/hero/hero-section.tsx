@@ -48,7 +48,7 @@ export function HeroSection({ hero, cityNames }: HeroSectionProps) {
           <p className="mt-7 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">{hero.sub}</p>
 
           <div className="mt-9 flex flex-wrap gap-3">
-            <a href="#quote" className={buttonClassName({ size: "lg" })}>
+            <a href="#book" className={buttonClassName({ size: "lg" })}>
               {hero.cta} <span aria-hidden="true">↘</span>
             </a>
             <a

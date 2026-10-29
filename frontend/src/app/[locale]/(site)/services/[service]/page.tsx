@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageHero } from "@/components/page/page-hero";
 import { TestimonialSection } from "@/features/home/testimonial-section";
-import { QuotePresetDefaults, QuoteSection } from "@/features/quote";
+import { BookingPresetDefaults, BookingSection } from "@/features/booking";
 import { OtherServices } from "@/features/services/detail/other-services";
 import { ServiceFacts } from "@/features/services/detail/service-facts";
 import { ServiceFleet } from "@/features/services/detail/service-fleet";
@@ -55,7 +55,7 @@ export default async function ServiceDetailPage({ params }: Props) {
 
   return (
     <main className="min-h-screen overflow-hidden bg-background text-foreground">
-      <QuotePresetDefaults preset={preset} />
+      <BookingPresetDefaults preset={preset} />
       <PageHero
         locale={locale}
         crumbs={{
@@ -72,7 +72,7 @@ export default async function ServiceDetailPage({ params }: Props) {
           <ServiceGlanceCard
             service={service}
             heading={detail.atAGlance}
-            cta={t.pages.services.quoteCta}
+            cta={t.pages.services.bookCta}
             locale={locale}
             pricing={t.pricing}
           />
@@ -103,7 +103,7 @@ export default async function ServiceDetailPage({ params }: Props) {
         services={services.filter((item) => item.slug !== service.slug)}
         heading={{ eyebrow: detail.otherEyebrow, title: detail.otherTitle, viewDetails: detail.viewDetails }}
       />
-      <QuoteSection locale={locale} quote={t.quote} cityNames={t.cities.names} />
+      <BookingSection locale={locale} booking={t.booking} cityNames={t.cities.names} />
     </main>
   );
 }

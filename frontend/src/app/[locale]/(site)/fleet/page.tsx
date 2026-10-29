@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { PageHero } from "@/components/page/page-hero";
 import { FleetComparison } from "@/features/fleet/fleet-comparison";
 import { FleetShowcase } from "@/features/fleet/fleet-showcase";
-import { QuoteSection } from "@/features/quote";
+import { BookingSection } from "@/features/booking";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
@@ -33,7 +33,7 @@ export default async function FleetPage() {
       />
       <FleetShowcase fleet={t.fleet} page={page} />
       <FleetComparison fleet={t.fleet} page={page} />
-      <QuoteSection locale={locale} quote={t.quote} cityNames={t.cities.names} />
+      <BookingSection locale={locale} booking={t.booking} cityNames={t.cities.names} />
     </main>
   );
 }

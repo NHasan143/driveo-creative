@@ -79,7 +79,7 @@ export interface Service extends Entity {
   seoTitle: LocalizedText;
   seoDescription: LocalizedText;
   priceUnit: PriceUnit;
-  /** Shown on the website as "from" prices; customers still get a fixed quote. */
+  /** What bookings cost; the website shows the lowest as a "from" price. */
   prices: ServicePrice[];
 }
 

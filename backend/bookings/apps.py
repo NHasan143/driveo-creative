@@ -1,5 +1,6 @@
 from django.apps import AppConfig
 
 
-class QuotesConfig(AppConfig):
-    name = "quotes"
+class BookingsConfig(AppConfig):
+    name = "bookings"
+    verbose_name = "Bookings"

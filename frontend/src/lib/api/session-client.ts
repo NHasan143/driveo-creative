@@ -2,12 +2,12 @@ import { env } from "@/config/env";
 import { ApiError } from "./http-client";
 
 /**
- * Requests that carry the visitor's session: customer accounts and the quote form.
+ * Requests that carry the visitor's session: customer accounts and the booking form.
  *
  * The API signs people in with Django's session cookie (HttpOnly, on the API's
  * own origin), sent with `credentials: "include"`. This page can't read the
  * API's cookies, so the CSRF token comes in JSON responses (`csrf_token`) and
- * is kept in memory, then sent as `X-CSRFToken` on every write. The quote form
+ * is kept in memory, then sent as `X-CSRFToken` on every write. The booking form
  * must send it too: a signed-in visitor's post is refused without it.
  */
 
@@ -20,6 +20,8 @@ interface RequestOptions {
   body?: unknown;
   locale?: string;
   timeoutMs?: number;
+  /** Extra request headers, e.g. a booking's X-Booking-Token. */
+  headers?: Record<string, string>;
 }
 
 function url(path: string) {
@@ -49,10 +51,10 @@ function isCsrfFailure(data: unknown) {
 
 export async function sessionRequest<T>(
   path: string,
-  { method = "GET", body, locale, timeoutMs = 15_000 }: RequestOptions = {},
+  { method = "GET", body, locale, timeoutMs = 15_000, headers: extraHeaders }: RequestOptions = {},
   retried = false,
 ): Promise<T> {
-  const headers: Record<string, string> = { Accept: "application/json" };
+  const headers: Record<string, string> = { Accept: "application/json", ...extraHeaders };
   if (body !== undefined) headers["Content-Type"] = "application/json";
   if (locale) headers["Accept-Language"] = locale;
   if (method !== "GET") headers["X-CSRFToken"] = csrfToken ?? (await fetchCsrfToken());
@@ -69,7 +71,7 @@ export async function sessionRequest<T>(
   if (response.status === 403 && isCsrfFailure(data) && !retried) {
     // The token was rotated, e.g. by signing in in another tab: fetch a fresh one and retry once.
     await fetchCsrfToken();
-    return sessionRequest<T>(path, { method, body, locale, timeoutMs }, true);
+    return sessionRequest<T>(path, { method, body, locale, timeoutMs, headers: extraHeaders }, true);
   }
   if (!response.ok)
     throw new ApiError(`Request to ${path} failed with ${response.status}`, response.status, data);

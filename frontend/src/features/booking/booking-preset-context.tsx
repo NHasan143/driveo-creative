@@ -1,71 +1,66 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
-import {
-  DEFAULT_VEHICLE_CLASS,
-  type City,
-  type ServiceType,
-  type VehicleClass,
-} from "@/domain/booking";
+import type { City, FleetVehicle, ServiceType } from "@/domain/booking";
 
-export const QUOTE_SECTION_ID = "quote";
+export const BOOKING_SECTION_ID = "book";
 
-/** Choices other parts of the page can pre-fill in the quote form. */
-export interface QuotePreset {
-  vehicle: VehicleClass;
+/** Choices other parts of the page can pre-fill in the booking form. */
+export interface BookingPreset {
+  vehicle: FleetVehicle | "";
   city: City | "";
   service: ServiceType | "";
 }
 
-const EMPTY_PRESET: QuotePreset = { vehicle: DEFAULT_VEHICLE_CLASS, city: "", service: "" };
+const EMPTY_PRESET: BookingPreset = { vehicle: "", city: "", service: "" };
 
-interface QuotePresetContextValue {
-  preset: QuotePreset;
-  update: (changes: Partial<QuotePreset>) => void;
+interface BookingPresetContextValue {
+  preset: BookingPreset;
+  update: (changes: Partial<BookingPreset>) => void;
   reset: () => void;
-  /** Applies the changes and brings the quote form into view. */
-  requestQuote: (changes: Partial<QuotePreset>) => void;
+  /** Applies the changes and brings the booking form into view. */
+  requestBooking: (changes: Partial<BookingPreset>) => void;
 }
 
-const QuotePresetContext = createContext<QuotePresetContextValue | null>(null);
+const BookingPresetContext = createContext<BookingPresetContextValue | null>(null);
 
 /**
  * Next.js keeps recently visited pages mounted but hidden (React `<Activity>`),
- * so several `#quote` sections can exist at once; scroll to the visible one.
+ * so several `#book` sections can exist at once; scroll to the visible one.
  */
-function scrollToVisibleQuote() {
-  const sections = document.querySelectorAll<HTMLElement>(`[id="${QUOTE_SECTION_ID}"]`);
+function scrollToVisibleBooking() {
+  const sections = document.querySelectorAll<HTMLElement>(`[id="${BOOKING_SECTION_ID}"]`);
   const visible = Array.from(sections).find((section) => section.getClientRects().length > 0);
   visible?.scrollIntoView({ behavior: "smooth" });
 }
 
-export function QuotePresetProvider({ children }: { children: ReactNode }) {
-  const [preset, setPreset] = useState<QuotePreset>(EMPTY_PRESET);
+export function BookingPresetProvider({ children }: { children: ReactNode }) {
+  const [preset, setPreset] = useState<BookingPreset>(EMPTY_PRESET);
 
-  const update = useCallback((changes: Partial<QuotePreset>) => {
+  const update = useCallback((changes: Partial<BookingPreset>) => {
     setPreset((current) => ({ ...current, ...changes }));
   }, []);
 
   const reset = useCallback(() => setPreset(EMPTY_PRESET), []);
 
-  const requestQuote = useCallback(
-    (changes: Partial<QuotePreset>) => {
+  const requestBooking = useCallback(
+    (changes: Partial<BookingPreset>) => {
       update(changes);
-      requestAnimationFrame(scrollToVisibleQuote);
+      requestAnimationFrame(scrollToVisibleBooking);
     },
     [update],
   );
 
   const value = useMemo(
-    () => ({ preset, update, reset, requestQuote }),
-    [preset, update, reset, requestQuote],
+    () => ({ preset, update, reset, requestBooking }),
+    [preset, update, reset, requestBooking],
   );
 
-  return <QuotePresetContext.Provider value={value}>{children}</QuotePresetContext.Provider>;
+  return <BookingPresetContext.Provider value={value}>{children}</BookingPresetContext.Provider>;
 }
 
-export function useQuotePreset() {
-  const context = useContext(QuotePresetContext);
-  if (!context) throw new Error("useQuotePreset must be used inside <QuotePresetProvider>");
+export function useBookingPreset() {
+  const context = useContext(BookingPresetContext);
+  if (!context) throw new Error("useBookingPreset must be used inside <BookingPresetProvider>");
   return context;
 }

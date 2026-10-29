@@ -16,16 +16,18 @@ import { hasLocale, localeMeta } from "@/i18n/config";
 import { NeedsApi } from "./needs-api";
 
 const STATUS = {
-  new: { label: "New", tone: "primary" },
-  contacted: { label: "Contacted", tone: "warning" },
-  quoted: { label: "Quoted", tone: "success" },
-  closed: { label: "Closed", tone: "neutral" },
+  pending: { label: "Pending", tone: "warning" },
+  confirmed: { label: "Confirmed", tone: "primary" },
+  completed: { label: "Completed", tone: "success" },
+  cancelled: { label: "Cancelled", tone: "neutral" },
 } as const;
 
-/** Quote requests are worked on in Django's admin, on the API's own origin. */
-function djangoAdminUrl(quoteId: number) {
-  return `${new URL(env.apiBaseUrl).origin}/admin/quotes/quoterequest/${quoteId}/change/`;
+/** Bookings are confirmed and assigned in Django's admin, on the API's own origin. */
+function djangoAdminUrl(bookingId: number) {
+  return `${new URL(env.apiBaseUrl).origin}/admin/bookings/booking/${bookingId}/change/`;
 }
+
+const money = new Intl.NumberFormat("en-GB", { style: "currency", currency: "EUR" });
 
 export function CustomerDetailScreen() {
   const { id } = useParams<{ id: string }>();
@@ -104,28 +106,33 @@ function CustomerView({ customer }: { customer: CustomerDetail }) {
 
         <Card>
           <CardHeader
-            title="Quote requests"
-            description="Requests sent while signed in. Reply and update them in the Django admin."
+            title="Bookings"
+            description="Bookings made while signed in. Confirm, assign a chauffeur or cancel them in the Django admin."
           />
-          {customer.quote_requests.length === 0 ? (
+          {customer.bookings.length === 0 ? (
             <EmptyState
               icon={<Inbox aria-hidden="true" />}
-              title="No requests yet"
-              description="Requests this customer sends while signed in will appear here."
+              title="No bookings yet"
+              description="Bookings this customer makes while signed in will appear here."
             />
           ) : (
             <ul className="divide-y divide-border">
-              {customer.quote_requests.map((request) => (
+              {customer.bookings.map((request) => (
                 <li key={request.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3 text-sm">
                   <span className="font-mono font-semibold" dir="ltr">
                     {request.reference}
                   </span>
                   <Badge tone={STATUS[request.status].tone}>{STATUS[request.status].label}</Badge>
                   <span className="min-w-0 flex-1 text-muted-foreground">
-                    {en.quote.serviceOptions[request.service_type as keyof typeof en.quote.serviceOptions] ??
-                      request.service_type}{" "}
+                    {en.booking.serviceOptions[request.service as keyof typeof en.booking.serviceOptions] ??
+                      request.service}{" "}
                     · {en.cities.names[request.city as keyof typeof en.cities.names] ?? request.city} ·{" "}
                     {formatDate(request.journey_date)} {request.journey_time.slice(0, 5)}
+                  </span>
+                  <span className="tabular-nums">
+                    {request.currency === "EUR"
+                      ? money.format(Number(request.total_price))
+                      : `${request.total_price} ${request.currency}`}
                   </span>
                   <a
                     href={djangoAdminUrl(request.id)}
@@ -146,7 +153,7 @@ function CustomerView({ customer }: { customer: CustomerDetail }) {
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
         title="Deactivate this account?"
-        description={`${fullName(customer)} won't be able to sign in on the website. Their quote requests stay. You can reactivate the account later.`}
+        description={`${fullName(customer)} won't be able to sign in on the website. Their bookings stay. You can reactivate the account later.`}
         confirmLabel="Deactivate"
         busy={setActive.isPending}
         onConfirm={toggleActive}

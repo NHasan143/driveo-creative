@@ -81,8 +81,8 @@ function CustomersTable() {
                 <tr className="border-b border-border">
                   <th className="px-4 py-2.5 text-start font-semibold">Customer</th>
                   <th className="px-4 py-2.5 text-start font-semibold">Phone</th>
-                  <th className="px-4 py-2.5 text-end font-semibold">Requests</th>
-                  <th className="px-4 py-2.5 text-start font-semibold">Last request</th>
+                  <th className="px-4 py-2.5 text-end font-semibold">Bookings</th>
+                  <th className="px-4 py-2.5 text-start font-semibold">Last booking</th>
                   <th className="px-4 py-2.5 text-start font-semibold">Joined</th>
                   <th className="px-4 py-2.5 text-start font-semibold">Status</th>
                 </tr>
@@ -99,8 +99,8 @@ function CustomersTable() {
                     <td className="px-4 py-3 whitespace-nowrap" dir="ltr">
                       {customer.phone || "—"}
                     </td>
-                    <td className="px-4 py-3 text-end tabular-nums">{customer.quote_count}</td>
-                    <td className="px-4 py-3 whitespace-nowrap">{formatDate(customer.last_request_at)}</td>
+                    <td className="px-4 py-3 text-end tabular-nums">{customer.booking_count}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">{formatDate(customer.last_booking_at)}</td>
                     <td className="px-4 py-3 whitespace-nowrap">{formatDate(customer.date_joined)}</td>
                     <td className="px-4 py-3">
                       <Badge tone={customer.is_active ? "success" : "neutral"} dot>

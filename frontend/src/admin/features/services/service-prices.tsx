@@ -104,7 +104,7 @@ function PriceCell({
 
 /**
  * Guide prices in euros for every city and vehicle class. The website shows the
- * lowest as "From €X" and the quote form shows the one for the chosen car and city.
+ * lowest as "From €X" and bookings are charged the one for the chosen car and city.
  */
 export function ServicePrices({
   serviceId,

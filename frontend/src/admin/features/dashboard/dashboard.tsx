@@ -16,6 +16,7 @@ import type { ReactNode } from "react";
 import { Button } from "@/admin/components/ui/button";
 import { Skeleton } from "@/admin/components/ui/primitives";
 import { orderDashboardFleet } from "./dashboard-fleet";
+import { OriginalContentCard } from "./original-content";
 import { coverageOf, emptyCoverage, percent } from "@/admin/lib/content/completeness";
 import { useCollection } from "@/admin/lib/content/hooks";
 import { LOCALE_LABELS, LOCALES } from "@/admin/lib/content/types";
@@ -55,6 +56,16 @@ export function Dashboard() {
   }
 
   const all = { services: services.data, vehicles: vehicles.data, cities: cities.data };
+  if (all.services.length + all.vehicles.length + all.cities.length === 0) {
+    return (
+      <div className={styles.dashboard}>
+        <header className={styles.intro}>
+          <h1>Dashboard</h1>
+        </header>
+        <OriginalContentCard />
+      </div>
+    );
+  }
   const published = <T extends { status: string }>(items: T[]) => items.filter((item) => item.status === "published").length;
   const coverage = coverageOf(all, emptyCoverage());
   const fleet = orderDashboardFleet(all.vehicles);

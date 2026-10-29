@@ -177,6 +177,14 @@ export const bg: Dictionary = {
       please_advise: "Моля, посъветвайте",
     },
   },
+  pricing: {
+    from: "От {price}",
+    perHour: "на час",
+    perJourney: "на пътуване",
+    guide: "Ориентировъчна цена",
+    guideNote: "Ориентир за този автомобил и град. Фиксираната ви цена се потвърждава писмено.",
+    guideHours: "{price} за {hours} часа",
+  },
   testimonial: {
     eyebrow: "Техните думи",
     quote:

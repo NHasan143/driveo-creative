@@ -159,6 +159,14 @@ export const ar: Dictionary = {
       please_advise: "أرجو النصيحة",
     },
   },
+  pricing: {
+    from: "ابتداءً من {price}",
+    perHour: "في الساعة",
+    perJourney: "للرحلة",
+    guide: "سعر استرشادي",
+    guideNote: "سعر استرشادي لهذه السيارة وهذه المدينة. يُؤكَّد سعرك الثابت كتابيًا.",
+    guideHours: "{price} لمدة {hours} ساعات",
+  },
   testimonial: {
     eyebrow: "بكلماتهم",
     quote:

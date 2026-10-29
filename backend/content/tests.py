@@ -210,7 +210,8 @@ class CollectionTests(ContentApiTestCase):
         self.assertEqual(vehicle["name"], text("First Class", fr="Première classe"))
 
         service = self.create(SERVICES, service_payload(vehicleIds=[vehicle["id"]]))
-        self.assertEqual(set(service), set(service_payload()) | {"id", "order", "updatedAt"})
+        self.assertEqual(set(service), set(service_payload()) | {"id", "order", "updatedAt", "priceUnit", "prices"})
+        self.assertEqual((service["priceUnit"], service["prices"]), ("trip", []))
         self.assertEqual(service["vehicleIds"], [vehicle["id"]])
         self.assertEqual(service["facts"], [{"value": text("60 min"), "label": text("Free waiting")}])
 
@@ -470,3 +471,81 @@ class ImportTests(ContentApiTestCase):
     def test_superusers_only(self):
         self.client.force_login(self.staff)
         self.assertEqual(self.post(self.URL, self.seed()).status_code, 403)
+
+
+class PriceTests(ContentApiTestCase):
+    def setUp(self):
+        super().setUp()
+        self.vehicle = self.create(VEHICLES, vehicle_payload())
+        self.service = self.create(SERVICES, service_payload())
+        self.city = self.create(CITIES, city_payload(serviceIds=[self.service["id"]]))
+        self.url = reverse("content-services-detail", args=[self.service["id"]])
+
+    def price(self, amount=95, **overrides):
+        return {"cityId": self.city["id"], "vehicleId": self.vehicle["id"], "amount": amount, **overrides}
+
+    def save_prices(self, prices, **overrides):
+        return self.put(self.url, service_payload(prices=prices, **overrides))
+
+    def test_save_and_read_prices(self):
+        response = self.save_prices([self.price(149.5)], priceUnit="hour")
+        self.assertEqual(response.status_code, 200, response.content)
+        service = self.client.get(self.url).json()
+        self.assertEqual(service["priceUnit"], "hour")
+        self.assertEqual(service["prices"], [self.price(149.5)])
+
+    def test_saving_replaces_the_price_list(self):
+        self.save_prices([self.price(95)])
+        self.save_prices([])
+        self.assertEqual(self.client.get(self.url).json()["prices"], [])
+
+    def test_leaving_prices_out_keeps_them(self):
+        self.save_prices([self.price(95)])
+        self.put(self.url, service_payload())
+        self.assertEqual(len(self.client.get(self.url).json()["prices"]), 1)
+
+    def test_too_low_price_points_at_the_row(self):
+        response = self.save_prices([self.price(95), self.price(0, vehicleId="other")])
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["prices"], {"1": {"amount": ["Enter a price of at least €1, or leave it empty."]}})
+
+    def test_unknown_and_duplicate_rows_point_at_the_row(self):
+        response = self.save_prices([self.price(95), self.price(80, cityId="nowhere"), self.price(70)])
+        self.assertEqual(response.status_code, 400)
+        errors = response.json()["prices"]
+        self.assertEqual(errors["1"], {"cityId": ["Unknown city: nowhere."]})
+        self.assertEqual(errors["2"], {"amount": ["This city and vehicle already have a price."]})
+
+    def test_unknown_price_unit(self):
+        response = self.save_prices([], priceUnit="day")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("priceUnit", response.json())
+
+    def test_deleting_a_city_or_vehicle_removes_its_prices(self):
+        self.save_prices([self.price(95)])
+        self.client.delete(reverse("content-cities-detail", args=[self.city["id"]]))
+        self.assertEqual(self.client.get(self.url).json()["prices"], [])
+
+    def test_published_content_hides_prices_for_drafts(self):
+        draft_city = self.create(CITIES, city_payload(slug="paris", status="draft", serviceIds=[self.service["id"]]))
+        self.save_prices([self.price(95), self.price(120, cityId=draft_city["id"])])
+        self.client.logout()
+        service = self.client.get(reverse("content-published")).json()["services"][0]
+        self.assertEqual(service["prices"], [self.price(95)])
+
+
+class ImportPriceTests(ImportTests):
+    def test_prices_are_imported_after_cities(self):
+        seed = self.seed()
+        seed["services"][0]["prices"] = [{"cityId": "london", "vehicleId": "first_class", "amount": 120}]
+        response = self.post(self.URL, seed)
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.json()["services"][0]["prices"], seed["services"][0]["prices"])
+
+    def test_a_bad_price_rolls_everything_back(self):
+        seed = self.seed()
+        seed["services"][0]["prices"] = [{"cityId": "nowhere", "vehicleId": "first_class", "amount": 120}]
+        response = self.post(self.URL, seed)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"services": {"0": {"prices": {"0": {"cityId": ["Unknown city: nowhere."]}}}}})
+        self.assertFalse(Service.objects.exists())

@@ -18,6 +18,7 @@ import { ContentValidationError } from "@/admin/lib/content/repository";
 import { emptyLocalized, SERVICE_ICONS, type Service } from "@/admin/lib/content/types";
 import { cn } from "@/admin/lib/cn";
 import { SERVICE_ICON_COMPONENTS } from "./service-icons";
+import { ServicePrices } from "./service-prices";
 import { serviceSchema, toServiceForm, type ServiceFormValues } from "./service-schema";
 
 function IconPicker() {
@@ -235,6 +236,16 @@ export function ServiceEditor({ service }: { service: Service | null }) {
               detail: `${vehicle.model} · up to ${vehicle.passengers} passengers${vehicle.status === "draft" ? " · draft" : ""}`,
             }))}
           />
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader
+          title="Prices"
+          description="Guide prices in euros. The website shows the lowest as “From €…” and the quote form shows the price for the chosen car and city. Customers still receive a fixed quote. Leave a cell empty where you don't offer that car."
+        />
+        <CardBody>
+          <ServicePrices serviceId={service?.id} cities={cities} vehicles={vehicles} />
         </CardBody>
       </Card>
 

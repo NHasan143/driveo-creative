@@ -43,6 +43,7 @@ export default async function ServicesPage() {
         services={services}
         page={page}
         viewDetails={t.pages.serviceDetail.viewDetails}
+        pricing={t.pricing}
       />
       <ServicesStandard
         items={t.assurance}

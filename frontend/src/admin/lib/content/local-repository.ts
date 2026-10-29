@@ -27,6 +27,11 @@ let cache: ContentSnapshot | null = null;
 async function load(): Promise<ContentSnapshot> {
   if (cache) return cache;
   const stored = await get<ContentSnapshot>(STORAGE_KEY);
+  // Content saved before services had prices.
+  stored?.services.forEach((service) => {
+    service.priceUnit ??= "trip";
+    service.prices ??= [];
+  });
   cache = stored ?? clone(seed);
   return cache;
 }
@@ -61,6 +66,13 @@ function detach(content: ContentSnapshot, collection: CollectionName, id: string
     content.services = content.services.map((service) => ({
       ...service,
       vehicleIds: service.vehicleIds.filter((vehicleId) => vehicleId !== id),
+      prices: service.prices.filter((price) => price.vehicleId !== id),
+    }));
+  }
+  if (collection === "cities") {
+    content.services = content.services.map((service) => ({
+      ...service,
+      prices: service.prices.filter((price) => price.cityId !== id),
     }));
   }
 }

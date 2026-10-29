@@ -17,6 +17,8 @@ import {
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import { cn } from "@/lib/cn";
+import type { GuidePrices } from "@/lib/content/site-services";
+import { formatPrice } from "@/lib/format-price";
 import { useQuoteSubmission } from "../hooks/use-quote-submission";
 import { useQuotePreset } from "../quote-preset-context";
 import type { QuoteRequestInput } from "../schema";
@@ -27,6 +29,8 @@ interface QuoteFormProps {
   locale: Locale;
   labels: Dictionary["quote"];
   cityNames: Dictionary["cities"]["names"];
+  pricing: Dictionary["pricing"];
+  guidePrices: GuidePrices;
 }
 
 const HOUR_OPTIONS = Array.from(
@@ -40,13 +44,14 @@ function todayIso() {
   return now.toISOString().slice(0, 10);
 }
 
-export function QuoteForm({ locale, labels, cityNames }: QuoteFormProps) {
+export function QuoteForm({ locale, labels, cityNames, pricing, guidePrices }: QuoteFormProps) {
   // Vehicle, city and service can be pre-filled from elsewhere on the page.
   const { preset, update: updatePreset, reset: resetPreset } = useQuotePreset();
   const { vehicle, city, service: serviceType } = preset;
   const { status, error, reference, submit, reset } = useQuoteSubmission(locale);
   const [passengers, setPassengers] = useState(1);
   const [luggage, setLuggage] = useState(0);
+  const [hours, setHours] = useState<number>(HIRE_HOURS.min);
   const [minDate, setMinDate] = useState<string>();
 
   // "Today" must come from the visitor's clock, not the build server's.
@@ -59,6 +64,19 @@ export function QuoteForm({ locale, labels, cityNames }: QuoteFormProps) {
   const luggageCount = Math.min(luggage, capacity.luggage);
   const isHourly = serviceType === "hourly_hire";
   const stepperLabels = { increase: labels.increase, decrease: labels.decrease, max: labels.max };
+
+  const guide = serviceType ? guidePrices[serviceType] : undefined;
+  const guideAmount =
+    guide && city && vehicle !== "please_advise" ? guide.amounts[`${city}:${vehicle}`] : undefined;
+  let guideText: string | null = null;
+  if (guide && guideAmount !== undefined) {
+    if (guide.unit === "trip") guideText = formatPrice(guideAmount, locale);
+    else if (isHourly)
+      guideText = pricing.guideHours
+        .replace("{price}", formatPrice(guideAmount * hours, locale))
+        .replace("{hours}", String(hours));
+    else guideText = `${formatPrice(guideAmount, locale)} ${pricing.perHour}`;
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -91,6 +109,7 @@ export function QuoteForm({ locale, labels, cityNames }: QuoteFormProps) {
       resetPreset();
       setPassengers(1);
       setLuggage(0);
+      setHours(HIRE_HOURS.min);
     }
   }
 
@@ -221,6 +240,14 @@ export function QuoteForm({ locale, labels, cityNames }: QuoteFormProps) {
           </Select>
         </Field>
 
+        {guideText && (
+          <div className={cn(styles.guide, styles.spanTwo)} role="status">
+            <span className={styles.label}>{pricing.guide}</span>
+            <strong>{guideText}</strong>
+            <p className={styles.hint}>{pricing.guideNote}</p>
+          </div>
+        )}
+
         <Field label={labels.pickup} wide>
           <input
             name="pickupLocation"
@@ -233,7 +260,12 @@ export function QuoteForm({ locale, labels, cityNames }: QuoteFormProps) {
 
         {isHourly ? (
           <Field label={labels.hours} wide hint={labels.hourlyNote}>
-            <Select name="hireHours" required defaultValue={String(HIRE_HOURS.min)}>
+            <Select
+              name="hireHours"
+              required
+              value={String(hours)}
+              onChange={(event) => setHours(Number(event.target.value))}
+            >
               {HOUR_OPTIONS.map((hours) => (
                 <option key={hours} value={hours}>
                   {hours} {labels.hoursUnit}

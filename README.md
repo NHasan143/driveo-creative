@@ -337,6 +337,11 @@ forms without mapping. Every endpoint is staff-only unless marked public.
   `{"facts": {"0": {"value": {"en": ["Keep this under 16 characters."]}}}}`. Limits match the admin's Zod schemas.
 - **Translations:** each text field is `{"en", "fr", "bg", "ar"}`; English is required except for SEO fields.
 - **Slugs** are unique per collection. **Ids** are strings; imported records keep theirs (`airport_transfer`).
+- **Guide prices:** a service has `priceUnit` (`"trip"` or `"hour"`) and `prices`, a list of
+  `{"cityId", "vehicleId", "amount"}` in **euros** (€1–€100,000, up to 2 decimals, one per city and vehicle).
+  Both are optional on `PUT`; leaving `prices` out keeps the stored list. Deleting a city or vehicle removes
+  its prices. `/v1/content/published/` drops prices for draft cities and vehicles. On import, prices are set
+  after the cities exist.
 - **Photos:** a record stores a website path (`/media/…`) or the bucket key of an upload, and the API returns
   the key as a stable `/v1/content/images/…` URL. Data URLs are refused; the admin uploads photos before saving.
 
@@ -513,6 +518,7 @@ Record decisions that would surprise a newcomer. Add new entries at the top.
 | 2026-10-26 | Content admin signs staff in with Django's session cookie + CSRF token, not an API token | The cookie is HttpOnly, so no script on the page (or XSS) can steal a credential; sign-out and deactivating a user take effect at once; it reuses Django's users, `is_staff` and password hashing. Cost: the website and API must share a site, and the CSRF token travels in JSON. DRF now denies by default (`IsAdminUser`); public views opt out |
 | 2026-10-26 | Translated content stored as one JSON object per field (`{"en","fr","bg","ar"}`), not a column per language | Matches the admin's types; repeatable parts (facts, features, steps) are lists of translated objects that columns can't express; adding a language needs no migration. Serializers validate keys and lengths |
 | 2026-10-26 | Content photos stored as references (website path or bucket key) served through a redirect endpoint | The bucket is private and presigned links expire after an hour, so they can't be saved in records. One stable URL per photo works in the admin and, later, on the website |
+| 2026-10-27 | Service prices are **guide prices in euros**, one per service × vehicle class × city (hourly hire per hour). The website shows "From €X" and a guide price in the quote form; customers still get a fixed quote | Client decision. Keeps the "quoted personally" promise true while giving visitors a price signal. One currency keeps the table and the "from" price simple |
 | 2026-10-26 | Content admin lives in the website app at `/admin` (its own root layout), not a separate app. Production hides it unless `ADMIN_ENABLED=true` | Client preference: one app to run and deploy. A second root layout keeps admin code and CSS off website pages. The gate stops an unauthenticated admin from going live with the site |
 | 2026-10-25 | Content admin built first against a browser-local store behind a `ContentRepository` interface | The client asked for the admin frontend first. Screens never touch storage directly, so connecting the Django API means swapping one implementation. Django's built-in admin stays for staff operations (quote requests) |
 | 2026-10-24 | Postgres and uploaded files on Neon (Lakebase Postgres + Object Storage) instead of containers on the VPS | Managed backups and scale-to-zero; database and files branch together for dev/preview; one fewer stateful service on the VPS |
@@ -570,6 +576,18 @@ Newest first. Follow [Keep a Changelog](https://keepachangelog.com/) headings: A
   - 27 tests at the time.
 
 ### 2026-10-27
+
+**Added**
+- Guide prices for services, in euros, edited in the admin and shown on the website.
+  - `backend`: `ServicePrice` (service × city × vehicle → amount) and `Service.price_unit` (`trip` or `hour`),
+    migrations `content/0002` and `0003` (hourly hire priced per hour). Validation, cleanup on delete,
+    published-only filtering and import support, with 9 new tests.
+  - `admin`: a **Prices** card in the service editor: per journey or per hour, and a grid of cities × vehicle
+    classes where an empty cell means no price.
+  - `frontend`: "From €X" (or "From €X per hour") on the home services cards, the Services page and the
+    service page's summary card. The quote form shows a guide price for the chosen service, car and city,
+    multiplied by the hours for hourly hire, with a note that the fixed price is confirmed in writing.
+    Nothing shows until prices are entered. Labels in EN, FR, BG and AR.
 
 **Fixed**
 - A service added in the content admin was saved only in the browser and never reached the website.

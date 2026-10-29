@@ -124,6 +124,9 @@ the admin has no Site settings screen. Every editable customer-facing text has E
   - The language tabs switch every text field at once and show how complete each language is.
   - Non-English fields show the English text as a reference. Arabic fields are right-to-left.
   - If a save fails validation, the editor jumps to the first problem, switching language if needed.
+  - A service's **Prices** card holds guide prices in euros for each city and vehicle class, per journey or
+    per hour. The website shows the lowest as "From €X" (`components/ui/from-price.tsx`), and the quote form
+    shows the one for the chosen car and city (`getGuidePrices()` in `lib/content/site-services.ts`).
   - Closing or reloading the tab with unsaved changes asks first. Moving to another admin page doesn't yet.
 - **Images:** upload or drag in a photo, which is resized to at most 1920px and saved as JPEG, or pick one from `public/media`.
   In `api` mode the photo is uploaded to the Neon `assets` bucket when the record is saved.

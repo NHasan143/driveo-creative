@@ -132,6 +132,20 @@
   text-align: center;
 }
 
+.guide {
+  display: grid;
+  gap: 0.35rem;
+  border-inline-start: 2px solid var(--primary);
+  padding-inline-start: 0.9rem;
+}
+
+.guide strong {
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--background);
+}
+
 .hint {
   font-size: 0.68rem;
   line-height: 1.5;

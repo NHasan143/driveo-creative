@@ -60,6 +60,8 @@ export const seed: ContentSnapshot = {
       vehicleIds: [...serviceMedia[key].vehicles],
       seoTitle: loc((d) => detail(d).meta.title),
       seoDescription: loc((d) => detail(d).meta.description),
+      priceUnit: key === "hourly_hire" ? "hour" : "trip",
+      prices: [],
     };
   }),
 

@@ -67,7 +67,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
 
 
 class ServiceViewSet(CollectionViewSet):
-    queryset = Service.objects.prefetch_related("vehicle_links")
+    queryset = Service.objects.prefetch_related("vehicle_links", "prices")
     serializer_class = ServiceSerializer
 
 
@@ -109,8 +109,14 @@ def snapshot(published_only=False):
             data[collection] = [item for item in data[collection] if item["status"] == "published"]
         live_vehicles = {item["id"] for item in data["vehicles"]}
         live_services = {item["id"] for item in data["services"]}
+        live_cities = {item["id"] for item in data["cities"]}
         for service in data["services"]:
             service["vehicleIds"] = [pk for pk in service["vehicleIds"] if pk in live_vehicles]
+            service["prices"] = [
+                price
+                for price in service["prices"]
+                if price["cityId"] in live_cities and price["vehicleId"] in live_vehicles
+            ]
         for city in data["cities"]:
             city["serviceIds"] = [pk for pk in city["serviceIds"] if pk in live_services]
         data["settings"]["testimonials"] = [t for t in data["settings"]["testimonials"] if t["published"]]
@@ -158,15 +164,21 @@ class ImportView(APIView):
             Service.objects.all().delete()
             Vehicle.objects.all().delete()
 
-            # Vehicles first: services point at vehicles, cities at services.
+            # Vehicles first: services point at vehicles, cities at services. A service's
+            # prices point at cities too, so they are set once the cities exist.
+            services = request.data.get("services", [])
+            prices = self._take_prices(services) if isinstance(services, list) else {}
             for collection in ("vehicles", "services", "cities"):
-                items = request.data.get(collection, [])
+                items = services if collection == "services" else request.data.get(collection, [])
                 if not isinstance(items, list):
                     errors[collection] = ["Expected a list."]
                     continue
                 item_errors = self._import_collection(collection, items)
                 if item_errors:
                     errors[collection] = item_errors
+            price_errors = self._import_prices(prices)
+            if price_errors:
+                errors.setdefault("services", {}).update(price_errors)
 
             if "settings" in request.data:
                 settings = SiteSettingsSerializer(SiteSettings.load(), data=request.data["settings"])
@@ -179,6 +191,33 @@ class ImportView(APIView):
                 raise ValidationError(errors)  # Rolls the whole import back.
 
         return Response(snapshot())
+
+    @staticmethod
+    def _take_prices(services):
+        """Removes `prices` from each service item: {index: (id, prices)}."""
+        taken = {}
+        for index, item in enumerate(services):
+            if isinstance(item, dict) and "prices" in item:
+                taken[index] = (item.get("id"), item["prices"])
+                services[index] = {key: value for key, value in item.items() if key != "prices"}
+        return taken
+
+    @staticmethod
+    def _import_prices(prices):
+        errors = {}
+        for index, (pk, items) in prices.items():
+            if not isinstance(pk, str) or not pk:
+                errors[str(index)] = {"prices": ["Give the service an id so its prices can be imported."]}
+                continue
+            service = Service.objects.filter(pk=pk).first()
+            if service is None:
+                continue  # The service itself failed to import; that error is already reported.
+            serializer = ServiceSerializer(service, data={"prices": items}, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+            else:
+                errors[str(index)] = serializer.errors
+        return errors
 
     @staticmethod
     def _import_collection(collection, items):

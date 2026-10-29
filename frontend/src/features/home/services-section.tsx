@@ -1,6 +1,7 @@
 import { Reveal } from "@/components/motion/reveal";
 import { SectionHeading } from "@/components/page/section-heading";
 import { ArrowLink } from "@/components/ui/arrow-link";
+import { FromPrice } from "@/components/ui/from-price";
 import { localePath, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import type { SiteService } from "@/lib/content/site-services";
@@ -13,9 +14,10 @@ interface ServicesSectionProps {
   more: string;
   /** Label of each card's link to its service detail page. */
   viewDetails: string;
+  pricing: Dictionary["pricing"];
 }
 
-export function ServicesSection({ locale, heading, services, more, viewDetails }: ServicesSectionProps) {
+export function ServicesSection({ locale, heading, services, more, viewDetails, pricing }: ServicesSectionProps) {
   return (
     <section id="services" className="section-band bg-background">
       <div className="site-shell">
@@ -41,6 +43,7 @@ export function ServicesSection({ locale, heading, services, more, viewDetails }
                 </p>
                 <h3 className="card-title">{item.title}</h3>
                 <p className="body-muted">{item.summary}</p>
+                <FromPrice amount={item.fromPrice} unit={item.priceUnit} locale={locale} labels={pricing} className="mt-4" />
                 <ArrowLink href={localePath(locale, item.path)} className="mt-6">
                   {viewDetails}
                 </ArrowLink>

@@ -5,12 +5,25 @@ so the API rejects what the forms would. Errors are keyed by the same field
 paths the forms use, e.g. {"slug": [...]} or {"facts": {"1": {"value": {"en": [...]}}}}.
 """
 
+from decimal import Decimal
+
 from django.core.validators import RegexValidator
 from django.db import IntegrityError, transaction
 from rest_framework import serializers
 
 from . import images
-from .models import DEFAULT_LOCALE, LOCALES, SERVICE_ICONS, City, Service, ServiceVehicle, SiteSettings, Vehicle
+from .models import (
+    DEFAULT_LOCALE,
+    LOCALES,
+    PRICE_UNITS,
+    SERVICE_ICONS,
+    City,
+    Service,
+    ServicePrice,
+    ServiceVehicle,
+    SiteSettings,
+    Vehicle,
+)
 
 SLUG_VALIDATOR = RegexValidator(
     r"^[a-z0-9]+(?:-[a-z0-9]+)*$",
@@ -115,6 +128,21 @@ class TitledCopySerializer(serializers.Serializer):
     copy = LocalizedField(220)
 
 
+class ServicePriceSerializer(serializers.Serializer):
+    """One guide price in euros: {cityId, vehicleId, amount}."""
+
+    cityId = serializers.CharField(max_length=64, source="city_id")
+    vehicleId = serializers.CharField(max_length=64, source="vehicle_id")
+    amount = serializers.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        min_value=Decimal("1"),
+        max_value=Decimal("100000"),
+        coerce_to_string=False,
+        error_messages={"min_value": "Enter a price of at least €1, or leave it empty."},
+    )
+
+
 class EntrySerializer(serializers.ModelSerializer):
     """Fields shared by every collection. Subclasses list theirs in Meta.fields."""
 
@@ -195,8 +223,10 @@ class ServiceSerializer(EntrySerializer):
     vehicleIds = RelatedIdsField(Vehicle, id_attr="vehicle_id", source="vehicle_links")
     seoTitle = LocalizedField(70, optional=True, source="seo_title")
     seoDescription = LocalizedField(170, optional=True, source="seo_description")
+    priceUnit = serializers.ChoiceField(choices=PRICE_UNITS, source="price_unit", required=False)
+    prices = ServicePriceSerializer(many=True, required=False, max_length=200)
 
-    relations = {"vehicle_links": "set_vehicles"}
+    relations = {"vehicle_links": "set_vehicles", "prices": "set_prices"}
 
     class Meta:
         model = Service
@@ -218,7 +248,33 @@ class ServiceSerializer(EntrySerializer):
             "vehicleIds",
             "seoTitle",
             "seoDescription",
+            "priceUnit",
+            "prices",
         ]
+
+    def validate_prices(self, prices):
+        city_ids = {price["city_id"] for price in prices}
+        vehicle_ids = {price["vehicle_id"] for price in prices}
+        known_cities = set(City.objects.filter(pk__in=city_ids).values_list("pk", flat=True))
+        known_vehicles = set(Vehicle.objects.filter(pk__in=vehicle_ids).values_list("pk", flat=True))
+        errors, seen = {}, set()
+        for index, price in enumerate(prices):
+            key = (price["city_id"], price["vehicle_id"])
+            if price["city_id"] not in known_cities:
+                errors[str(index)] = {"cityId": [f"Unknown city: {price['city_id']}."]}
+            elif price["vehicle_id"] not in known_vehicles:
+                errors[str(index)] = {"vehicleId": [f"Unknown vehicle: {price['vehicle_id']}."]}
+            elif key in seen:
+                errors[str(index)] = {"amount": ["This city and vehicle already have a price."]}
+            seen.add(key)
+        if errors:
+            raise serializers.ValidationError(errors)
+        return prices
+
+    @staticmethod
+    def set_prices(service, prices):
+        service.prices.all().delete()
+        ServicePrice.objects.bulk_create(ServicePrice(service=service, **price) for price in prices)
 
     @staticmethod
     def set_vehicles(service, vehicles):

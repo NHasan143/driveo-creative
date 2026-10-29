@@ -73,6 +73,8 @@ export default async function ServiceDetailPage({ params }: Props) {
             service={service}
             heading={detail.atAGlance}
             cta={t.pages.services.quoteCta}
+            locale={locale}
+            pricing={t.pricing}
           />
         }
       />

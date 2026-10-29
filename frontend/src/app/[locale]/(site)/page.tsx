@@ -34,6 +34,7 @@ export default async function HomePage() {
         services={services}
         more={t.pages.links.services}
         viewDetails={t.pages.serviceDetail.viewDetails}
+        pricing={t.pricing}
       />
       <FleetSection locale={locale} fleet={t.fleet} more={t.pages.links.fleet} />
       <CitiesSection locale={locale} cities={t.cities} more={t.pages.links.cities} />

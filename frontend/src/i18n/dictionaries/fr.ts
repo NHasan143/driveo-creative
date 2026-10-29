@@ -171,6 +171,14 @@ export const fr: Dictionary = {
       please_advise: "À conseiller",
     },
   },
+  pricing: {
+    from: "À partir de {price}",
+    perHour: "par heure",
+    perJourney: "par trajet",
+    guide: "Prix indicatif",
+    guideNote: "Indicatif pour ce véhicule et cette ville. Votre prix fixe est confirmé par écrit.",
+    guideHours: "{price} pour {hours} heures",
+  },
   testimonial: {
     eyebrow: "Leurs mots",
     quote:

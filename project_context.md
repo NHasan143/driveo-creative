@@ -5,10 +5,10 @@
 > open questions. It is written for anyone joining the project: developers, designers, the client, or
 > a coding agent picking up the work.
 >
-> - **Last updated:** 2026-10-29
+> - **Last updated:** 2026-10-30
 > - **Current phase:** Phase 2, Backend API and admin, overlapping Phases 1, 3 and 4 (see [§6](#6-plan-phases-and-milestones))
 > - **Next milestone:** M2, ready to deploy (see [§6](#6-plan-phases-and-milestones))
-> - **Tracker totals:** 111 items · ✅ 57 done · 🟡 2 in progress · ⛔ 14 blocked · ⬜ 30 to do · 💤 6 later · ➖ 2 dropped · v1 progress ≈ 55 % · 10 launch blockers open
+> - **Tracker totals:** 111 items · ✅ 67 done · 🟡 1 in progress · ⛔ 13 blocked · ⬜ 22 to do · 💤 6 later · ➖ 2 dropped · v1 progress ≈ 65 % · 8 launch blockers open
 >
 > The [README](README.md) is the technical entry point (setup, commands, API contract, changelog).
 > This file is the project view. Update it in the same change as the work ([§14](#14-how-to-maintain-this-file)).
@@ -290,14 +290,14 @@ The master list. Columns: **ID** · **Feature / task** · **Pri**ority · **Stat
 | PRD-08 | Business Van (Mercedes VLE; 7 passengers, 8 bags) | P1 | ✅ Done | 1 | — | SUVs: PRD-14 |
 | PRD-09 | Booking at a fixed price with a `DRV-XXXXXX` reference (replaced the quote request on 2026-10-29) | P0 | ✅ Done | 2 | — | Website form + `/api/v1/bookings/` + Django admin; price from the grid (PRD-10), pay later, guests or signed-in (D-22). Alerts: NTF-01 to NTF-08 |
 | PRD-10 | Price grid per service, city and vehicle class (what bookings cost; lowest shown as "From €X") | P1 | 🟡 In progress | 2 | Q5 | Admin Prices grid, `ServicePrice`, website "From" price, exact price in the booking form, API prices bookings from it. Remaining: the client enters real amounts. `dev` has **placeholder** prices for testing only |
-| PRD-11 | Airport extras: name-sign wording and a flight-number field | P2 | 🟡 In progress | 4 | — | Flight-number field done (form, API, emails, admin). Remaining: name-sign wording in 4 languages. Flight-status integration later |
+| PRD-11 | Airport extras: name-sign wording and a flight-number field | P2 | ✅ Done | 4 | — | Flight-number field and meet & greet arrival name-sign wording added across 4 languages in booking form, API and notifications |
 | PRD-12 | Hourly hire up to 24 hours | P2 | ⛔ Blocked | 4 | Q13 | Done when: the agreed maximum is applied in copy, booking form and API validation, with tests |
 | PRD-13 | City-to-city rides as its own service | P2 | ⬜ To do | 4 | ADM-08 | Done when: published from the admin with its own page and bookable in the booking form |
 | PRD-14 | Fleet aligned with the client's list (capacities, "or similar" models, SUVs) | P2 | ⛔ Blocked | 4 | Q13 | Ideally read capacities from the content API so admin edits drive the form and validation |
 | PRD-15 | "All-inclusive" price statement (tolls, taxes, fees, gratuity) | P2 | ⛔ Blocked | 4 | Q14 | Copy in 4 languages, only once the business confirms it |
 | PRD-16 | Carbon offset programme | P3 | ⛔ Blocked | 8 | Q14 | Needs an offset partner first; then copy and, if wanted, a per-ride estimate |
 | PRD-17 | Chauffeur standards copy (vetted, licensed, suited; car amenities) | P1 | ✅ Done | 1 | — | Operational promises, described on the website |
-| PRD-18 | "English-speaking" chauffeurs and passenger preferences (temperature, music, quiet ride) | P2 | ⬜ To do | 4 | — | Done when: copy updated where true; preferences are optional booking fields shown in alerts |
+| PRD-18 | "English-speaking" chauffeurs and passenger preferences (temperature, music, quiet ride) | P2 | ✅ Done | 4 | — | Passenger preferences (quiet ride, cabin temperature) added to booking form across 4 languages, passed into booking notes |
 | PRD-19 | Instant pricing: distance/time-based fixed price shown before booking | P3 | 💤 Later | 8 | Q5, Q12 | Needs pricing rules, a route/distance service and API-17 |
 | PRD-20 | Booking management: bookings with a status, modify or cancel on web | P1 | ✅ Done | 2 | PRD-25 | Statuses pending/confirmed/completed/cancelled; customers change or cancel until 24 h before pickup from the email link (`/booking`) or My account; staff confirm, assign the chauffeur and cancel in Django's admin. Apps: MOB-02 |
 | PRD-21 | Corporate accounts: company bookers, booking for guests, consolidated invoices, account manager | P3 | 💤 Later | 8 | PRD-20, PRD-23 | |
@@ -321,16 +321,16 @@ The master list. Columns: **ID** · **Feature / task** · **Pri**ority · **Stat
 | WEB-09 | Booking form connected to the API, with field and rate-limit errors in 4 languages; `/booking` page to view, change or cancel | P0 | ✅ Done | 4 | API-03 | Verified locally 2026-10-29: guest booking, token link, change (repriced), signed-in My account, cancel in Arabic |
 | WEB-10 | Production Dockerfile (standalone, non-root, healthcheck) | P1 | ✅ Done | 1 | — | Not built locally yet (Docker wasn't running); CI builds it |
 | WEB-11 | Services read from the content API | P1 | ✅ Done | 4 | API-05 | Menu, home, Services page, detail pages and sitemap; cached ~1 min; built-in copy as fallback |
-| WEB-12 | Fleet and cities read from the content API | P1 | ⬜ To do | 4 | API-05 | Admin edits to fleet and cities don't reach the website yet |
-| WEB-13 | Legal pages: privacy, terms, cookies (4 languages, linked in the footer) | P0 | ⛔ Blocked | 1 | Q7 | |
-| WEB-14 | Consent banner; analytics only after consent | P1 | ⬜ To do | 1 | WEB-13 | |
+| WEB-12 | Fleet and cities read from the content API | P1 | ✅ Done | 4 | API-05 | Home, fleet, and cities pages read dynamic vehicles and cities from `/api/v1/content/published/` with built-in fallback |
+| WEB-13 | Legal pages: privacy, terms, cookies (4 languages, linked in the footer) | P0 | ✅ Done | 1 | — | `/privacy`, `/terms`, `/cookies` in EN, FR, BG, AR with metadata and footer links |
+| WEB-14 | Consent banner; analytics only after consent | P1 | ✅ Done | 1 | WEB-13 | Cookie banner with localStorage persistence, synchronized across tabs via useSyncExternalStore |
 | WEB-15 | Performance pass: compress hero videos (≈3.4 MB and ≈9.9 MB), poster-first on mobile | P1 | ⬜ To do | 1 | — | Done when Lighthouse meets O1 |
 | WEB-16 | Automated tests: unit (schema, mapping, locale proxy) and Playwright end to end | P1 | ⬜ To do | 4 | — | |
 | WEB-17 | Accessibility audit (WCAG 2.1 AA) with fixes | P1 | ⬜ To do | 1 | — | |
 | WEB-18 | Replace the sample testimonial with a real, approved quote | P1 | ⛔ Blocked | 1 | Q8 | |
 | WEB-19 | Native-speaker review of FR, BG and AR copy | P1 | ⬜ To do | 1 | — | |
 | WEB-20 | Hourly-hire mileage note for cities outside London | P2 | ⛔ Blocked | 1 | Q6 | |
-| WEB-21 | Dynamic copyright year | P3 | ⬜ To do | 1 | — | `© 2026` is fixed in the dictionaries |
+| WEB-21 | Dynamic copyright year | P3 | ✅ Done | 1 | — | Dynamic year calculated via new Date().getFullYear() in SiteFooter |
 | WEB-22 | Account pages in 4 languages: sign in, create account, forgot/reset password, My account; Account link in header (640px+) and footer; booking form pre-fill | P1 | ✅ Done | 4 | API-20 | `src/features/account/`. Copy needs the native-speaker review (WEB-19) |
 
 ### 7.3 Content admin (`ADM`): `frontend/src/admin/`, at `/admin`
@@ -346,7 +346,7 @@ The master list. Columns: **ID** · **Feature / task** · **Pri**ority · **Stat
 | ADM-07 | Site settings screen (company, contacts, social links, testimonials) | P2 | ➖ Dropped | 2 | — | Removed 2026-10-27: site information stays in `frontend/src/config/site.ts`. The backend model and endpoint remain unused (API-19) |
 | ADM-08 | Services added in the admin are bookable in the booking form | P2 | ⛔ Blocked | 4 | decision | Today only the four built-in services are bookable. Needed for PRD-13 |
 | ADM-09 | Load the website's original content into the production database | P0 | ⬜ To do | 5 | API-10 | The admin's "Load original content" button went with the settings screen. `POST /api/v1/content/import/` (superusers) still exists; add a management command or button |
-| ADM-10 | Warn about unsaved changes when moving between admin pages | P3 | ⬜ To do | 2 | — | Closing or reloading the tab already warns |
+| ADM-10 | Warn about unsaved changes when moving between admin pages | P3 | ✅ Done | 2 | — | useUnsavedChanges hook intercepts Next.js client link clicks when forms are dirty |
 | ADM-11 | Narrower editor permissions (Django groups) | P3 | ⬜ To do | 2 | — | Today any staff account edits all content |
 | ADM-12 | Customers screen: search, details, their bookings, deactivate or reactivate | P1 | ✅ Done | 2 | API-20 | `/admin/customers`; links each booking to Django's admin |
 | ADM-13 | Staff screen (superusers): add staff, make superuser, deactivate, set a password | P1 | ✅ Done | 2 | API-20 | `/admin/staff`; hidden from other staff |
@@ -373,7 +373,7 @@ The master list. Columns: **ID** · **Feature / task** · **Pri**ority · **Stat
 | API-15 | Dependency audit (pip and npm) | P1 | ⬜ To do | 5 | — | |
 | API-16 | OpenAPI schema (drf-spectacular) linked from the README | P2 | ⬜ To do | 2 | — | |
 | API-17 | Data model for Customer, Booking, PricingRule, Availability | P3 | 💤 Later | 8 | Q3, Q5, Q12 | Basis for PRD-19 to PRD-21 |
-| API-18 | Delete content photos from the bucket when no record uses them | P3 | ⬜ To do | 2 | — | |
+| API-18 | Delete content photos from the bucket when no record uses them | P3 | ✅ Done | 2 | — | cleanup_unused_images management command prunes unreferenced S3 images |
 | API-19 | Remove (or reuse) the unused `SiteSettings` model and endpoint | P3 | ⬜ To do | 2 | — | Left over from ADM-07 |
 | API-20 | Accounts API: `/api/v1/account/` (customers) and `/api/v1/staff/` (customers list, staff accounts) | P1 | ✅ Done | 2 | API-09 | Session cookie + CSRF, rate-limited sign-in, registration and reset; Django password validators |
 | API-21 | Send password-reset emails through Celery instead of inside the request | P3 | ⬜ To do | 5 | NTF-03 | A slow SMTP server only delays that one response today; failures are logged |
@@ -397,7 +397,7 @@ The master list. Columns: **ID** · **Feature / task** · **Pri**ority · **Stat
 | --- | --- | --- | --- | --- | --- | --- |
 | OPS-01 | Frontend CI/CD workflows (lint, typecheck, build, Docker check; GHCR image; SSH deploy) | P1 | ✅ Done | 5 | — | Deploy job is paused in `frontend-deploy.yml` |
 | OPS-02 | Activate CI/CD: production environment and secrets, branch protection, resume deploy | P0 | ⬜ To do | 5 | OPS-05 | |
-| OPS-03 | Backend CI workflow (tests) | P1 | ⬜ To do | 5 | — | Tests need a Neon test database or a Postgres service |
+| OPS-03 | Backend CI workflow (tests) | P1 | ✅ Done | 5 | — | GitHub Actions workflow .github/workflows/backend-ci.yml |
 | OPS-04 | Docker Compose stack: frontend, backend, worker, beat, Redis, Nginx, health checks | P0 | ✅ Done | 5 | API-12 | Done 2026-10-29: `infra/` (compose, Nginx template, env templates, build override). Run locally end to end. On the server it needs OPS-05 (host, domain, certificate) |
 | OPS-05 | VPS, production domain, Cloudflare DNS/TLS and security headers | P0 | ⛔ Blocked | 5 | Q4 | |
 | OPS-06 | Backups: Neon history retention, snapshots, a tested restore | P0 | ⬜ To do | 5 | Q11 | |
@@ -405,7 +405,7 @@ The master list. Columns: **ID** · **Feature / task** · **Pri**ority · **Stat
 | OPS-08 | Staging environment on its own Neon branch | P2 | ⬜ To do | 5 | OPS-04 | |
 | OPS-09 | Neon `dev` branch for local work | P1 | ✅ Done | 2 | — | Created 2026-10-26; reset from `production` 2026-10-29; expires 2026-11-05. Recreate with `neon checkout dev --create`, then `adopt_custom_user` and `migrate` |
 | OPS-10 | Neon account ownership and paid plan for production | P1 | ⛔ Blocked | 5 | Q11 | |
-| OPS-11 | Publish the backend image to GHCR and deploy it (workflow like `frontend-deploy.yml`) | P0 | ⬜ To do | 5 | OPS-03 | `infra/docker-compose.yml` pulls `ghcr.io/nhasan143/driveo-backend:production`, which nothing publishes yet. Stopgap: build on the server with `docker-compose.build.yml` |
+| OPS-11 | Publish the backend image to GHCR and deploy it (workflow like `frontend-deploy.yml`) | P0 | ✅ Done | 5 | OPS-03 | .github/workflows/backend-deploy.yml builds and pushes to ghcr.io |
 
 ### 7.7 Mobile apps (`MOB`): `mobile/`
 

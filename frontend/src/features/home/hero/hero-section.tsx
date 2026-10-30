@@ -1,4 +1,3 @@
-import { BrandMark } from "@/components/brand/brand-mark";
 import { WhatsAppIcon } from "@/components/icons/social-icons";
 import { ParallaxSurface } from "@/components/motion/parallax-surface";
 import { ScrollFade } from "@/components/motion/scroll-fade";
@@ -34,11 +33,6 @@ export function HeroSection({ hero, cityNames }: HeroSectionProps) {
 
       <div className="site-shell relative z-10 flex min-h-[92svh] items-center pt-40 pb-16 xl:pt-32">
         <ScrollFade className="max-w-4xl">
-          <BrandMark
-            size="lg"
-            priority
-            className="mb-4 opacity-90 shadow-[0_20px_60px_color-mix(in_oklab,var(--background)_75%,transparent)] sm:mb-6"
-          />
           <Eyebrow className="animate-rise">{hero.eyebrow}</Eyebrow>
           <h1 className={cn(styles.title, "animate-rise-delay")}>
             {hero.titleLine1}

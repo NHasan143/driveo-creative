@@ -2,10 +2,11 @@ import "server-only";
 
 import { cacheLife, cacheTag } from "next/cache";
 import { seed } from "@/admin/lib/content/seed";
-import type { LocalizedText, PriceUnit, Service, ServiceIcon } from "@/admin/lib/content/types";
+import type { City as AdminCity, LocalizedText, PriceUnit, Service, ServiceIcon, Vehicle } from "@/admin/lib/content/types";
 import { env } from "@/config/env";
 import { serviceMedia } from "@/config/services";
 import { CITIES, FLEET_VEHICLES, SERVICE_TYPES, type City, type FleetVehicle, type ServiceType } from "@/domain/booking";
+import { fleetMedia } from "@/features/fleet/fleet-media";
 import type { Locale } from "@/i18n/config";
 
 /**
@@ -50,27 +51,80 @@ export interface SiteService {
   priceUnit: PriceUnit;
 }
 
+/** Fleet vehicle as shown on the website, managed in the content admin (/admin). */
+export interface SiteVehicle {
+  id: string;
+  slug: string;
+  vehicleKey: FleetVehicle | null;
+  name: string;
+  model: string;
+  description: string;
+  passengers: number;
+  luggage: number;
+  features: string[];
+  image: string;
+}
+
+/** Operating city as shown on the website, managed in the content admin (/admin). */
+export interface SiteCity {
+  id: string;
+  slug: string;
+  cityKey: City | null;
+  name: string;
+  serviceIds: string[];
+}
+
 /** API base for server-side requests; inside Docker this can be an internal address. */
 const API_BASE = (process.env.API_INTERNAL_BASE_URL ?? env.apiBaseUrl).replace(/\/$/, "");
 
-async function loadPublishedServices(): Promise<Service[]> {
+interface PublishedContent {
+  services: Service[];
+  vehicles: Vehicle[];
+  cities: AdminCity[];
+}
+
+async function loadPublishedContent(): Promise<PublishedContent> {
   "use cache";
   cacheLife("minutes");
   cacheTag("content");
 
-  if (env.apiMock) return seed.services;
+  if (env.apiMock) {
+    return {
+      services: seed.services,
+      vehicles: seed.vehicles,
+      cities: seed.cities,
+    };
+  }
+
   try {
     const response = await fetch(`${API_BASE}/v1/content/published/`, {
       headers: { Accept: "application/json" },
       signal: AbortSignal.timeout(8_000),
     });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = (await response.json()) as { services?: Service[] };
-    if (!Array.isArray(data.services)) throw new Error("Response has no services list");
-    return [...data.services].sort((a, b) => a.order - b.order);
+    const data = (await response.json()) as {
+      services?: Service[];
+      vehicles?: Vehicle[];
+      cities?: AdminCity[];
+    };
+    return {
+      services: Array.isArray(data.services)
+        ? [...data.services].sort((a, b) => a.order - b.order)
+        : seed.services,
+      vehicles: Array.isArray(data.vehicles)
+        ? [...data.vehicles].sort((a, b) => a.order - b.order)
+        : seed.vehicles,
+      cities: Array.isArray(data.cities)
+        ? [...data.cities].sort((a, b) => a.order - b.order)
+        : seed.cities,
+    };
   } catch (error) {
-    console.warn(`[content] Published services unavailable, using built-in copy: ${String(error)}`);
-    return seed.services;
+    console.warn(`[content] Published content unavailable, using built-in copy: ${String(error)}`);
+    return {
+      services: seed.services,
+      vehicles: seed.vehicles,
+      cities: seed.cities,
+    };
   }
 }
 
@@ -122,13 +176,53 @@ function toSiteService(service: Service, locale: Locale): SiteService {
   };
 }
 
+function toSiteVehicle(vehicle: Vehicle, locale: Locale): SiteVehicle {
+  const vehicleKey = (FLEET_VEHICLES as readonly string[]).includes(vehicle.id)
+    ? (vehicle.id as FleetVehicle)
+    : null;
+  const defaultImage = vehicleKey ? fleetMedia[vehicleKey].src : "/media/fleet-first-2026-front.jpg";
+  return {
+    id: vehicle.id,
+    slug: vehicle.slug,
+    vehicleKey,
+    name: pick(vehicle.name, locale),
+    model: vehicle.model || (vehicleKey ? fleetMedia[vehicleKey].model : ""),
+    description: pick(vehicle.description, locale),
+    passengers: vehicle.passengers,
+    luggage: vehicle.luggage,
+    features: (vehicle.features ?? []).map((f) => pick(f, locale)).filter(Boolean),
+    image: vehicle.image || defaultImage,
+  };
+}
+
+function toSiteCity(city: AdminCity, locale: Locale): SiteCity {
+  const cityKey = (CITIES as readonly string[]).includes(city.id) ? (city.id as City) : null;
+  return {
+    id: city.id,
+    slug: city.slug,
+    cityKey,
+    name: pick(city.name, locale),
+    serviceIds: city.serviceIds ?? [],
+  };
+}
+
 export async function getSiteServices(locale: Locale): Promise<SiteService[]> {
-  const services = await loadPublishedServices();
+  const { services } = await loadPublishedContent();
   return services.map((service) => toSiteService(service, locale));
 }
 
 export async function getSiteService(locale: Locale, slug: string): Promise<SiteService | undefined> {
   return (await getSiteServices(locale)).find((service) => service.slug === slug);
+}
+
+export async function getSiteFleet(locale: Locale): Promise<SiteVehicle[]> {
+  const { vehicles } = await loadPublishedContent();
+  return vehicles.map((vehicle) => toSiteVehicle(vehicle, locale));
+}
+
+export async function getSiteCities(locale: Locale): Promise<SiteCity[]> {
+  const { cities } = await loadPublishedContent();
+  return cities.map((city) => toSiteCity(city, locale));
 }
 
 /** What the header's Services menu needs; plain data, so it can cross into client components. */
@@ -155,7 +249,8 @@ export type ServicePrices = Partial<Record<ServiceType, { unit: PriceUnit; amoun
 
 export async function getServicePrices(): Promise<ServicePrices> {
   const grid: ServicePrices = {};
-  for (const service of await loadPublishedServices()) {
+  const { services } = await loadPublishedContent();
+  for (const service of services) {
     const type = bookingTypeOf(service.id);
     if (!type) continue;
     const amounts: Partial<Record<PriceKey, number>> = {};

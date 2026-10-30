@@ -98,6 +98,20 @@ export function BookingForm({ locale, labels, cityNames, pricing, prices }: Book
     const data = new FormData(form);
     const text = (name: string) => String(data.get(name) ?? "");
 
+    const rawNotes = text("notes").trim();
+    const nameSign = text("nameSign").trim();
+    const quietRide = data.get("quietRide") ? labels.quietRide : "";
+    const cabinTemp = text("cabinTemperature").trim();
+
+    const extras: string[] = [];
+    if (nameSign) extras.push(`${labels.nameSign}: ${nameSign}`);
+    if (quietRide) extras.push(quietRide);
+    if (cabinTemp) extras.push(`${labels.cabinTemperature}: ${cabinTemp}`);
+
+    const combinedNotes = [extras.length > 0 ? `[${extras.join(" · ")}]` : "", rawNotes]
+      .filter(Boolean)
+      .join("\n\n");
+
     const sent = await submit({
       firstName: text("firstName"),
       lastName: text("lastName"),
@@ -114,7 +128,7 @@ export function BookingForm({ locale, labels, cityNames, pricing, prices }: Book
       journeyTime: text("journeyTime"),
       passengers: passengerCount,
       luggage: luggageCount,
-      notes: text("notes"),
+      notes: combinedNotes,
       honeypot: text("website_hp"),
     });
 
@@ -335,15 +349,24 @@ export function BookingForm({ locale, labels, cityNames, pricing, prices }: Book
         )}
 
         {isAirport && (
-          <Field label={labels.flightNumber} wide>
-            <input
-              name="flightNumber"
-              maxLength={12}
-              pattern="[A-Za-z0-9 ]*"
-              placeholder={labels.flightNumberPlaceholder}
-              dir="ltr"
-            />
-          </Field>
+          <>
+            <Field label={labels.flightNumber}>
+              <input
+                name="flightNumber"
+                maxLength={12}
+                pattern="[A-Za-z0-9 ]*"
+                placeholder={labels.flightNumberPlaceholder}
+                dir="ltr"
+              />
+            </Field>
+            <Field label={labels.nameSign}>
+              <input
+                name="nameSign"
+                maxLength={80}
+                placeholder={labels.nameSignPlaceholder}
+              />
+            </Field>
+          </>
         )}
 
         <Field label={labels.date} hint={labels.dateHint}>
@@ -371,6 +394,32 @@ export function BookingForm({ locale, labels, cityNames, pricing, prices }: Book
           onChange={setLuggage}
           labels={stepperLabels}
         />
+
+        <div className="rounded-lg border border-border/80 bg-background/50 p-4 sm:col-span-2 backdrop-blur-sm">
+          <p className="mono-label mb-3 text-[0.62rem] text-primary">{labels.preferences}</p>
+          <div className="grid gap-3 sm:grid-cols-2 sm:items-center">
+            <label className="flex cursor-pointer select-none items-center gap-2.5 text-xs text-muted-foreground transition-colors hover:text-foreground">
+              <input
+                type="checkbox"
+                name="quietRide"
+                className="size-4 rounded border-border/80 bg-background/80 accent-primary focus:ring-1 focus:ring-primary"
+              />
+              <span>{labels.quietRide}</span>
+            </label>
+            <div className="flex items-center gap-2">
+              <span className="whitespace-nowrap text-xs text-muted-foreground">{labels.cabinTemperature}:</span>
+              <select
+                name="cabinTemperature"
+                className="h-8 rounded border border-border/80 bg-background/80 px-2.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                defaultValue=""
+              >
+                <option value="">{labels.tempStandard}</option>
+                <option value="19°C">{labels.tempCool}</option>
+                <option value="23°C">{labels.tempWarm}</option>
+              </select>
+            </div>
+          </div>
+        </div>
 
         <Field label={labels.notes} wide>
           <textarea name="notes" maxLength={1500} rows={4} placeholder={labels.notesPlaceholder} />

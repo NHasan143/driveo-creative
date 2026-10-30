@@ -117,8 +117,23 @@ export function SiteFooter({ locale, nav, footer, install, cityNames }: SiteFoot
           </div>
         </div>
 
-        <div className="mt-14 flex flex-col gap-3 border-t border-border pt-6 font-mono text-[10px] tracking-[0.2em] text-muted-foreground uppercase sm:flex-row sm:justify-between">
-          <span>{footer.copyright}</span>
+        <div className="mt-14 flex flex-col gap-4 border-t border-border pt-6 font-mono text-[10px] tracking-[0.2em] text-muted-foreground uppercase sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+            <span>{footer.copyright.replace(/\b\d{4}\b/, String(new Date().getFullYear()))}</span>
+            <div className="flex flex-wrap items-center gap-4 text-muted-foreground/80 lowercase">
+              <Link href={localePath(locale, "/privacy")} className="transition-colors hover:text-foreground">
+                {footer.privacy}
+              </Link>
+              <span>·</span>
+              <Link href={localePath(locale, "/terms")} className="transition-colors hover:text-foreground">
+                {footer.terms}
+              </Link>
+              <span>·</span>
+              <Link href={localePath(locale, "/cookies")} className="transition-colors hover:text-foreground">
+                {footer.cookies}
+              </Link>
+            </div>
+          </div>
           <span>{footer.motto}</span>
         </div>
       </div>

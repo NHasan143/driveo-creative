@@ -3,8 +3,18 @@
   isolation: isolate;
   overflow: hidden;
   padding-block: 8rem;
-  background: var(--foreground);
-  color: var(--background);
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.band::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, color-mix(in oklab, var(--primary) 12%, transparent), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 85% 100%, color-mix(in oklab, var(--primary) 6%, transparent), transparent 60%);
+  pointer-events: none;
 }
 
 .layout {
@@ -20,23 +30,26 @@
 }
 
 .intro :global(.eyebrow) {
-  color: color-mix(in oklab, var(--primary) 88%, var(--background));
+  color: var(--primary);
 }
 
 .intro h2 {
-  max-width: 9ch;
+  max-width: 10ch;
   margin-top: 1.25rem;
   font-family: var(--font-display);
-  font-size: clamp(3.2rem, 6vw, 6rem);
+  font-size: clamp(2.8rem, 5.5vw, 4.8rem);
   font-weight: 500;
-  line-height: 0.9;
+  line-height: 0.96;
+  text-wrap: balance;
+  color: var(--foreground);
 }
 
 .lead {
   max-width: 28rem;
   margin-top: 2rem;
   line-height: 1.75;
-  color: color-mix(in oklab, var(--background) 65%, transparent);
+  color: var(--muted-foreground);
+  text-wrap: pretty;
 }
 
 .seal {
@@ -49,6 +62,7 @@
   line-height: 1.7;
   letter-spacing: 0.16em;
   text-transform: uppercase;
+  color: color-mix(in oklab, var(--foreground) 75%, transparent);
 }
 
 .orbit {

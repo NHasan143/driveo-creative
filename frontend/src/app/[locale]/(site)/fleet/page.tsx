@@ -4,6 +4,7 @@ import { FleetComparison } from "@/features/fleet/fleet-comparison";
 import { FleetShowcase } from "@/features/fleet/fleet-showcase";
 import { BookingSection } from "@/features/booking";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
+import { getSiteFleet } from "@/lib/content/site-services";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 const PATH = "/fleet";
@@ -16,7 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function FleetPage() {
   const locale = await getLocale();
-  const t = await getDictionary(locale);
+  const [t, fleet] = await Promise.all([getDictionary(locale), getSiteFleet(locale)]);
   const page = t.pages.fleet;
 
   return (
@@ -31,8 +32,8 @@ export default async function FleetPage() {
         cta={t.hero.cta}
         whatsappLabel={t.hero.whatsapp}
       />
-      <FleetShowcase fleet={t.fleet} page={page} />
-      <FleetComparison fleet={t.fleet} page={page} />
+      <FleetShowcase fleet={t.fleet} page={page} vehicles={fleet} />
+      <FleetComparison fleet={t.fleet} page={page} vehicles={fleet} />
       <BookingSection locale={locale} booking={t.booking} cityNames={t.cities.names} />
     </main>
   );

@@ -4,6 +4,7 @@ import { CityDirectory } from "@/features/cities/city-directory";
 import { AssuranceSection } from "@/features/home/assurance-section";
 import { BookingSection } from "@/features/booking";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
+import { getSiteCities } from "@/lib/content/site-services";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 const PATH = "/cities";
@@ -16,7 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function CitiesPage() {
   const locale = await getLocale();
-  const t = await getDictionary(locale);
+  const [t, cities] = await Promise.all([getDictionary(locale), getSiteCities(locale)]);
   const page = t.pages.cities;
 
   return (
@@ -31,7 +32,12 @@ export default async function CitiesPage() {
         cta={t.hero.cta}
         whatsappLabel={t.hero.whatsapp}
       />
-      <CityDirectory cityNames={t.cities.names} serviceNames={t.booking.serviceOptions} page={page} />
+      <CityDirectory
+        cityNames={t.cities.names}
+        serviceNames={t.booking.serviceOptions}
+        page={page}
+        siteCities={cities}
+      />
       <AssuranceSection
         items={t.assurance}
         heading={{ eyebrow: page.standardEyebrow, title: page.standardTitle }}

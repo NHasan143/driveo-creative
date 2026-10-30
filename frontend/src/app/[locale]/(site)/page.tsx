@@ -8,7 +8,7 @@ import { ServicesSection } from "@/features/home/services-section";
 import { TestimonialSection } from "@/features/home/testimonial-section";
 import { BookingSection } from "@/features/booking";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
-import { getSiteServices } from "@/lib/content/site-services";
+import { getSiteCities, getSiteFleet, getSiteServices } from "@/lib/content/site-services";
 import { LocalBusinessJsonLd } from "@/lib/seo/json-ld";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
@@ -20,8 +20,12 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function HomePage() {
   const locale = await getLocale();
-  const t = await getDictionary(locale);
-  const services = await getSiteServices(locale);
+  const [t, services, fleet, cities] = await Promise.all([
+    getDictionary(locale),
+    getSiteServices(locale),
+    getSiteFleet(locale),
+    getSiteCities(locale),
+  ]);
 
   return (
     <main className="min-h-screen overflow-hidden bg-background text-foreground">
@@ -36,8 +40,8 @@ export default async function HomePage() {
         viewDetails={t.pages.serviceDetail.viewDetails}
         pricing={t.pricing}
       />
-      <FleetSection locale={locale} fleet={t.fleet} more={t.pages.links.fleet} />
-      <CitiesSection locale={locale} cities={t.cities} more={t.pages.links.cities} />
+      <FleetSection locale={locale} fleet={t.fleet} more={t.pages.links.fleet} vehicles={fleet} />
+      <CitiesSection locale={locale} cities={t.cities} more={t.pages.links.cities} siteCities={cities} />
       <ProcessSection locale={locale} process={t.process} more={t.pages.links.process} />
       <BookingSection locale={locale} booking={t.booking} cityNames={t.cities.names} />
       <TestimonialSection testimonial={t.testimonial} />

@@ -88,12 +88,14 @@
 }
 
 .title {
-  max-width: 10ch;
-  margin-top: 1.75rem;
+  max-width: 13ch;
+  margin-top: 1.5rem;
   font-family: var(--font-display);
-  font-size: clamp(4.2rem, 10vw, 9rem);
+  font-size: clamp(3.5rem, 7.8vw, 7.25rem);
   font-weight: 500;
-  line-height: 0.86;
+  line-height: 0.92;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
 }
 
 .title em {
@@ -160,7 +162,8 @@
 
 @media (width <= 639px) {
   .title {
-    font-size: clamp(3.75rem, 19vw, 5.4rem);
+    font-size: clamp(2.75rem, 13vw, 4rem);
+    line-height: 0.95;
   }
 
   .video {

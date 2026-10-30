@@ -130,6 +130,7 @@
     font-size: clamp(2.65rem, 5vw, 4.8rem);
     font-weight: 500;
     line-height: 0.98;
+    text-wrap: balance;
   }
 
   .card-title {
@@ -137,6 +138,7 @@
     font-family: var(--font-display);
     font-size: 1.8rem;
     font-weight: 500;
+    text-wrap: balance;
   }
 
   .body-muted {
@@ -144,6 +146,7 @@
     font-size: 0.9rem;
     line-height: 1.7;
     color: var(--muted-foreground);
+    text-wrap: pretty;
   }
 
   .social-icon {

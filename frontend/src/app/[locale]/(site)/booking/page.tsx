@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { AccountPage } from "@/features/account";
-import { BookingSection, ManageBooking } from "@/features/booking";
+import { ManageBooking } from "@/features/booking";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
@@ -25,7 +25,6 @@ export default async function ManageBookingPage() {
           <ManageBooking locale={locale} t={t.manageBooking} fields={t.booking} />
         </Suspense>
       </AccountPage>
-      <BookingSection locale={locale} booking={t.booking} cityNames={t.cities.names} />
     </>
   );
 }

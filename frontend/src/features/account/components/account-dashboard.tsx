@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Eyebrow } from "@/components/ui/eyebrow";
 import { listMyBookings, type BookingDto } from "@/features/booking/api/bookings";
-import { manageBookingHref } from "@/features/booking/components/booking-form";
+import { manageBookingHref } from "@/features/booking/book-link";
 import Link from "next/link";
 import { localeMeta, localePath, locales, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/get-dictionary";

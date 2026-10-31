@@ -1,9 +1,10 @@
+import { Check } from "lucide-react";
 import type { Metadata } from "next";
-import { PageHero } from "@/components/page/page-hero";
-import { AssuranceSection } from "@/features/home/assurance-section";
-import { ProcessTimeline } from "@/features/process/process-timeline";
-import { RequestChecklist } from "@/features/process/request-checklist";
-import { BookingSection } from "@/features/booking";
+import { BookCta } from "@/components/page/book-cta";
+import { FeatureCards } from "@/components/page/feature-cards";
+import { PageBanner } from "@/components/page/page-banner";
+import { PageSection } from "@/components/page/page-section";
+import { StepCards } from "@/components/page/step-cards";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
@@ -21,24 +22,40 @@ export default async function ProcessPage() {
   const page = t.pages.process;
 
   return (
-    <main className="min-h-screen overflow-hidden bg-background text-foreground">
-      <PageHero
+    <main className="min-h-screen bg-background text-foreground">
+      <PageBanner
         locale={locale}
-        crumbs={{ home: t.pages.breadcrumbHome, trail: [{ label: t.nav.process }] }}
-        eyebrow={page.eyebrow}
         title={page.title}
         intro={page.intro}
-        image={{ src: "/media/driveo-journey-poster.jpg", alt: "" }}
-        cta={t.hero.cta}
-        whatsappLabel={t.hero.whatsapp}
+        image="/media/paris-hotel-evening.jpg"
+        explore={t.servicePage.explore}
+        crumbs={[{ label: t.pages.breadcrumbHome, path: "/" }, { label: t.nav.process }]}
       />
-      <ProcessTimeline steps={t.process.items} details={page.details} />
-      <RequestChecklist page={page} />
-      <AssuranceSection
-        items={t.assurance}
-        heading={{ eyebrow: page.commitmentsEyebrow, title: page.commitmentsTitle }}
-      />
-      <BookingSection locale={locale} booking={t.booking} cityNames={t.cities.names} />
+
+      <div id="content" className="scroll-mt-24">
+        <PageSection title={t.process.title}>
+          <StepCards
+            steps={t.process.items.map((item, index) => ({ title: item.title, copy: page.details[index] ?? item.copy }))}
+          />
+        </PageSection>
+
+        <PageSection title={page.checklistTitle} intro={page.checklistIntro} tone="tinted">
+          <ul className="grid gap-3 sm:grid-cols-2">
+            {page.checklist.map((item) => (
+              <li key={item} className="flex items-start gap-3 rounded-2xl border border-border bg-card p-5 text-sm">
+                <Check aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-primary" />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </PageSection>
+
+        <PageSection title={page.commitmentsTitle}>
+          <FeatureCards items={t.assurance} columns={4} />
+        </PageSection>
+
+        <BookCta locale={locale} title={t.booking.title} intro={t.booking.intro} cta={t.nav.book} />
+      </div>
     </main>
   );
 }

@@ -1,25 +1,24 @@
-"use client";
-
 import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 import type { ReactNode } from "react";
-import { Button } from "@/components/ui/button";
-import { useBookingPreset, type BookingPreset } from "../booking-preset-context";
+import { buttonClassName } from "@/components/ui/button";
+import type { Locale } from "@/i18n/config";
+import { bookHref, type BookQuery } from "../book-link";
 
 interface BookButtonProps {
-  /** Form fields to pre-fill, e.g. `{ vehicle: "first_class" }` or `{ city: "paris" }`. */
-  preset: Partial<BookingPreset>;
+  locale: Locale;
+  /** Choices to pre-fill on the booking page, e.g. `{ vehicle: "first_class" }` or `{ city: "paris" }`. */
+  preset?: BookQuery;
   children: ReactNode;
   variant?: "primary" | "secondary";
   className?: string;
 }
 
-/** Jumps to the booking form with the given choices pre-filled. */
-export function BookButton({ preset, children, variant, className }: BookButtonProps) {
-  const { requestBooking } = useBookingPreset();
-
+/** Opens the booking page with the given choices pre-filled. */
+export function BookButton({ locale, preset, children, variant, className }: BookButtonProps) {
   return (
-    <Button variant={variant} className={className} onClick={() => requestBooking(preset)}>
+    <Link href={bookHref(locale, preset)} className={buttonClassName({ variant }, className)}>
       {children} <ArrowRight aria-hidden="true" className="rtl:-scale-x-100" />
-    </Button>
+    </Link>
   );
 }

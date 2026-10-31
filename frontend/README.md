@@ -49,14 +49,16 @@ npm run dev                  # http://localhost:3000 → redirects to /?lang=en
 src/
 ├── app/                      # Routing only: layouts, pages, metadata routes
 │   ├── [locale]/             # Root layout per language (en, fr, bg, ar), statically generated
-│   │   ├── (site)/           # Public pages sharing header, footer and booking pre-fill state
-│   │   │   ├── layout.tsx    # SiteHeader + SiteFooter + BookingPresetProvider
+│   │   ├── (site)/           # Public pages sharing the header and footer
+│   │   │   ├── layout.tsx    # SiteHeader + SiteFooter + cookie banner
 │   │   │   ├── page.tsx      # Home  → /?lang=xx
+│   │   │   ├── book/         # /book?lang=xx&service=…&city=… : the 3-step booking flow (noindex)
 │   │   │   ├── services/     # /services?lang=xx
-│   │   │   │   └── [service]/  # /services/airport-transfer?lang=xx … (4 detail pages)
+│   │   │   │   └── [service]/  # /services/airport-transfer?lang=xx … (one per published service)
 │   │   │   ├── fleet/        # /fleet?lang=xx
 │   │   │   ├── cities/       # /cities?lang=xx
-│   │   │   ├── process/      # /process?lang=xx
+│   │   │   ├── process/      # /process?lang=xx ("How it works")
+│   │   │   ├── help/         # /help?lang=xx (FAQ, contact, managing a booking)
 │   │   │   ├── booking/      # /booking?lang=xx&ref=…&token=… (view, change, cancel; noindex)
 │   │   │   └── account/      # Customer accounts (see below)
 │   │   ├── not-found.tsx     # Localized 404 (outside (site), no header)
@@ -67,18 +69,16 @@ src/
 ├── proxy.ts                  # Language routing: "/?lang=fr" is served from app/[locale] (rewrite); /admin passes through
 ├── admin/                    # Content admin code (components, features, lib, styles), see below
 ├── components/               # Shared, feature-agnostic building blocks
-│   ├── ui/                   # Button, Eyebrow, ArrowLink, CheckList …
-│   ├── layout/               # SiteHeader, MainNav, SiteFooter, LanguageSwitcher
-│   ├── page/                 # PageHero, SectionHeading (inner-page building blocks)
-│   ├── brand/ · icons/
-│   └── motion/               # GSAP setup, <Reveal>, <ScrollFade>, <ParallaxSurface>
+│   ├── ui/                   # Button, Eyebrow, FromPrice
+│   ├── layout/               # SiteHeader (HeaderFrame, MainNav, MobileMenu, AccountLink, LanguageSwitcher), SiteFooter
+│   ├── page/                 # Inner-page blocks: PageBanner, PageSection, FeatureCards, VehicleClasses,
+│   │                         # CityCards, ServiceCards, StepCards, FaqList, BookCta
+│   └── brand/ · icons/
 ├── features/                 # Self-contained product areas
-│   ├── home/                 # Hero, assurance, services, cities, process, testimonial
-│   ├── services/             # Services page rows + detail/ (hero card, facts, overview, steps, fleet, cross-links)
-│   ├── fleet/                # Fleet cards, showcase, comparison table, media config
-│   ├── cities/               # Cities page: city directory
-│   ├── process/              # Process page: timeline, request checklist
-│   ├── booking/              # Booking form, manage page: schema, API clients, hooks, pre-fill context, UI
+│   ├── home/                 # Hero (film + booking bar), services carousel, app, scroll story, house standard
+│   ├── fleet/                # Fleet media config (photos and models used by the seed content)
+│   ├── booking/              # Booking bar, /book flow, manage page: schema, API clients, hooks, links
+│   ├── legal/                # Privacy, terms and cookie pages
 │   ├── account/              # Customer accounts
 │   └── pwa/                  # "Add to Home Screen"
 ├── domain/booking.ts         # Cities, services, vehicles, capacity rules (stable API ids)
@@ -87,6 +87,26 @@ src/
 ├── config/                   # env, site constants, navigation (page list), services (slugs, media)
 └── styles/globals.css        # Design tokens, base styles, shared primitives
 ```
+
+## Layout and booking (Blacklane-style)
+
+The site follows the structure of [blacklane.com](https://www.blacklane.com/en/) with Driveo's own colours,
+fonts, logo, copy and four languages:
+
+- **Header:** transparent over the hero, solid once you scroll. Services menu, Fleet, Cities, How it works,
+  Help, language, Sign in / Account and **Book now**. Below 1280px a menu button opens a full-screen drawer.
+- **Booking bar** (`features/booking/components/booking-bar.tsx`), in the home and inner-page heroes:
+  One way / By the hour, city, pickup, drop-off or hours, date and time. **See prices** opens `/book` with
+  the choices in the query string (`bookHref()` in `features/booking/book-link.ts`; every "Book" button uses it).
+- **Booking flow** (`/book`, `booking-flow.tsx`), three steps with a sticky journey summary:
+  1. the journey and the car class, with each car's price from the admin's grid;
+  2. pickup details (flight number and name sign for airport transfers, passengers, luggage, preferences,
+     notes) and contact details, filled in for signed-in customers;
+  3. review, then **Book now** posts to `/v1/bookings/` as before (`useBookingSubmission`).
+- **Home:** hero, services carousel, the home-screen app (PWA), a pinned scroll story (the four assurance points),
+  the house standard and the footer.
+- **Inner pages:** a photo banner with the booking bar and breadcrumbs, then content sections, an FAQ built
+  only from facts already on the site, and a closing booking band.
 
 ## Customer accounts (`/account`)
 

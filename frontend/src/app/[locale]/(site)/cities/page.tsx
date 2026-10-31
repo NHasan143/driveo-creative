@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
-import { PageHero } from "@/components/page/page-hero";
-import { CityDirectory } from "@/features/cities/city-directory";
-import { AssuranceSection } from "@/features/home/assurance-section";
-import { BookingSection } from "@/features/booking";
+import { BookCta } from "@/components/page/book-cta";
+import { CityCards } from "@/components/page/city-cards";
+import { FeatureCards } from "@/components/page/feature-cards";
+import { PageBanner } from "@/components/page/page-banner";
+import { PageSection } from "@/components/page/page-section";
+import { BookingBar } from "@/features/booking";
 import { getDictionary, getLocale } from "@/i18n/get-dictionary";
-import { getSiteCities } from "@/lib/content/site-services";
+import { getSiteCities, getSiteServices } from "@/lib/content/site-services";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 const PATH = "/cities";
@@ -17,32 +19,38 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function CitiesPage() {
   const locale = await getLocale();
-  const [t, cities] = await Promise.all([getDictionary(locale), getSiteCities(locale)]);
+  const [t, cities, services] = await Promise.all([getDictionary(locale), getSiteCities(locale), getSiteServices(locale)]);
   const page = t.pages.cities;
 
   return (
-    <main className="min-h-screen overflow-hidden bg-background text-foreground">
-      <PageHero
+    <main className="min-h-screen bg-background text-foreground">
+      <PageBanner
         locale={locale}
-        crumbs={{ home: t.pages.breadcrumbHome, trail: [{ label: t.nav.cities }] }}
-        eyebrow={page.eyebrow}
         title={page.title}
         intro={page.intro}
-        image={{ src: "/media/paris-hotel-evening.jpg", alt: "" }}
-        cta={t.hero.cta}
-        whatsappLabel={t.hero.whatsapp}
-      />
-      <CityDirectory
-        cityNames={t.cities.names}
-        serviceNames={t.booking.serviceOptions}
-        page={page}
-        siteCities={cities}
-      />
-      <AssuranceSection
-        items={t.assurance}
-        heading={{ eyebrow: page.standardEyebrow, title: page.standardTitle }}
-      />
-      <BookingSection locale={locale} booking={t.booking} cityNames={t.cities.names} />
+        image="/media/london-thames-night.jpg"
+        explore={t.servicePage.explore}
+        crumbs={[{ label: t.pages.breadcrumbHome, path: "/" }, { label: t.nav.cities }]}
+      >
+        <BookingBar locale={locale} labels={t.bookingBar} hoursUnit={t.booking.hoursUnit} cityNames={t.cities.names} />
+      </PageBanner>
+
+      <div id="content" className="scroll-mt-24">
+        <PageSection title={t.cities.titleLine1} intro={t.cities.copy}>
+          <CityCards
+            locale={locale}
+            cities={cities}
+            serviceNames={Object.fromEntries(services.map((service) => [service.id, service.title]))}
+            labels={{ services: page.servicesLabel, book: page.bookCta }}
+          />
+        </PageSection>
+
+        <PageSection title={page.standardTitle} tone="tinted">
+          <FeatureCards items={t.assurance} columns={4} />
+        </PageSection>
+
+        <BookCta locale={locale} title={t.booking.title} intro={t.booking.intro} cta={t.nav.book} />
+      </div>
     </main>
   );
 }

@@ -1,4 +1,4 @@
-import { PageHero } from "@/components/page/page-hero";
+import { PageBanner } from "@/components/page/page-banner";
 import type { Locale } from "@/i18n/config";
 
 export interface LegalSection {
@@ -10,10 +10,11 @@ interface LegalArticleProps {
   locale: Locale;
   homeLabel: string;
   trailLabel: string;
-  eyebrow: string;
   title: string;
   lastUpdated: string;
   intro: string;
+  /** Unused since the banner redesign (no eyebrow or buttons); kept so the pages that pass them still compile. */
+  eyebrow?: string;
   cta?: string;
   whatsappLabel?: string;
   sections: LegalSection[];
@@ -23,25 +24,18 @@ export function LegalArticle({
   locale,
   homeLabel,
   trailLabel,
-  eyebrow,
   title,
   lastUpdated,
   intro,
-  cta = "Book journey",
-  whatsappLabel = "WhatsApp",
   sections,
 }: LegalArticleProps) {
   return (
     <main className="min-h-screen overflow-hidden bg-background text-foreground">
-      <PageHero
+      <PageBanner
         locale={locale}
-        crumbs={{ home: homeLabel, trail: [{ label: trailLabel }] }}
-        eyebrow={eyebrow}
         title={title}
         intro={intro}
-        image={{ src: "/media/driveo-journey-poster.jpg", alt: "" }}
-        cta={cta}
-        whatsappLabel={whatsappLabel}
+        crumbs={[{ label: homeLabel, path: "/" }, { label: trailLabel }]}
       />
 
       <section className="section-band bg-background">

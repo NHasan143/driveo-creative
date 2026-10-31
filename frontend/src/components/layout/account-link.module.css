@@ -1,18 +1,16 @@
-/* Matches the language switcher's pill, so the header's controls read as a set.
-   Hidden on phones: the header row has no room for it there (the footer links to the account). */
+/* A pill beside the language switcher, so the header's controls read as a set.
+   Phones reach the account from the menu instead. */
 .link {
   display: none;
   align-items: center;
-  gap: 0.4rem;
-  min-height: 2.45rem;
-  padding: 0.45rem 0.7rem;
-  border: 1px solid color-mix(in oklab, var(--primary) 45%, transparent);
+  gap: 0.45rem;
+  min-height: 2.5rem;
+  padding: 0.45rem 0.95rem;
+  border: 1px solid var(--input);
   border-radius: 999px;
   color: var(--foreground);
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-size: 0.85rem;
+  font-weight: 600;
   transition:
     border-color 0.25s,
     color 0.25s;
@@ -25,23 +23,16 @@
 
 .link svg {
   flex: none;
-  width: 0.95rem;
-  height: 0.95rem;
+  width: 1rem;
+  height: 1rem;
 }
 
-/* Small tablets show the icon alone (the link keeps its accessible name). */
 .text {
-  display: none;
-}
-
-@media (width >= 640px) {
-  .link {
-    display: inline-flex;
-  }
+  white-space: nowrap;
 }
 
 @media (width >= 768px) {
-  .text {
-    display: inline;
+  .link {
+    display: inline-flex;
   }
 }

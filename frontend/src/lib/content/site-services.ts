@@ -263,3 +263,13 @@ export async function getServicePrices(): Promise<ServicePrices> {
   }
   return grid;
 }
+
+/** The lowest price for one car on one service, across every city; null when it has none. */
+export function lowestVehiclePrice(prices: ServicePrices, service: ServiceType, vehicle: FleetVehicle) {
+  const grid = prices[service];
+  if (!grid) return null;
+  const amounts = Object.entries(grid.amounts)
+    .filter(([key]) => key.endsWith(`:${vehicle}`))
+    .map(([, amount]) => amount as number);
+  return amounts.length > 0 ? { amount: Math.min(...amounts), unit: grid.unit } : null;
+}

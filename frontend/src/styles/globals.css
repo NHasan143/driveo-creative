@@ -28,7 +28,7 @@
   --ring: var(--primary);
 
   --ease-out-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --header-height: 5rem;
+  --header-height: 4.5rem;
 }
 
 @theme inline {

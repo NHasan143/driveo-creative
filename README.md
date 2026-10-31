@@ -627,6 +627,7 @@ Record decisions that would surprise a newcomer. Add new entries at the top.
 
 | Date | Decision | Reason |
 | --- | --- | --- |
+| 2026-10-30 | Website layout and features modelled on blacklane.com (booking bar → 3-step `/book` flow, Blacklane page structure), with Driveo's colours, fonts, logo and copy | Client request. Sections with no real Driveo content (business accounts, chauffeur partners, partner logos, statistics) were left out rather than invented |
 | 2026-10-29 | **Bookings replace quote requests.** Customers book at a fixed price taken from the admin's price grid (service × city × car, per hour for hourly hire); nothing is paid online (paid to the chauffeur or by invoice); guests can book and manage a booking from a private link in their email, signed-in customers also from My account; changes and cancellations close 24 hours before pickup | Client decisions. The quotes app and its data were removed (dev only had test requests). Pay-later avoids a payment provider for v1. The token link keeps guest booking frictionless without exposing bookings by reference |
 | 2026-10-26 | Content admin signs staff in with Django's session cookie + CSRF token, not an API token | The cookie is HttpOnly, so no script on the page (or XSS) can steal a credential; sign-out and deactivating a user take effect at once; it reuses Django's users, `is_staff` and password hashing. Cost: the website and API must share a site, and the CSRF token travels in JSON. DRF now denies by default (`IsAdminUser`); public views opt out |
 | 2026-10-26 | Translated content stored as one JSON object per field (`{"en","fr","bg","ar"}`), not a column per language | Matches the admin's types; repeatable parts (facts, features, steps) are lists of translated objects that columns can't express; adding a language needs no migration. Serializers validate keys and lengths |
@@ -662,6 +663,24 @@ Record decisions that would surprise a newcomer. Add new entries at the top.
 ## Changelog
 
 Newest first. Follow [Keep a Changelog](https://keepachangelog.com/) headings: Added / Changed / Fixed / Removed.
+
+### 2026-10-30
+
+**Changed**
+- `frontend`: website redesigned on the layout and features of blacklane.com, keeping Driveo's colours,
+  fonts, logo and four languages.
+  - New header (scroll-solid, Services menu, Help, Sign in / Account, Book now, phone drawer) and a
+    five-column footer.
+  - A booking bar in every hero (One way / By the hour, city, places, date, time) opens a new 3-step
+    booking page, `/book`: choose the car class with its price, add pickup and contact details, review and book.
+    Bookings still go to `/v1/bookings/`; no backend change.
+  - Home: film hero, services carousel, home-screen app section, pinned scroll story, house standard.
+  - Service, Services, Fleet, Cities and How it works pages rebuilt with photo banners, car-class cards,
+    city cards, step cards and FAQs; new Help page (FAQ, contact, managing a booking).
+  - Buttons are sentence-case pills; the old long booking form, its pre-fill context and unused
+    motion helpers were removed.
+  - Verified in a browser at desktop and phone widths, in all four languages (RTL Arabic); all 60
+    page loads return 200; production build passes.
 
 ### 2026-10-29
 

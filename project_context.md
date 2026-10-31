@@ -470,6 +470,7 @@ It counts items, not effort: the remaining items include the larger ones (deploy
 
 ### Recently completed
 
+- 2026-10-30: Website redesigned on blacklane.com's layout and features (colours, fonts, logo and languages unchanged): scroll-solid header with phone drawer, booking bar in every hero, new 3-step `/book` flow (car class with price → details → review), rebuilt home and inner pages, new Help page, Blacklane-style footer. Backend untouched.
 - 2026-10-29: **Bookings replace quote requests** (PRD-09, PRD-20, API-03, API-04, WEB-08, WEB-09, NTF-08, D-22): fixed prices from the admin grid, pay later, guest token links and My account, change or cancel until 24 h before pickup, customer emails in 4 languages, Django admin confirm, assign and cancel. Website copy rewritten in 4 languages. Placeholder prices on `dev`. Fixed CORS for the guest token header.
 - 2026-10-29: Production stack (OPS-04) in `infra/`, run locally end to end; found and fixed Nginx 502s after container restarts, Django's redirect breaking internal API calls, and Compose mangling `$` in the secret key.
 - 2026-10-29: Backend Docker image (API-12): one image for API, worker and scheduler, built and checked against `dev`, including production settings.

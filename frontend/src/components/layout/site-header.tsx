@@ -1,13 +1,16 @@
 import Link from "next/link";
 import { BrandMark } from "@/components/brand/brand-mark";
-import { ButtonLink } from "@/components/ui/button";
+import { buttonClassName } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
+import { bookHref } from "@/features/booking/book-link";
 import { localePath, type Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import type { NavService } from "@/lib/content/site-services";
 import { AccountLink } from "./account-link";
+import { HeaderFrame } from "./header-frame";
 import { LanguageSwitcher } from "./language-switcher";
 import { MainNav } from "./main-nav";
+import { MobileMenu } from "./mobile-menu";
 
 interface SiteHeaderProps {
   locale: Locale;
@@ -16,15 +19,15 @@ interface SiteHeaderProps {
   allServices: string;
 }
 
+/** One row: logo, page links (xl and up), language, account and the booking button; a menu below xl. */
 export function SiteHeader({ locale, nav, services, allServices }: SiteHeaderProps) {
   return (
-    <header className="absolute inset-x-0 top-0 z-50 border-b border-border/60 bg-background/45 backdrop-blur-md">
-      <div className="site-shell flex h-20 items-center justify-between gap-3">
+    <HeaderFrame>
+      <div className="site-shell flex h-[4.5rem] items-center gap-3">
         <Link href={localePath(locale)} className="flex min-w-0 items-center gap-3" aria-label={nav.home}>
           <BrandMark priority />
-          {/* Phones show the logo alone; the buttons need the room and the link has an aria-label. */}
-          <span className="hidden max-w-64 font-mono text-[0.68rem] leading-tight font-bold tracking-[0.18em] uppercase sm:line-clamp-2">
-            {siteConfig.legalName}
+          <span className="hidden font-display text-lg leading-none tracking-wide whitespace-nowrap lg:inline">
+            {siteConfig.name}
           </span>
         </Link>
 
@@ -33,35 +36,19 @@ export function SiteHeader({ locale, nav, services, allServices }: SiteHeaderPro
           nav={nav}
           services={services}
           allServices={allServices}
-          className="hidden shrink-0 items-center gap-8 xl:flex"
+          className="ms-auto hidden items-center gap-7 xl:flex"
+          linkClassName="font-sans text-[0.9rem] font-medium tracking-normal normal-case text-foreground/85 hover:text-foreground"
         />
 
-        {/* The language switcher and book button share one size so they read as a pair. */}
-        <div className="flex shrink-0 items-center gap-2">
-          <AccountLink locale={locale} label={nav.account} />
+        <div className="ms-auto flex shrink-0 items-center gap-2 xl:ms-6">
           <LanguageSwitcher locale={locale} label={nav.language} />
-          {/* Every page ends with the booking form, so this anchor always resolves. */}
-          <ButtonLink href="#book" size="compact">
-            {nav.book} <span aria-hidden="true">↘</span>
-          </ButtonLink>
+          <AccountLink locale={locale} signIn={nav.signIn} account={nav.account} />
+          <Link href={bookHref(locale)} className={buttonClassName({ size: "compact" })}>
+            {nav.book}
+          </Link>
+          <MobileMenu locale={locale} nav={nav} services={services} allServices={allServices} />
         </div>
       </div>
-
-      {/*
-        Below xl (1280px) the page links move to a slim second row instead of a hamburger menu;
-        between 1024 and 1279px there isn't room for them beside the buttons in French or Bulgarian.
-        It must stay a single line: the hero padding assumes this header height, and the
-        row can't scroll sideways because that would clip the Services dropdown. On phones
-        the type and spacing scale with the viewport so even Bulgarian fits at 320px.
-      */}
-      <MainNav
-        locale={locale}
-        nav={nav}
-        services={services}
-        allServices={allServices}
-        className="site-shell flex min-h-11 flex-nowrap items-center justify-between gap-x-2 border-t border-border/60 sm:justify-start sm:gap-x-6 xl:hidden"
-        linkClassName="shrink-0 whitespace-nowrap text-[clamp(0.55rem,2.6vw,0.6rem)] tracking-[0.08em] sm:tracking-[0.2em]"
-      />
-    </header>
+    </HeaderFrame>
   );
 }

@@ -1,0 +1,21 @@
+# Secrets never go into the image; production passes environment variables.
+.env*
+!.env.example
+.neon
+
+# Local environments and build output
+.venv
+node_modules
+**/__pycache__
+*.pyc
+staticfiles
+media
+db.sqlite3
+
+# Neon CLI tooling, not used at runtime
+neon.ts
+package.json
+package-lock.json
+
+Dockerfile
+.dockerignore

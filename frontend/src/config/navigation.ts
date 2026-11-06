@@ -4,6 +4,7 @@ export const SITE_PAGES = [
   { key: "fleet", segment: "fleet" },
   { key: "cities", segment: "cities" },
   { key: "process", segment: "process" },
+  { key: "help", segment: "help" },
 ] as const;
 
 export type SitePageKey = (typeof SITE_PAGES)[number]["key"];

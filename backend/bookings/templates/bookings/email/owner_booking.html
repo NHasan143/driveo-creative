@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <body style="margin:0;padding:24px;background:#f4f4f2;font-family:Arial,Helvetica,sans-serif;color:#111;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#fff;border:1px solid #e2e2de;">
+      <tr>
+        <td style="padding:20px 24px;background:#0b0b0b;color:#fff;">
+          <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#c9a96e;">{{ heading }}</div>
+          <div style="font-size:22px;margin-top:4px;">{{ reference }}</div>
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:20px 24px;">
+          <table role="presentation" width="100%" cellpadding="6" cellspacing="0" style="font-size:14px;">
+            <tr><td style="color:#666;width:110px;">Service</td><td>{{ service }}</td></tr>
+            <tr><td style="color:#666;">When</td><td>{{ when }}</td></tr>
+            <tr><td style="color:#666;">Route</td><td>{{ route }}</td></tr>
+            <tr><td style="color:#666;">Vehicle</td><td>{{ vehicle }}</td></tr>
+            <tr><td style="color:#666;">Price</td><td>{{ price }}</td></tr>
+            <tr><td colspan="2" style="border-top:1px solid #eee;padding:0;height:8px;"></td></tr>
+            <tr><td style="color:#666;">Customer</td><td>{{ booking.full_name }}</td></tr>
+            <tr><td style="color:#666;">Phone</td><td><a href="tel:{{ booking.phone }}" style="color:#111;">{{ booking.phone }}</a></td></tr>
+            <tr><td style="color:#666;">Email</td><td><a href="mailto:{{ booking.email }}" style="color:#111;">{{ booking.email }}</a></td></tr>
+            <tr><td style="color:#666;">Language</td><td>{{ booking.get_locale_display }}</td></tr>
+            {% if booking.notes %}<tr><td style="color:#666;vertical-align:top;">Notes</td><td>{{ booking.notes|linebreaksbr }}</td></tr>{% endif %}
+          </table>
+
+          {% if event == "cancelled" %}
+          <p style="margin:24px 0 0;font-size:14px;">The customer cancelled this booking. Release the chauffeur and car.</p>
+          {% else %}
+          <div style="margin:24px 0 0;padding:16px;background:#f7f5f0;border-left:3px solid #c9a96e;">
+            <div style="font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#8a7346;">Next step</div>
+            <p style="font-size:13px;color:#555;margin:6px 0 12px;">The customer has a confirmation of receipt. Assign a chauffeur and car, then confirm the booking in the dashboard: they get an email with the details.</p>
+            <a href="{{ admin_url }}" style="display:inline-block;margin:0 6px 6px 0;padding:9px 14px;background:#0b0b0b;color:#fff;text-decoration:none;font-size:13px;">Open in the dashboard</a>
+            {% if reply_whatsapp_url %}<a href="{{ reply_whatsapp_url }}" style="display:inline-block;margin:0 6px 6px 0;padding:9px 14px;background:#1f7a4d;color:#fff;text-decoration:none;font-size:13px;">WhatsApp the customer</a>{% endif %}
+            <a href="tel:{{ booking.phone }}" style="display:inline-block;margin:0 6px 6px 0;padding:9px 14px;border:1px solid #0b0b0b;color:#0b0b0b;text-decoration:none;font-size:13px;">Call</a>
+          </div>
+          {% endif %}
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

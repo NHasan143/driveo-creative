@@ -1,0 +1,38 @@
+/* A pill beside the language switcher, so the header's controls read as a set.
+   Phones reach the account from the menu instead. */
+.link {
+  display: none;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.5rem;
+  padding: 0.45rem 0.95rem;
+  border: 1px solid var(--input);
+  border-radius: 999px;
+  color: var(--foreground);
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition:
+    border-color 0.25s,
+    color 0.25s;
+}
+
+.link:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.link svg {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+}
+
+.text {
+  white-space: nowrap;
+}
+
+@media (width >= 768px) {
+  .link {
+    display: inline-flex;
+  }
+}

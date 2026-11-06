@@ -61,7 +61,7 @@ export function CityEditor({ city }: { city: City | null }) {
       onSubmit={onSubmit}
       updatedAt={city?.updatedAt}
       title={isNew ? "New city" : city.name.en || "Untitled city"}
-      description={isNew ? "Add a city or region Driveo operates in. It appears on the Cities page and in the quote form." : undefined}
+      description={isNew ? "Add a city or region Driveo operates in. It appears on the Cities page and in the booking form." : undefined}
       breadcrumbs={[{ label: "Cities", href: "/admin/cities" }]}
       onDelete={
         city
@@ -74,7 +74,7 @@ export function CityEditor({ city }: { city: City | null }) {
       }
     >
       <Card>
-        <CardHeader title="City" description="Shown on the Cities page, in the footer and in the quote form." />
+        <CardHeader title="City" description="Shown on the Cities page, in the footer and in the booking form." />
         <CardBody className="sm:grid-cols-2">
           <LocalizedField name="name" label="City or region name" required maxLength={40} placeholder="London" />
           <SlugField source="name.en" prefix="/cities#" autoFollow={isNew} />

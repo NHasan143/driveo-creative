@@ -1,0 +1,31 @@
+# Builds both images from this checkout instead of pulling them, e.g. to try the
+# whole stack on a laptop before a release:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+#
+# The website's NEXT_PUBLIC_* values are baked in at build time, from .env.
+
+services:
+  frontend:
+    image: driveo-frontend:local
+    build:
+      context: ../frontend
+      args:
+        NEXT_PUBLIC_SITE_URL: https://${SITE_HOST}
+        NEXT_PUBLIC_API_BASE_URL: https://${API_HOST}/api
+        NEXT_PUBLIC_API_MOCK: "false"
+        NEXT_PUBLIC_ADMIN_CONTENT_SOURCE: api
+
+  backend:
+    image: driveo-backend:local
+    build:
+      context: ../backend
+
+  worker:
+    image: driveo-backend:local
+
+  beat:
+    image: driveo-backend:local
+
+  migrate:
+    image: driveo-backend:local

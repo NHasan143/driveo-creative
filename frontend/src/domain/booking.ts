@@ -1,5 +1,5 @@
 /**
- * Booking domain vocabulary shared by the marketing sections and the quote form.
+ * Booking domain vocabulary shared by the marketing sections and the booking form.
  * Ids are stable API values; human-readable labels live in the i18n dictionaries.
  */
 
@@ -17,10 +17,6 @@ export type ServiceType = (typeof SERVICE_TYPES)[number];
 export const FLEET_VEHICLES = ["business_class", "first_class", "business_van"] as const;
 export type FleetVehicle = (typeof FLEET_VEHICLES)[number];
 
-export const VEHICLE_CLASSES = [...FLEET_VEHICLES, "please_advise"] as const;
-export type VehicleClass = (typeof VEHICLE_CLASSES)[number];
-
-export const DEFAULT_VEHICLE_CLASS: VehicleClass = "please_advise";
 
 export interface VehicleCapacity {
   passengers: number;
@@ -30,7 +26,7 @@ export interface VehicleCapacity {
 const STANDARD_CAPACITY: VehicleCapacity = { passengers: 4, luggage: 3 };
 const VAN_CAPACITY: VehicleCapacity = { passengers: 7, luggage: 8 };
 
-export function getVehicleCapacity(vehicle: VehicleClass): VehicleCapacity {
+export function getVehicleCapacity(vehicle: FleetVehicle | ""): VehicleCapacity {
   return vehicle === "business_van" ? VAN_CAPACITY : STANDARD_CAPACITY;
 }
 

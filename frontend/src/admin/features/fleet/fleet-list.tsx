@@ -14,7 +14,7 @@ export function FleetList() {
       noun="vehicle"
       basePath="/admin/fleet"
       emptyIcon={<CarFront />}
-      emptyDescription="Vehicle classes appear on the Fleet page, on service pages and in the quote form."
+      emptyDescription="Vehicle classes appear on the Fleet page, on service pages and in the booking form."
       searchText={(vehicle) => `${vehicle.name.en} ${vehicle.model} ${vehicle.slug}`}
       displayName={(vehicle) => vehicle.name.en || "Untitled vehicle"}
       duplicate={duplicateVehicle}

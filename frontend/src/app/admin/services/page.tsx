@@ -13,7 +13,7 @@ export default function ServicesPage() {
     <AuthGate>
       <PageHeader
         title="Services"
-        description="What Driveo offers. Each published service gets its own page, a place in the menu and an option in the quote form."
+        description="What Driveo offers. Each published service gets its own page, a place in the menu and an option in the booking form."
         actions={
           <Button asChild>
             <Link href="/admin/services/new">

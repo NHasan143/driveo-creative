@@ -3,14 +3,12 @@
   align-items: center;
   justify-content: center;
   gap: 0.65rem;
-  min-height: 2.7rem;
-  padding: 0.7rem 1.2rem;
+  min-height: 2.75rem;
+  padding: 0.65rem 1.35rem;
   border-radius: 999px;
-  font-family: var(--font-mono);
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+  font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
   transition:
@@ -21,7 +19,7 @@
 }
 
 .base:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 .base:disabled {
@@ -57,23 +55,22 @@
 }
 
 .lg {
-  min-height: 3.35rem;
-  padding-inline: 1.65rem;
+  min-height: 3.25rem;
+  padding-inline: 1.75rem;
+  font-size: 1rem;
 }
 
-/* Header size: matches the language switcher's height, type and tracking exactly. */
+/* Header size: the same height as the language and account pills beside it. */
 .compact {
   gap: 0.5rem;
-  min-height: 2.45rem;
-  padding: 0.45rem 1rem;
-  font-size: 0.62rem;
-  letter-spacing: 0.14em;
+  min-height: 2.5rem;
+  padding: 0.45rem 1.05rem;
+  font-size: 0.85rem;
 }
 
 @media (width <= 639px) {
   .compact {
-    padding-inline: 0.8rem;
-    font-size: 0.58rem;
-    letter-spacing: 0.08em;
+    padding-inline: 0.85rem;
+    font-size: 0.8rem;
   }
 }

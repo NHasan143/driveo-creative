@@ -1,0 +1,23 @@
+{% autoescape off %}{{ heading }} {{ reference }}
+
+Service:    {{ service }}
+When:       {{ when }}
+Route:      {{ route }}
+Vehicle:    {{ vehicle }}
+Price:      {{ price }}
+
+Customer:   {{ booking.full_name }}
+Phone:      {{ booking.phone }}
+Email:      {{ booking.email }}
+Language:   {{ booking.get_locale_display }}
+{% if booking.notes %}
+Notes:
+{{ booking.notes }}
+{% endif %}
+{% if event == "cancelled" %}The customer cancelled this booking. Release the chauffeur and car.
+{% else %}NEXT STEP
+Assign a chauffeur and car, then confirm the booking in the dashboard. The customer gets an email with the details.
+{% if reply_whatsapp_url %}WhatsApp the customer: {{ reply_whatsapp_url }}
+{% endif %}{% endif %}
+Dashboard: {{ admin_url }}
+{% endautoescape %}

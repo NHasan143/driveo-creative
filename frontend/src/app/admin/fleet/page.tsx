@@ -13,7 +13,7 @@ export default function FleetPage() {
     <AuthGate>
       <PageHeader
         title="Fleet"
-        description="Vehicle classes offered to customers. Capacity limits also control the quote form."
+        description="Vehicle classes offered to customers. Capacity limits also control the booking form."
         actions={
           <Button asChild>
             <Link href="/admin/fleet/new">

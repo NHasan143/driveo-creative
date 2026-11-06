@@ -5,7 +5,7 @@
 # (Settings → Environments → staging / production):
 #
 #   Variables  NEXT_PUBLIC_SITE_URL      public origin, e.g. https://driveoexclusive.com
-#              NEXT_PUBLIC_API_BASE_URL  Django API base, e.g. https://driveoexclusive.com/api
+#              NEXT_PUBLIC_API_BASE_URL  Django API base, e.g. https://api.driveoexclusive.com/api
 #              DEPLOY_PATH               directory on the server holding docker-compose.yml
 #              ALLOW_MOCK_DEPLOY         "true" only for preview environments without an API
 #   Secrets    DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY, DEPLOY_KNOWN_HOSTS

@@ -229,7 +229,7 @@ export function ServiceEditor({ service }: { service: Service | null }) {
         <CardBody>
           <OrderedPicker
             name="vehicleIds"
-            emptyText="No vehicles chosen. Add at least one so visitors can request a quote for it."
+            emptyText="No vehicles chosen. Add at least one so visitors can book it."
             options={vehicles.map((vehicle) => ({
               id: vehicle.id,
               label: vehicle.name.en,
@@ -242,7 +242,7 @@ export function ServiceEditor({ service }: { service: Service | null }) {
       <Card>
         <CardHeader
           title="Prices"
-          description="Guide prices in euros. The website shows the lowest as “From €…” and the quote form shows the price for the chosen car and city. Customers still receive a fixed quote. Leave a cell empty where you don't offer that car."
+          description="Prices in euros that customers pay. The website shows the lowest as “From €…” and the booking form charges the price for the chosen car and city (per hour for hourly services). Leave a cell empty where you don't offer that car: it can't be booked there."
         />
         <CardBody>
           <ServicePrices serviceId={service?.id} cities={cities} vehicles={vehicles} />

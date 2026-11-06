@@ -1,0 +1,117 @@
+# Production stack for one VPS: Nginx → website (Next.js) and API (Django),
+# plus the alert worker, its scheduler and Redis. Postgres and uploaded files
+# live on Neon, not here.
+#
+# On the server, this folder holds:
+#   docker-compose.yml, nginx/        from the repository
+#   .env                              from .env.example: host names, images, admin switch
+#   backend.env                       from backend.env.example: Django settings and secrets
+#   certs/origin.pem, certs/origin.key   Cloudflare origin certificate (TLS ends at Nginx)
+#
+#   docker compose pull && docker compose up -d                   start or update
+#   docker compose run --rm migrate                               apply migrations (before a release)
+#   docker compose logs -f backend                                follow a service's logs
+#
+# The frontend deploy workflow (.github/workflows/frontend-deploy.yml) sets
+# FRONTEND_IMAGE and restarts only the `frontend` service.
+
+x-logging: &logging
+  # Rotate container logs so they can't fill the disk.
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+x-backend: &backend
+  image: ${BACKEND_IMAGE:-ghcr.io/nhasan143/driveo-backend:production}
+  env_file:
+    # Raw: Compose would otherwise expand any `$` inside values, e.g. in the
+    # Django secret key, and silently change them. Needs Compose 2.30+.
+    - path: backend.env
+      format: raw
+  environment:
+    # Inside this network, whatever backend.env says.
+    REDIS_URL: redis://redis:6379/0
+    CACHE_REDIS_URL: redis://redis:6379/1
+  restart: unless-stopped
+  logging: *logging
+  depends_on:
+    redis:
+      condition: service_healthy
+
+services:
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_HOST: ${SITE_HOST:?Set SITE_HOST in .env, e.g. driveoexclusive.com}
+      API_HOST: ${API_HOST:?Set API_HOST in .env, e.g. api.driveoexclusive.com}
+    volumes:
+      # *.template files are filled in with the environment above at start-up.
+      - ./nginx/templates:/etc/nginx/templates:ro
+      - ./certs:/etc/nginx/certs:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/nginx-health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    logging: *logging
+    depends_on:
+      frontend:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+
+  frontend:
+    image: ${FRONTEND_IMAGE:-ghcr.io/nhasan143/driveo-frontend:production}
+    environment:
+      # Server-side rendering calls the API inside this network, not through Nginx.
+      API_INTERNAL_BASE_URL: http://backend:8000/api
+      # The content admin at /admin; only with staff sign-in (the image is built in API mode).
+      ADMIN_ENABLED: ${ADMIN_ENABLED:-false}
+    restart: unless-stopped
+    logging: *logging
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  backend:
+    <<: *backend
+
+  worker:
+    <<: *backend
+    command: ["celery", "-A", "config", "worker", "-l", "info", "--concurrency", "2"]
+    # No web server in this container.
+    healthcheck:
+      disable: true
+
+  beat:
+    <<: *backend
+    command: ["celery", "-A", "config", "beat", "-l", "info", "--schedule", "/tmp/celerybeat-schedule"]
+    healthcheck:
+      disable: true
+
+  redis:
+    # Broker for alerts and the shared rate-limit cache. Nothing in it needs to
+    # survive a restart: alerts are saved in Postgres first and re-queued.
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    logging: *logging
+
+  # One-off: docker compose run --rm migrate
+  migrate:
+    <<: *backend
+    command: ["python", "manage.py", "migrate", "--database", "direct"]
+    restart: "no"
+    healthcheck:
+      disable: true
+    profiles: ["tools"]

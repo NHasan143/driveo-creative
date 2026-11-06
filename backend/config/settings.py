@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 
 import dj_database_url
+from corsheaders.defaults import default_headers
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -42,12 +43,16 @@ INSTALLED_APPS = [
     "rest_framework",
     "storages",
     "core",
-    "quotes",
+    "bookings",
     "content",
+    "account",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Serves the Django admin's CSS/JS from STATIC_ROOT, so production needs no
+    # separate static file server.
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     # Before CommonMiddleware, so CORS headers are added to every API response.
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -127,7 +132,7 @@ STORAGES = {
         },
     },
     "staticfiles": {
-        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
 }
 
@@ -150,6 +155,10 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Users: account.User (same fields as Django's, table auth_user). Databases
+# created before it existed need `manage.py adopt_custom_user` once.
+AUTH_USER_MODEL = "account.User"
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/6.1/topics/i18n/
@@ -167,10 +176,53 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = "static/"
+# `collectstatic` copies the admin's assets here (the Docker image does it at build time).
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 
 def env_list(name):
     return [item.strip() for item in os.environ.get(name, "").split(",") if item.strip()]
+
+
+def env_bool(name, default=False):
+    value = os.environ.get(name, "")
+    return value.lower() == "true" if value else default
+
+
+# Production: HTTPS behind Cloudflare and Nginx
+# Every switch below is off by default, so local http://localhost works as is.
+# backend/.env.example lists the production values.
+
+# Nginx passes the original scheme in X-Forwarded-Proto. Trust it only behind
+# a proxy that overwrites it; otherwise any client could claim to be on HTTPS.
+if env_bool("DJANGO_BEHIND_PROXY"):
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+# Cloudflare and Nginx already send http:// to https://; this is a second line.
+SECURE_SSL_REDIRECT = env_bool("DJANGO_SSL_REDIRECT")
+# Container health checks call the API over plain HTTP inside the network.
+SECURE_REDIRECT_EXEMPT = [r"^api/v1/health/$"]
+# Browsers remember to use HTTPS for this many seconds. Start short (3600) and
+# raise it to a year (31536000) once HTTPS is known to work. Sent on HTTPS only.
+SECURE_HSTS_SECONDS = int(os.environ.get("DJANGO_HSTS_SECONDS") or 0)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("DJANGO_HSTS_INCLUDE_SUBDOMAINS")
+
+# Rate limits (and the IP stored with bookings) use the visitor's IP.
+# Behind proxies REMOTE_ADDR is the proxy's, so DRF reads X-Forwarded-For
+# instead: set this to the number of proxies in front of Django (Cloudflare +
+# Nginx = 2). Leave it empty when nothing sits in front of Django.
+NUM_PROXIES = int(os.environ["DRF_NUM_PROXIES"]) if os.environ.get("DRF_NUM_PROXIES") else None
+
+# Rate limits are counted in the cache. The default in-memory cache belongs to
+# one process, so with several web workers each counts on its own. Production
+# points this at Redis, e.g. redis://redis:6379/1 (Celery uses database 0).
+if os.environ.get("CACHE_REDIS_URL"):
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": os.environ["CACHE_REDIS_URL"],
+        },
+    }
 
 
 # Email
@@ -214,12 +266,12 @@ CELERY_TASK_IGNORE_RESULT = True
 CELERY_TASK_ACKS_LATE = True
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
-# A failed publish (Redis down) fails fast; the quote is already saved.
+# A failed publish (Redis down) fails fast; the booking is already saved.
 CELERY_BROKER_TRANSPORT_OPTIONS = {"max_retries": 1, "socket_connect_timeout": 2}
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_BEAT_SCHEDULE = {
     "requeue-stale-notifications": {
-        "task": "quotes.tasks.requeue_stale_notifications_task",
+        "task": "bookings.tasks.requeue_stale_notifications_task",
         "schedule": 600.0,
     },
 }
@@ -227,7 +279,7 @@ CELERY_BEAT_SCHEDULE = {
 
 # DRF
 
-# Deny by default: a view is staff-only unless it opts out (the public quote
+# Deny by default: a view is staff-only unless it opts out (the public booking
 # form and health check set AllowAny). Session auth only, see core/auth_views.py.
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -237,9 +289,14 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAdminUser",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "quote_requests": os.environ.get("QUOTE_REQUESTS_RATE") or "10/hour",
+        "bookings": os.environ.get("BOOKINGS_RATE") or "10/hour",
         "staff_sign_in": os.environ.get("STAFF_SIGN_IN_RATE") or "20/hour",
+        # Customer accounts (account app), per IP.
+        "account_sign_in": os.environ.get("ACCOUNT_SIGN_IN_RATE") or "20/hour",
+        "account_register": os.environ.get("ACCOUNT_REGISTER_RATE") or "10/hour",
+        "password_reset": os.environ.get("PASSWORD_RESET_RATE") or "5/hour",
     },
+    "NUM_PROXIES": NUM_PROXIES,
 }
 
 # The website calls the API from the browser, so its origin must be allowed.
@@ -249,6 +306,8 @@ CORS_URLS_REGEX = r"^/api/.*$"
 # The content admin (/admin on the website) signs staff in with the session
 # cookie, so allowed origins may send cookies.
 CORS_ALLOW_CREDENTIALS = True
+# Guests open their booking with the private token from their email (bookings/views.py).
+CORS_ALLOW_HEADERS = (*default_headers, "x-booking-token")
 
 # Staff sessions for the content admin (core/auth_views.py).
 # The admin's origin must be trusted for CSRF; it is the website's origin.
@@ -265,11 +324,18 @@ CSRF_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_AGE = 60 * 60 * 12
 
 
-# Quote request alerts (quotes app)
+# Bookings (bookings app)
 
-# Comma-separated lists. An empty list skips that channel (logged in the admin).
-QUOTE_ALERT_EMAILS = env_list("QUOTE_ALERT_EMAILS")
-QUOTE_ALERT_WHATSAPP = env_list("QUOTE_ALERT_WHATSAPP")  # E.164, e.g. +447700900123
+# Who hears about new, changed and cancelled bookings. Comma-separated; an
+# empty list skips that channel (logged in the admin). The QUOTE_ALERT_* names
+# from before bookings replaced quote requests still work.
+BOOKING_ALERT_EMAILS = env_list("BOOKING_ALERT_EMAILS") or env_list("QUOTE_ALERT_EMAILS")
+# E.164, e.g. +447700900123
+BOOKING_ALERT_WHATSAPP = env_list("BOOKING_ALERT_WHATSAPP") or env_list("QUOTE_ALERT_WHATSAPP")
+# Customers change or cancel online until this many hours before pickup.
+BOOKING_CANCEL_NOTICE_HOURS = int(os.environ.get("BOOKING_CANCEL_NOTICE_HOURS") or 24)
+# A new booking needs at least this much notice (city time); urgent ones are by phone.
+BOOKING_MIN_NOTICE_HOURS = int(os.environ.get("BOOKING_MIN_NOTICE_HOURS") or 3)
 
 TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "")
 TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "")
@@ -281,12 +347,21 @@ TWILIO_WHATSAPP_CONTENT_SID = os.environ.get("TWILIO_WHATSAPP_CONTENT_SID", "")
 # Used to build dashboard links in alerts.
 BACKEND_BASE_URL = os.environ.get("BACKEND_BASE_URL") or "http://localhost:8000"
 
+# Public website, used to build links in emails (e.g. password reset).
+WEBSITE_BASE_URL = os.environ.get("WEBSITE_BASE_URL") or "http://localhost:3000"
+# Password reset links stop working after this many seconds (and once used).
+PASSWORD_RESET_TIMEOUT = 60 * 60 * 2
 
+
+# Everything goes to the console (docker logs). Warnings and errors from any
+# module, including unhandled request errors (django.request), reach it through
+# the root logger.
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "root": {"handlers": ["console"], "level": "WARNING"},
     "loggers": {
-        "quotes": {"handlers": ["console"], "level": "INFO"},
+        "bookings": {"handlers": ["console"], "level": "INFO", "propagate": False},
     },
 }

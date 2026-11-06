@@ -1,10 +1,21 @@
-import { CarFront, LayoutDashboard, MapPin, Sparkles, type LucideIcon } from "lucide-react";
+import {
+  CarFront,
+  LayoutDashboard,
+  MapPin,
+  ShieldCheck,
+  Sparkles,
+  UserRound,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 
 export interface NavItem {
   href: string;
   label: string;
   icon: LucideIcon;
   description: string;
+  /** Only shown to superusers (their staff session says so). */
+  superuserOnly?: boolean;
 }
 
 export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
@@ -18,6 +29,14 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
       { href: "/admin/services", label: "Services", icon: Sparkles, description: "What Driveo offers" },
       { href: "/admin/fleet", label: "Fleet", icon: CarFront, description: "Vehicle classes" },
       { href: "/admin/cities", label: "Cities", icon: MapPin, description: "Where Driveo operates" },
+    ],
+  },
+  {
+    label: "People",
+    items: [
+      { href: "/admin/customers", label: "Customers", icon: Users, description: "Website accounts" },
+      { href: "/admin/staff", label: "Staff", icon: ShieldCheck, description: "Admin accounts", superuserOnly: true },
+      { href: "/admin/account", label: "My account", icon: UserRound, description: "Your details and password" },
     ],
   },
 ];

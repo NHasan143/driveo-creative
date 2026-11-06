@@ -1,0 +1,11 @@
+{% autoescape off %}*{{ heading }} {{ reference }}*
+{{ service }}
+{{ when }}
+{{ route }}
+{{ vehicle }}
+{{ price }}
+
+{{ customer }}
+{% if reply_whatsapp_url %}Customer on WhatsApp: {{ reply_whatsapp_url }}
+{% endif %}
+Dashboard: {{ admin_url }}{% endautoescape %}

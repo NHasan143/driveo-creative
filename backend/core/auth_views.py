@@ -46,6 +46,8 @@ def staff_payload(request, user):
             "username": user.get_username(),
             "name": user.get_full_name() or user.get_username(),
             "email": user.email,
+            # Superusers also manage staff accounts in the admin.
+            "isSuperuser": user.is_superuser,
         },
         "csrfToken": get_token(request),
     }

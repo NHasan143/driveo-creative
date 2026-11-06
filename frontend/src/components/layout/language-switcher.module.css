@@ -10,15 +10,14 @@
   gap: 0.4rem;
   /* Never narrower than the menu's widest option, so both edges always line up. */
   min-width: 7.4rem;
-  min-height: 2.45rem;
-  padding: 0.45rem 0.7rem;
-  border: 1px solid color-mix(in oklab, var(--primary) 45%, transparent);
+  min-height: 2.5rem;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid var(--input);
   border-radius: 999px;
   color: var(--foreground);
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 600;
   cursor: pointer;
   transition:
     border-color 0.25s,
@@ -80,10 +79,9 @@
   border-radius: 999px;
   line-height: 1rem;
   color: var(--foreground);
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  font-weight: 500;
   white-space: nowrap;
   text-align: start;
   outline: none;
@@ -108,13 +106,6 @@
   height: 0.8rem;
 }
 
-/* Arabic has no capitals and reads poorly with wide tracking. */
-.option:lang(ar) {
-  font-family: var(--font-sans);
-  font-size: 0.78rem;
-  letter-spacing: 0;
-}
-
 @keyframes menu-in {
   from {
     opacity: 0;
@@ -129,9 +120,8 @@
 @media (width <= 639px) {
   .trigger {
     min-width: 0;
-    padding: 0.35rem 0.55rem;
-    font-size: 0.58rem;
-    letter-spacing: 0.08em;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.8rem;
   }
 
   .full {

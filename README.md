@@ -38,13 +38,13 @@ This repository holds the platform that will replace the Lovable prototype. It h
 
 ## Project status
 
-_Last updated: 2026-10-25_
+_Last updated: 2026-10-29_
 
 | Component | Directory | Stack | Status |
 | --- | --- | --- | --- |
-| Website | [`frontend/`](frontend/) | Next.js · React · TypeScript · Tailwind · GSAP | 🟡 In progress: pages complete, quote form connected to the Django API |
+| Website | [`frontend/`](frontend/) | Next.js · React · TypeScript · Tailwind · GSAP | 🟡 In progress: pages complete; bookings at fixed prices (guests or signed-in customers), customer accounts |
 | Content admin | [`frontend/`](frontend/) at `/admin` | Next.js · React · TypeScript · Tailwind · TanStack Query · react-hook-form · Zod | 🟡 Full create/update/delete/reorder for services, fleet and cities in four languages. Site information is fixed in the frontend; there is no Site settings screen. Saves to the Django API with staff sign-in when `NEXT_PUBLIC_ADMIN_CONTENT_SOURCE=api`, otherwise a browser-only demo. The website shows the published **services** (fleet, cities and settings still use built-in copy); hidden in production builds (`ADMIN_ENABLED`) |
-| Shared API + admin | [`backend/`](backend/) | Python · Django · DRF · Lakebase Postgres (Neon) · Neon Object Storage · Redis · Celery | 🟡 Quote requests (with email/WhatsApp alerts), website content API with staff sign-in, health endpoint. Not deployed yet |
+| Shared API + admin | [`backend/`](backend/) | Python · Django · DRF · Lakebase Postgres (Neon) · Neon Object Storage · Redis · Celery | 🟡 Bookings (fixed prices from the admin's price grid, pay later, guest manage links, customer emails in 4 languages, owner email/WhatsApp alerts), customer and staff accounts, website content API, health endpoint. Not deployed yet |
 | Mobile apps | `mobile/` _(planned)_ | React · Vite · TypeScript · Capacitor | ⚪ Not started |
 | Infrastructure | `.github/`, `infra/` _(planned)_ | Docker Compose · Nginx · Cloudflare · GitHub Actions | 🟡 Started: frontend Dockerfile and CI/CD workflows. Server and compose stack pending |
 | Design reference | [`driveo-creative/`](driveo-creative/) | Lovable (TanStack Start · Supabase) | 🔒 Reference only, do not develop here |
@@ -53,13 +53,14 @@ Legend: 🟢 done · 🟡 in progress · ⚪ not started · 🔒 frozen
 
 ### Website milestones
 
-- [x] Design ported from Lovable: hero, assurance, services, fleet, cities, process, quote, testimonial, footer
+- [x] Design ported from Lovable: hero, assurance, services, fleet, cities, process, booking form, testimonial, footer
 - [x] Four languages (EN, FR, BG, AR) at `/?lang=xx` URLs, with right-to-left Arabic
-- [x] Inner pages: Services, Fleet, Cities, Process (same design system, each ending in the quote form)
+- [x] Inner pages: Services, Fleet, Cities, Process (same design system, each ending in the booking form)
 - [x] Service detail pages (4 services × 4 languages)
 - [x] SEO: metadata, hreflang, sitemap, robots, JSON-LD, web app manifest
-- [x] Quote form with client validation and a typed API client (mock mode)
-- [x] Quote form connected to the live Django endpoint (locally; production needs the deploy)
+- [x] Booking form with client validation and a typed API client (mock mode)
+- [x] Bookings through the live Django API (locally; production needs the deploy): exact price from the
+  admin's grid, private link to view, change or cancel, bookings listed in My account
 - [x] "Add to Home Screen" (PWA install prompt)
 - [x] Production Dockerfile (standalone Next.js)
 - [ ] Legal pages (privacy policy, terms, cookies)
@@ -201,8 +202,8 @@ read the published services from `GET /api/v1/content/published/`.
 - If the API is unreachable, or in mock mode, the website shows its built-in copy instead.
 - Fleet, cities, site settings and page headings ("Four ways to travel") still come from the website's
   built-in copy.
-- A service added in the admin is not a choice in the quote form, whose four services drive the booking
-  rules. Its quote buttons open the form with no service selected.
+- A service added in the admin is not a choice in the booking form, whose four services drive the booking
+  rules. Its book buttons open the form with no service selected.
 
 ### Backend
 
@@ -224,7 +225,7 @@ uv pip install --python .venv -r requirements.txt
 .venv/Scripts/python manage.py runserver             # http://localhost:8000/api/v1/health/
 ```
 
-Quote alerts run in a Celery worker, so start Redis and a worker next to the server:
+Booking emails and alerts run in a Celery worker, so start Redis and a worker next to the server:
 
 ```bash
 redis-server                                          # or: docker run -p 6379:6379 redis:7
@@ -260,9 +261,10 @@ Each app owns its environment template. Never commit real secrets.
 | App | Template | Key variables |
 | --- | --- | --- |
 | Website + content admin | [`frontend/.env.example`](frontend/.env.example) | `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_API_MOCK`, `NEXT_PUBLIC_ADMIN_CONTENT_SOURCE` (`local` demo or `api`), `ADMIN_ENABLED` (production gate for `/admin`) |
-| Backend | [`backend/.env.example`](backend/.env.example) → `backend/.env.local` (Neon section filled in by `neon env pull`) | `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`; Neon: `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `AWS_*`; jobs: `REDIS_URL`; alerts: `QUOTE_ALERT_EMAILS`, `QUOTE_ALERT_WHATSAPP`, `SMTP_*`, `DEFAULT_FROM_EMAIL`, `TWILIO_*`, `BACKEND_BASE_URL` (also the base of content photo URLs); browser access: `CORS_ALLOWED_ORIGINS`, `CSRF_TRUSTED_ORIGINS`, `SESSION_COOKIE_SAMESITE`, `STAFF_SIGN_IN_RATE` |
+| Backend | [`backend/.env.example`](backend/.env.example) → `backend/.env.local` (Neon section filled in by `neon env pull`) | `DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`; Neon: `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `AWS_*`; jobs: `REDIS_URL`; bookings: `BOOKING_ALERT_EMAILS`, `BOOKING_ALERT_WHATSAPP`, `BOOKING_MIN_NOTICE_HOURS`, `BOOKING_CANCEL_NOTICE_HOURS`, `BOOKINGS_RATE`;
+alerts: `SMTP_*`, `DEFAULT_FROM_EMAIL`, `TWILIO_*`, `BACKEND_BASE_URL` (also the base of content photo URLs); browser access: `CORS_ALLOWED_ORIGINS`, `CSRF_TRUSTED_ORIGINS`, `SESSION_COOKIE_SAMESITE`, `STAFF_SIGN_IN_RATE`; accounts: `WEBSITE_BASE_URL` (links in emails), `ACCOUNT_SIGN_IN_RATE`, `ACCOUNT_REGISTER_RATE`, `PASSWORD_RESET_RATE` |
 
-With no API URL set, the website runs in **mock mode**: quote requests get a fake `DRV-XXXXXX` reference.
+With no API URL set, the website runs in **mock mode**: bookings get a fake `DRV-XXXXXX` reference (managing them needs the API).
 This lets you work on the frontend without the backend.
 
 ---
@@ -295,17 +297,32 @@ Base URL: `{API_BASE_URL}/v1/`. JSON, snake_case. Every client sends `Accept-Lan
 | Endpoint | Method | Used by | Status |
 | --- | --- | --- | --- |
 | `/v1/health/` | `GET` | Uptime checks, deploys | Implemented: `200 {"database":"ok","storage":"ok"}`, or `503` if either fails |
-| `/v1/quote-requests/` | `POST` | Website quote form | Implemented and used by the website |
+| `/v1/bookings/` | `POST` | Website booking form | Implemented and used by the website |
+| `/v1/bookings/{reference}/` | `GET` · `PATCH` | Booking page (`/booking`) | The booking's owner: the signed-in customer, or anyone sending its `X-Booking-Token` |
+| `/v1/bookings/{reference}/cancel/` | `POST` | Booking page | Same access; cancels the booking |
+| `/v1/account/bookings/` | `GET` | My account | Signed in. The customer's bookings, newest first |
 
-`POST /v1/quote-requests/` returns `201 { "reference": "DRV-XXXXXX" }`.
-The full request body, the validation rules and the honeypot (anti-spam) field are in the
-[frontend README](frontend/README.md#backend-contract). The API enforces the same rules. It also
-rejects journey dates more than one day in the past.
+`POST /v1/bookings/` returns `201` with the booking and its `manage_token`, the private key a guest uses to
+open it again (it is also in the customer's email link `{WEBSITE_BASE_URL}/booking?lang&ref&token`).
 
+- **Body:** contact details, `service`, `city`, `vehicle` (content ids), `pickup_location`, `destination` (or
+  `hire_hours` 2–16 for an hourly service), `flight_number` (airport transfers), `journey_date`,
+  `journey_time`, `passengers`, `luggage`, `notes`, `locale`, `honeypot`.
+- **Price:** set by the API from the admin's price grid (`content.ServicePrice`), never sent by the client:
+  the amount for the service, city and car, times the hours for per-hour services. A combination without a
+  price is refused (`400` on `vehicle`). Stored on the booking (`unit_price`, `total_price`, `currency`), so
+  later grid changes don't change existing bookings. Nothing is paid online.
+- **Rules:** published service, city and car; party within the car's capacity; pickup at least
+  `BOOKING_MIN_NOTICE_HOURS` (3) ahead in the city's time zone.
+- **Change and cancel:** the customer may change date, time, route, car, hours and party, or cancel, until
+  `BOOKING_CANCEL_NOTICE_HOURS` (24) before pickup; later the API answers `409 {"code": "too_late"}`, and for a
+  cancelled or completed booking `409 {"code": "closed"}`. A change is repriced and goes back to *pending*.
+- **Access errors:** a wrong token or someone else's booking gets `404`, so references can't be probed.
 - **Errors:** `400` with DRF field errors, for example `{"passengers": ["This vehicle takes up to 4 passengers."]}`.
 - **Honeypot:** a filled honeypot gets a normal-looking `201` with a fake reference. Nothing is stored or sent.
-- **Rate limit:** `QUOTE_REQUESTS_RATE` per IP (default `10/hour`), then `429`.
+- **Rate limit:** `BOOKINGS_RATE` per IP (default `10/hour`), then `429`.
 - **References:** `DRV-` plus 6 characters, without 0/O/1/I so they are easy to read out.
+- **CORS:** the website is another origin, so `X-Booking-Token` is in `CORS_ALLOW_HEADERS`.
 
 ### Content API (`backend/content/`)
 
@@ -345,6 +362,33 @@ forms without mapping. Every endpoint is staff-only unless marked public.
 - **Photos:** a record stores a website path (`/media/…`) or the bucket key of an upload, and the API returns
   the key as a stable `/v1/content/images/…` URL. Data URLs are refused; the admin uploads photos before saving.
 
+### Accounts API (`backend/account/`)
+
+Users are `account.User` (Django's fields plus `phone` and `locale`, table `auth_user`). **Staff** have
+`is_staff`; **customers** are everyone else and register on the website. Snake_case JSON. Sign-in works like
+staff sign-in: Django's session cookie plus a CSRF token from JSON, sent back as `X-CSRFToken`.
+
+| Endpoint | Method | Purpose |
+| --- | --- | --- |
+| `/v1/account/session/` | `GET` · `POST` · `DELETE` | Public. `{"user": {...} or null, "csrf_token"}` (never an error) · sign in `{"email", "password"}` (`ACCOUNT_SIGN_IN_RATE`) · sign out |
+| `/v1/account/register/` | `POST` | Public. `{"email", "first_name", "last_name", "phone", "locale", "password"}` → `201`, signed in (`ACCOUNT_REGISTER_RATE`) |
+| `/v1/account/profile/` | `GET` · `PATCH` | Signed in. Name, email, phone, email language |
+| `/v1/account/password/` | `POST` | Signed in. `{"current_password", "new_password"}` → `204`; other sessions end |
+| `/v1/account/password-reset/` | `POST` | Public. `{"email", "locale"}` → always `204`; emails a one-time link to `{WEBSITE_BASE_URL}/account/reset-password` valid 2 hours (`PASSWORD_RESET_RATE`) |
+| `/v1/account/password-reset/confirm/` | `POST` | Public. `{"uid", "token", "new_password"}` → `204` |
+| `/v1/staff/customers/` | `GET` | Staff. `?search=&page=`, 25 per page, with booking counts |
+| `/v1/staff/customers/{id}/` | `GET` · `PATCH` | Staff. The customer and their bookings · `{"is_active"}` |
+| `/v1/staff/users/` | `GET` · `POST` | Superusers. Staff accounts · add one `{"username", "email", "first_name", "last_name", "password", "is_superuser"}` |
+| `/v1/staff/users/{id}/` | `GET` · `PATCH` | Superusers. Name, email, phone, `is_active`, `is_superuser` (not for yourself) |
+| `/v1/staff/users/{id}/password/` | `POST` | Superusers. `{"password"}` → `204` |
+
+- **Bookings by signed-in customers** are linked to the account (`Booking.customer`). The booking
+  endpoint uses session auth, so a signed-in visitor must send the CSRF token; the website always does.
+- **One session per browser:** the website, its admin and Django's admin share the session cookie, so signing in
+  to one as someone else signs the other out.
+- **Passwords** go through Django's validators (8+ characters, not common, not only digits, not like the name).
+- **Existing databases** created before `account.User` run `manage.py adopt_custom_user` once, then `migrate`.
+
 > When the backend is created, publish its OpenAPI schema (for example, drf-spectacular at `/api/schema/`)
 > and link it here. That schema then becomes the source of truth for this table.
 
@@ -352,51 +396,46 @@ forms without mapping. Every endpoint is staff-only unless marked public.
 
 ## Booking and notification workflow
 
-1. **Request submitted.** A customer sends a booking or quote request from the website or app.
-2. **Validated and saved.** The API checks details, availability and pricing rules, then stores the request.
-3. **Notification queued.** A Celery task is created, so the customer gets a confirmation right away.
-4. **Owner alerted.** The owner receives the request by email and Twilio WhatsApp and handles it in the dashboard.
+1. **Booked.** A customer (guest or signed in) books from the website at the price shown.
+2. **Validated, priced and saved.** The API checks the journey, prices it from the admin's grid and stores it
+   as *pending*.
+3. **Emails queued.** After the save, a Celery task emails the customer (in their language, with the manage
+   link) and alerts the owner by email and Twilio WhatsApp.
+4. **Owner confirms.** In Django's admin (`/admin/bookings/booking/`) staff confirm the booking, add the
+   chauffeur's name and phone and the car, or cancel it. Each status change emails the customer.
+5. **Customer manages.** Until 24 hours before pickup the customer can change or cancel from the link or My
+   account; the owner is alerted of every change.
 
-Every request is **saved before any notification is sent**. If a provider is down, the failure is logged
+Every booking is **saved before any message is sent**. If a provider is down, the failure is logged
 and the send is retried automatically. A saved booking is never lost because a message failed.
 
-### How it's built (quote requests, `backend/quotes/`)
+### How it's built (`backend/bookings/`)
 
 ```mermaid
 flowchart LR
-    Form["POST /v1/quote-requests/"] --> Save[("QuoteRequest<br/>saved on Neon")]
-    Save -->|after commit| Rows["Notification row<br/>per recipient"]
+    Form["POST /v1/bookings/"] --> Price["pricing.resolve<br/>(content price grid)"] --> Save[("Booking<br/>saved on Neon")]
+    Save -->|after commit| Rows["Notification row<br/>per event, audience, channel"]
     Rows --> Redis[("Redis")] --> Worker["Celery worker"]
-    Worker --> Email["SMTP email"]
-    Worker --> WA["Twilio WhatsApp"]
+    Worker --> Email["SMTP email<br/>(customer + owner)"]
+    Worker --> WA["Twilio WhatsApp<br/>(owner)"]
     Worker -->|status, attempts, error| Rows
 ```
 
-- **One `Notification` row per recipient and channel**, shown inline on the request in the admin
-  (pending, sent, failed or skipped, with attempt count and last error).
+- **Statuses:** *pending* → *confirmed* → *completed*, or *cancelled* (by the customer or staff). The chauffeur's
+  name, phone and car are shown to the customer only once confirmed.
+- **One `Notification` row per event (created, changed, confirmed, cancelled), audience (owner, customer) and
+  channel**, shown inline on the booking in the admin (pending, sent, failed or skipped, with attempt count
+  and last error).
 - **Retries:** after 1, 2, 4, 8 and 16 minutes for outages, timeouts and rate limits (Twilio 429/5xx,
   SMTP connection errors). Permanent errors (an invalid number, rejected credentials) fail at once.
-- **Redis down when a request arrives:** the request is still saved and its rows stay pending. Celery beat
+- **Redis down when a booking arrives:** the booking is still saved and its rows stay pending. Celery beat
   re-queues pending rows older than 45 minutes every 10 minutes.
 - **Missing configuration** (no recipients, no Twilio credentials) creates a `skipped` row with the reason,
   never a silent gap.
-- **Admin:** staff can filter and search requests, set a status (new, contacted, quoted, closed), keep
-  staff notes, and use the **Resend failed alerts** action.
-- **Email** has a text and an HTML part and a link to the request in the admin. Without `SMTP_HOST`,
-  it is printed to the console.
-
-### Replies are manual
-
-The customer gets no automatic message. The website shows their reference and says a concierge will
-be in touch. The owner replies personally, and every alert is built for that:
-
-- **Email alert:**
-  - The sender shows as "Ada Lovelace via Driveo Exclusive", and `Reply-To` is the customer, so
-    pressing Reply answers them directly.
-  - It has **Reply by email**, **Reply on WhatsApp** (a `wa.me` chat link) and **Call** buttons.
-- **WhatsApp alert:** it ends with the customer's `wa.me` link and email. Replying in the alert chat
-  itself goes to the Twilio number, not the customer, and the message says so.
-- **Admin:** each request has the same reply links. Set the status to *Contacted* after replying.
+- **Admin:** filter and search bookings, the actions **Confirm**, **Mark completed**, **Cancel** and **Resend
+  failed messages**, and staff notes. Changing the status on the form emails the customer too.
+- **Email:** customer emails in EN/FR/BG/AR; owner alerts have a text and an HTML part, a link to the booking
+  in the admin, and `Reply-To` set to the customer. Without `SMTP_HOST`, email is printed to the console.
 - **WhatsApp links need an international number** (starting with `+` or `00`). A local number such as
   `020 7946 0000` gets email and phone options only.
 
@@ -429,11 +468,84 @@ Website image (see the [Dockerfile](frontend/Dockerfile)):
 cd frontend
 docker build -t driveo-frontend \
   --build-arg NEXT_PUBLIC_SITE_URL=https://driveoexclusive.com \
-  --build-arg NEXT_PUBLIC_API_BASE_URL=https://driveoexclusive.com/api .
+  --build-arg NEXT_PUBLIC_API_BASE_URL=https://api.driveoexclusive.com/api .
 docker run -p 3000:3000 driveo-frontend
 ```
 
 `NEXT_PUBLIC_*` values are baked in at build time, so build a separate image for each environment.
+
+### Production stack (`infra/`)
+
+[`infra/docker-compose.yml`](infra/docker-compose.yml) runs everything on one VPS: **Nginx** (TLS with the
+Cloudflare origin certificate) → **frontend** (Next.js) and **backend** (gunicorn), plus the alert **worker**,
+its scheduler (**beat**) and **Redis** (broker and rate-limit cache). Postgres and files stay on Neon.
+
+| Host | Served by |
+| --- | --- |
+| `SITE_HOST`, e.g. `driveoexclusive.com` | Website and content admin (`/admin`) |
+| `API_HOST`, e.g. `api.driveoexclusive.com` | API (`/api/v1/…`) and Django's admin (`/admin/`) |
+
+Server set-up, in the deploy folder (`DEPLOY_PATH`):
+
+1. Copy `infra/docker-compose.yml` and `infra/nginx/` there.
+2. Create `.env` from [`infra/.env.example`](infra/.env.example) (host names, images, `ADMIN_ENABLED`) and
+   `backend.env` from [`infra/backend.env.example`](infra/backend.env.example) (Django settings and secrets,
+   values without quotes).
+3. Put the Cloudflare origin certificate in `certs/origin.pem` and `certs/origin.key`; set Cloudflare SSL to
+   "Full (strict)".
+4. `docker compose pull`, then `docker compose run --rm migrate`, then `docker compose up -d`.
+
+The frontend deploy workflow later replaces only the `frontend` container. To try the whole stack on a
+laptop, build both images from the checkout:
+`docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build`
+(with a self-signed certificate for `localhost` and `api.localhost`).
+
+Details that matter:
+- **Nginx re-resolves container names** (Docker DNS, 10 s), so a recreated container is reached at once;
+  with a fixed `proxy_pass` address every deploy would cause 502s until Nginx restarted.
+- **The website's server calls the API inside the network** (`API_INTERNAL_BASE_URL=http://backend:8000/api`),
+  so `DJANGO_ALLOWED_HOSTS` includes `backend`, and Django's own HTTPS redirect stays off.
+- **`backend.env` is read raw** (Compose 2.30+), so a `$` in the Django secret key isn't expanded away.
+- **Logs** rotate at 10 MB × 5 per container. **Redis** keeps nothing on disk: alerts are saved in Postgres
+  first and re-queued by the scheduler.
+
+Backend image (see the [Dockerfile](backend/Dockerfile)). One image runs the API (default command, gunicorn
+on port 8000), the alert worker and the scheduler; configuration comes from environment variables, and the
+image contains no secrets:
+
+```bash
+cd backend
+docker build -t driveo-backend .
+docker run --env-file .env.production -p 8000:8000 driveo-backend                         # API
+docker run --env-file .env.production driveo-backend celery -A config worker -l info      # alert worker
+docker run --env-file .env.production driveo-backend celery -A config beat -l info --schedule /tmp/celerybeat-schedule
+docker run --env-file .env.production driveo-backend python manage.py migrate --database direct   # one-off, before a release
+```
+
+The image runs as a non-root user, serves the Django admin's static files itself (collected at build time) and
+has a health check on `/api/v1/health/` (database and bucket), so `DJANGO_ALLOWED_HOSTS` must include
+`localhost`. Docker's `--env-file` keeps quotes, so write values there unquoted (`backend/.env.local` quotes
+some of its values and can't be passed as is). Disable that health check for the worker and scheduler containers. Migrations never run at
+start-up, because several containers start together.
+
+### Backend production settings
+
+`backend/config/settings.py` is one file for every environment; production differs only in environment
+variables (all listed in [`backend/.env.example`](backend/.env.example)). Behind Cloudflare + Nginx:
+
+| Variable | Production value | Why |
+| --- | --- | --- |
+| `DJANGO_DEBUG` | `false` | Also makes the session and CSRF cookies Secure |
+| `DJANGO_ALLOWED_HOSTS` | `<api host>,localhost` | `localhost` for the container health check |
+| `DJANGO_BEHIND_PROXY` | `true` | Trust Nginx's `X-Forwarded-Proto: https` |
+| `DJANGO_SSL_REDIRECT` | `false` behind our Nginx | Nginx already redirects outside HTTP; Django's redirect would break the website's internal `http://backend:8000` calls. Use `true` only without such a proxy |
+| `DJANGO_HSTS_SECONDS` | `3600`, later `31536000` | Browsers stick to HTTPS |
+| `DRF_NUM_PROXIES` | `2` | Rate limits and stored IPs use the visitor's address from `X-Forwarded-For` |
+| `CACHE_REDIS_URL` | `redis://redis:6379/1` | One rate-limit count shared by all web workers |
+
+The Django admin's CSS and JS are served by WhiteNoise from `STATIC_ROOT` (`collectstatic` at image build).
+Check a configuration with `manage.py check --deploy`: with real SMTP settings it should only warn about the
+HSTS subdomain and preload switches, which stay off until every subdomain is on HTTPS.
 
 ### CI/CD (GitHub Actions)
 
@@ -464,7 +576,7 @@ flowchart LR
    | Kind | Name | Example |
    | --- | --- | --- |
    | Variable | `NEXT_PUBLIC_SITE_URL` | `https://driveoexclusive.com` |
-   | Variable | `NEXT_PUBLIC_API_BASE_URL` | `https://driveoexclusive.com/api` |
+   | Variable | `NEXT_PUBLIC_API_BASE_URL` | `https://api.driveoexclusive.com/api` |
    | Variable | `DEPLOY_PATH` | `/opt/driveo` |
    | Variable | `ALLOW_MOCK_DEPLOY` | `true` (staging previews only) |
    | Secret | `DEPLOY_HOST` | `203.0.113.10` |
@@ -515,10 +627,12 @@ Record decisions that would surprise a newcomer. Add new entries at the top.
 
 | Date | Decision | Reason |
 | --- | --- | --- |
+| 2026-10-30 | Website layout and features modelled on blacklane.com (booking bar → 3-step `/book` flow, Blacklane page structure), with Driveo's colours, fonts, logo and copy | Client request. Sections with no real Driveo content (business accounts, chauffeur partners, partner logos, statistics) were left out rather than invented |
+| 2026-10-29 | **Bookings replace quote requests.** Customers book at a fixed price taken from the admin's price grid (service × city × car, per hour for hourly hire); nothing is paid online (paid to the chauffeur or by invoice); guests can book and manage a booking from a private link in their email, signed-in customers also from My account; changes and cancellations close 24 hours before pickup | Client decisions. The quotes app and its data were removed (dev only had test requests). Pay-later avoids a payment provider for v1. The token link keeps guest booking frictionless without exposing bookings by reference |
 | 2026-10-26 | Content admin signs staff in with Django's session cookie + CSRF token, not an API token | The cookie is HttpOnly, so no script on the page (or XSS) can steal a credential; sign-out and deactivating a user take effect at once; it reuses Django's users, `is_staff` and password hashing. Cost: the website and API must share a site, and the CSRF token travels in JSON. DRF now denies by default (`IsAdminUser`); public views opt out |
 | 2026-10-26 | Translated content stored as one JSON object per field (`{"en","fr","bg","ar"}`), not a column per language | Matches the admin's types; repeatable parts (facts, features, steps) are lists of translated objects that columns can't express; adding a language needs no migration. Serializers validate keys and lengths |
 | 2026-10-26 | Content photos stored as references (website path or bucket key) served through a redirect endpoint | The bucket is private and presigned links expire after an hour, so they can't be saved in records. One stable URL per photo works in the admin and, later, on the website |
-| 2026-10-27 | Service prices are **guide prices in euros**, one per service × vehicle class × city (hourly hire per hour). The website shows "From €X" and a guide price in the quote form; customers still get a fixed quote | Client decision. Keeps the "quoted personally" promise true while giving visitors a price signal. One currency keeps the table and the "from" price simple |
+| 2026-10-27 | _Superseded 2026-10-29: prices are now what bookings cost._ Service prices are **guide prices in euros**, one per service × vehicle class × city (hourly hire per hour). The website shows "From €X" and a guide price in the quote form; customers still get a fixed quote | Client decision. Keeps the "quoted personally" promise true while giving visitors a price signal. One currency keeps the table and the "from" price simple |
 | 2026-10-26 | Content admin lives in the website app at `/admin` (its own root layout), not a separate app. Production hides it unless `ADMIN_ENABLED=true` | Client preference: one app to run and deploy. A second root layout keeps admin code and CSS off website pages. The gate stops an unauthenticated admin from going live with the site |
 | 2026-10-25 | Content admin built first against a browser-local store behind a `ContentRepository` interface | The client asked for the admin frontend first. Screens never touch storage directly, so connecting the Django API means swapping one implementation. Django's built-in admin stays for staff operations (quote requests) |
 | 2026-10-24 | Postgres and uploaded files on Neon (Lakebase Postgres + Object Storage) instead of containers on the VPS | Managed backups and scale-to-zero; database and files branch together for dev/preview; one fewer stateful service on the VPS |
@@ -535,10 +649,12 @@ Record decisions that would surprise a newcomer. Add new entries at the top.
 
 ## Open questions
 
-- [ ] Quote notification recipients: the prototype sent email only, to `driveolimited@gmail.com`. The proposal specifies email and Twilio WhatsApp. Confirm the address and WhatsApp number.
+- [ ] Booking alert recipients: the prototype sent email only, to `driveolimited@gmail.com`. The proposal specifies email and Twilio WhatsApp. Confirm the address and WhatsApp number.
 - [ ] Production domain and hosting provider for the VPS.
 - [ ] Transactional email provider (for example Postmark, SES or Resend) and the sender domain.
-- [ ] Are customer accounts needed in v1, or only anonymous quote requests?
+- [x] Customer accounts are in v1; guests can still book without one.
+- [ ] Real prices for every service, city and car. The dev database has **placeholder** prices (London
+  airport transfer €95 Business Class, ×1.6 First Class, ×1.3 Business Van, …) only for testing.
 - [ ] Copy for the legal pages (privacy, terms, cookies) and the cookie-consent approach.
 - [ ] Whether to keep the hourly-hire note ("15 miles within Greater London") for the other cities.
 
@@ -547,6 +663,70 @@ Record decisions that would surprise a newcomer. Add new entries at the top.
 ## Changelog
 
 Newest first. Follow [Keep a Changelog](https://keepachangelog.com/) headings: Added / Changed / Fixed / Removed.
+
+### 2026-10-30
+
+**Changed**
+- `frontend`: website redesigned on the layout and features of blacklane.com, keeping Driveo's colours,
+  fonts, logo and four languages.
+  - New header (scroll-solid, Services menu, Help, Sign in / Account, Book now, phone drawer) and a
+    five-column footer.
+  - A booking bar in every hero (One way / By the hour, city, places, date, time) opens a new 3-step
+    booking page, `/book`: choose the car class with its price, add pickup and contact details, review and book.
+    Bookings still go to `/v1/bookings/`; no backend change.
+  - Home: film hero, services carousel, home-screen app section, pinned scroll story, house standard.
+  - Service, Services, Fleet, Cities and How it works pages rebuilt with photo banners, car-class cards,
+    city cards, step cards and FAQs; new Help page (FAQ, contact, managing a booking).
+  - Buttons are sentence-case pills; the old long booking form, its pre-fill context and unused
+    motion helpers were removed.
+  - Verified in a browser at desktop and phone widths, in all four languages (RTL Arabic); all 60
+    page loads return 200; production build passes.
+
+### 2026-10-29
+
+**Added**
+- `backend` + `frontend`: **bookings** replace quote requests (`bookings` app, renamed from `quotes`).
+  - `POST /v1/bookings/` prices the booking from the admin's price grid; the form shows the exact price for the
+    chosen service, city, car (and hours) before booking, with a flight number field for airport transfers.
+  - Guests get a private link (`/booking?ref&token`) to view, change or cancel; signed-in customers see
+    their bookings in My account. Changes reprice; both close 24 hours before pickup.
+  - Customer emails (received, changed, confirmed, cancelled) in four languages; owner alerts by email and
+    WhatsApp for new bookings, changes and cancellations.
+  - Django admin: confirm, assign chauffeur and car, complete, cancel, resend failed messages.
+  - Content admin: customer lists and details show bookings with totals.
+- `frontend`: website copy in four languages now talks about booking at a fixed price, paid later.
+
+**Removed**
+- `backend`: quote requests (`/v1/quote-requests/`, `/v1/account/quote-requests/`, the `quotes` tables).
+  `QUOTE_ALERT_EMAILS` / `QUOTE_ALERT_WHATSAPP` still work as fallbacks for `BOOKING_ALERT_*`;
+  `QUOTE_REQUESTS_RATE` is now `BOOKINGS_RATE`.
+
+**Added**
+- `backend`: custom user model `account.User` (Django's fields plus `phone` and `locale`, email unique ignoring
+  case) on the existing `auth_user` table, with `manage.py adopt_custom_user` to switch existing databases over.
+- `backend` + `frontend`: customer accounts. Register, sign in, forgotten-password email (in the customer's
+  language) and reset, edit details, change password, and see the quote requests sent while signed in.
+  Website pages at `/account` in all four languages, an Account link in the header (from 640px) and footer,
+  and the quote form fills in a signed-in customer's details. Quote requests now record the customer.
+- `frontend` (admin): **Customers** (search, details, their requests, deactivate), **Staff** (superusers: add
+  staff, make superuser, deactivate, set password) and **My account** (details and password).
+- Backend tests for users, accounts and staff screens' API (109 backend tests in total, all passing).
+
+- `infra`: production stack (OPS-04): `infra/docker-compose.yml` with Nginx (TLS, two host names), website,
+  API, alert worker, scheduler and Redis; env templates; a build override for local runs. Tried locally end to
+  end: pages, API, HTTPS redirect, a quote request through Nginx → Django → Redis → worker → email.
+- `frontend`: the Docker image is built with the content admin in API mode (`NEXT_PUBLIC_ADMIN_CONTENT_SOURCE=api`).
+- `backend`: Docker image for the API, alert worker and scheduler (API-12): Python 3.12, gunicorn
+  (`gunicorn.conf.py`, `WEB_CONCURRENCY` workers), non-root, static files collected at build, health check,
+  no secrets (`.dockerignore`).
+- `backend`: production settings (API-14), all off by default: trust the proxy's HTTPS header, HTTPS redirect,
+  HSTS, the visitor's real IP behind `DRF_NUM_PROXIES` proxies (rate limits and stored quote IPs), a shared
+  Redis cache for rate limits, WhiteNoise for the Django admin's static files, and console logging of warnings
+  and errors from every module. See [Backend production settings](#backend-production-settings).
+
+**Changed**
+- The quote form always sends the session cookie and CSRF token (`credentials: "include"`), because the API
+  refuses a signed-in visitor's post without the token.
 
 ### 2026-10-25
 

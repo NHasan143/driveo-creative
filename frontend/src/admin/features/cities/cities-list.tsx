@@ -15,7 +15,7 @@ export function CitiesList() {
       noun="city"
       basePath="/admin/cities"
       emptyIcon={<MapPin />}
-      emptyDescription="Cities appear on the website's Cities page, in the footer and in the quote form."
+      emptyDescription="Cities appear on the website's Cities page, in the footer and in the booking form."
       searchText={(city) => `${city.name.en} ${city.slug}`}
       displayName={(city) => city.name.en || "Untitled city"}
       duplicate={duplicateCity}

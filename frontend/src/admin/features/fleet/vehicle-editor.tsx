@@ -80,7 +80,7 @@ export function VehicleEditor({ vehicle }: { vehicle: Vehicle | null }) {
       onSubmit={onSubmit}
       updatedAt={vehicle?.updatedAt}
       title={isNew ? "New vehicle" : vehicle.name.en || "Untitled vehicle"}
-      description={isNew ? "Add a vehicle class to the fleet. It also becomes an option in the quote form." : undefined}
+      description={isNew ? "Add a vehicle class to the fleet. It also becomes an option in the booking form." : undefined}
       breadcrumbs={[{ label: "Fleet", href: "/admin/fleet" }]}
       onDelete={
         vehicle
@@ -101,7 +101,7 @@ export function VehicleEditor({ vehicle }: { vehicle: Vehicle | null }) {
       }
     >
       <Card>
-        <CardHeader title="Basics" description="How the class appears in the fleet, on service pages and in the quote form." />
+        <CardHeader title="Basics" description="How the class appears in the fleet, on service pages and in the booking form." />
         <CardBody>
           <div className="grid gap-5 sm:grid-cols-2">
             <LocalizedField name="name" label="Class name" required maxLength={40} placeholder="First Class" />
@@ -121,7 +121,7 @@ export function VehicleEditor({ vehicle }: { vehicle: Vehicle | null }) {
       </Card>
 
       <Card>
-        <CardHeader title="Capacity" description="The quote form uses these limits for passengers and luggage." />
+        <CardHeader title="Capacity" description="The booking form uses these limits for passengers and luggage." />
         <CardBody className="sm:grid-cols-2">
           <NumberField name="passengers" label="Passengers" hint="Maximum seated passengers." icon={<Users />} />
           <NumberField name="luggage" label="Luggage" hint="Maximum suitcases." icon={<Luggage />} />

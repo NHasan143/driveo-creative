@@ -2,7 +2,7 @@
 
 import { ExternalLink, Inbox } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { Suspense,useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/admin/components/layout/page-header";
 import { Button } from "@/admin/components/ui/button";
@@ -30,12 +30,17 @@ function djangoAdminUrl(bookingId: number) {
 const money = new Intl.NumberFormat("en-GB", { style: "currency", currency: "EUR" });
 
 export function CustomerDetailScreen() {
-  const { id } = useParams<{ id: string }>();
+  // const { id } = useParams<{ id: string }>();
   if (IS_LOCAL_DEMO) return <NeedsApi />;
-  return <CustomerLoader id={id} />;
-}
+  return (
+    <Suspense fallback = {<Skeleton className="h-64" />}>
+      <CustomerLoader />
+    </Suspense>
+    );
+  }
 
-function CustomerLoader({ id }: { id: string }) {
+function CustomerLoader() {
+  const {id} = useParams<{id: string}>();
   const { data, isPending, isError, error } = useCustomer(id);
   if (isPending) return <Skeleton className="h-64" />;
   if (isError) {

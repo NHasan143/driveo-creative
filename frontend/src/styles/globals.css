@@ -5,30 +5,66 @@
 @source not "../app/admin";
 
 /* ------------------------------------------------------------------ */
-/* Design tokens                                                       */
+/* Design tokens (Figma: Driveo Exclusive, "Final design")            */
 /* ------------------------------------------------------------------ */
 
 :root {
-  --background: oklch(14.5% 0.008 55);
-  --foreground: oklch(93% 0.019 78);
-  --card: oklch(19% 0.011 55);
-  --card-foreground: oklch(93% 0.019 78);
-  --primary: oklch(75.5% 0.095 56);
-  --primary-foreground: oklch(14.5% 0.008 55);
-  --secondary: oklch(19% 0.011 55);
-  --secondary-foreground: oklch(93% 0.019 78);
-  --muted: oklch(23% 0.014 55);
-  --muted-foreground: oklch(69% 0.022 73);
-  --accent: var(--primary);
-  --accent-foreground: oklch(14.5% 0.008 55);
-  --destructive: oklch(62% 0.2 25);
-  --destructive-foreground: oklch(98% 0 0);
-  --border: oklch(93% 0.019 78 / 0.12);
-  --input: oklch(93% 0.019 78 / 0.18);
-  --ring: var(--primary);
+  /* Brand palette */
+  --ink: #191612;
+  --ink-soft: #1c1915;
+  --ink-raised: #221e18;
+  --night: #0f0d0a;
+  --body-text: #4a4235;
+  --muted-text: #675d4b;
+  --sand: #a59a84;
+  --sand-light: #c4bba8;
+  --stone: #635e5b;
+  --cream: #f4f1ea;
+  --cream-deep: #eae2d2;
+  --linen: #eee7e1;
+  --cream-border: #e8e3d8;
+  --line: #e4e4e7;
+  --line-warm: #d9d2c3;
+  --amber: #f5a800;
+  --amber-bright: #faa926;
+  --amber-text: #7f5500;
+  --amber-soft: #fff4d6;
+  --orange: #ff9c31;
+  --error: #e5484d;
+  --error-text: #c73b40;
+  --success: #1f9d8a;
+
+  --gradient-gold: radial-gradient(84% 350% at 100% 0%, #ff9c31 9%, #ffbe4a 55%, #f9cf2c 100%);
+  --gradient-blush: linear-gradient(120deg, #f4eae6 20%, #eedcd5 38%, #e8e8e8 79%);
+  --gradient-peach: linear-gradient(104deg, #f5aa89 20%, #fce1d5 38%, #e8e8e8 79%);
+
+  /* Semantic tokens used across the site */
+  --background: #ffffff;
+  --foreground: var(--ink);
+  --card: #ffffff;
+  --card-foreground: var(--ink);
+  --primary: var(--amber);
+  --primary-foreground: var(--ink);
+  --secondary: var(--cream);
+  --secondary-foreground: var(--ink);
+  --muted: var(--cream);
+  --muted-foreground: var(--muted-text);
+  --accent: var(--amber-text);
+  --accent-foreground: #ffffff;
+  --destructive: var(--error);
+  --destructive-foreground: #ffffff;
+  --border: var(--cream-border);
+  --input: var(--line-warm);
+  --ring: var(--amber);
 
   --ease-out-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --header-height: 4.5rem;
+  --header-height: 5rem;
+}
+
+@media (width >= 1280px) {
+  :root {
+    --header-height: 6.0625rem;
+  }
 }
 
 @theme inline {
@@ -49,9 +85,34 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  --font-sans: var(--font-manrope), var(--font-arabic), system-ui, sans-serif;
-  --font-display: var(--font-fraunces), var(--font-arabic), Georgia, serif;
-  --font-mono: var(--font-space-mono), var(--font-mono-cyrillic), var(--font-arabic), ui-monospace, monospace;
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-raised: var(--ink-raised);
+  --color-night: var(--night);
+  --color-body: var(--body-text);
+  --color-muted-text: var(--muted-text);
+  --color-sand: var(--sand);
+  --color-sand-light: var(--sand-light);
+  --color-stone: var(--stone);
+  --color-cream: var(--cream);
+  --color-cream-deep: var(--cream-deep);
+  --color-linen: var(--linen);
+  --color-cream-border: var(--cream-border);
+  --color-line: var(--line);
+  --color-line-warm: var(--line-warm);
+  --color-amber: var(--amber);
+  --color-amber-bright: var(--amber-bright);
+  --color-amber-text: var(--amber-text);
+  --color-amber-soft: var(--amber-soft);
+  --color-orange: var(--orange);
+  --color-error: var(--error);
+  --color-error-text: var(--error-text);
+  --color-success: var(--success);
+
+  --font-sans: var(--font-inter), var(--font-arabic), system-ui, sans-serif;
+  --font-display: var(--font-source-serif), var(--font-arabic), Georgia, serif;
+  --font-baskerville: var(--font-libre-baskerville), var(--font-source-serif), var(--font-arabic), Georgia, serif;
+  --font-mono: var(--font-inter), var(--font-arabic), system-ui, sans-serif;
 }
 
 /* ------------------------------------------------------------------ */
@@ -67,7 +128,7 @@
     scroll-behavior: smooth;
     scroll-padding-top: var(--header-height);
     background: var(--background);
-    color-scheme: dark;
+    color-scheme: light;
   }
 
   body {
@@ -79,7 +140,7 @@
   }
 
   :focus-visible {
-    outline: 1px solid var(--ring);
+    outline: 2px solid var(--ring);
     outline-offset: 3px;
   }
 }
@@ -89,104 +150,165 @@
 /* ------------------------------------------------------------------ */
 
 @layer components {
+  /* 1320px content column: 60px gutters on desktop, 20px on phones. */
   .site-shell {
-    width: min(100% - 3rem, 1320px);
+    width: min(100% - 2.5rem, 1320px);
     margin-inline: auto;
   }
 
   .section-band {
-    padding-block: 7rem;
+    padding-block: 2rem;
   }
 
+  /* Two-tone section heading: the second half is set in a muted brown. */
+  .section-title {
+    font-family: var(--font-display);
+    font-size: 2.25rem;
+    font-weight: 500;
+    line-height: 1.08;
+    letter-spacing: -0.015em;
+    color: var(--ink);
+    text-wrap: balance;
+  }
+
+  .section-title .accent {
+    color: var(--muted-text);
+  }
+
+  .section-title-light {
+    color: #ffffff;
+  }
+
+  .section-title-light .accent {
+    color: var(--sand-light);
+  }
+
+  /* Kept for the older pages (account, legal, booking): a small amber label. */
   .eyebrow {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    font-family: var(--font-mono);
-    font-size: 0.65rem;
-    letter-spacing: 0.26em;
+    gap: 0.6rem;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: var(--accent);
+    color: var(--amber-text);
   }
 
   .eyebrow > .eyebrow-rule {
-    width: 2rem;
+    width: 1.5rem;
     height: 1px;
-    background: var(--primary);
+    background: var(--amber);
   }
 
   .mono-label {
-    font-family: var(--font-mono);
-    font-size: 0.65rem;
-    letter-spacing: 0.2em;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: var(--muted-foreground);
-  }
-
-  .section-title {
-    max-width: 18ch;
-    margin-top: 1rem;
-    font-family: var(--font-display);
-    font-size: clamp(2.65rem, 5vw, 4.8rem);
-    font-weight: 500;
-    line-height: 0.98;
-    text-wrap: balance;
+    color: var(--muted-text);
   }
 
   .card-title {
     margin-top: 1rem;
     font-family: var(--font-display);
-    font-size: 1.8rem;
+    font-size: 1.6rem;
     font-weight: 500;
     text-wrap: balance;
   }
 
   .body-muted {
     margin-top: 0.75rem;
-    font-size: 0.9rem;
-    line-height: 1.7;
-    color: var(--muted-foreground);
+    font-size: 0.94rem;
+    line-height: 1.6;
+    color: var(--muted-text);
     text-wrap: pretty;
   }
 
   .social-icon {
     display: inline-grid;
-    flex: 0 0 2.65rem;
+    flex: 0 0 2.75rem;
     place-items: center;
-    width: 2.65rem;
-    height: 2.65rem;
+    width: 2.75rem;
+    height: 2.75rem;
     padding: 0;
-    border: 1px solid color-mix(in oklab, var(--primary) 48%, transparent);
+    border: 1px dashed #342e25;
     border-radius: 50%;
-    color: var(--primary);
-    background: color-mix(in oklab, var(--background) 72%, transparent);
+    color: var(--sand-light);
     transition:
       color 0.25s,
-      background 0.25s,
       border-color 0.25s,
       transform 0.25s;
   }
 
   .social-icon svg {
-    width: 1.15rem;
-    height: 1.15rem;
+    width: 1.5rem;
+    height: 1.5rem;
   }
 
   .social-icon:hover {
-    color: var(--primary-foreground);
-    background: var(--primary);
-    border-color: var(--primary);
-    transform: translateY(-3px);
-  }
-}
-
-@media (width <= 639px) {
-  .site-shell {
-    width: min(100% - 2rem, 1320px);
+    color: var(--amber);
+    border-color: var(--amber);
+    transform: translateY(-2px);
   }
 
-  .section-band {
-    padding-block: 5rem;
+  .bg-gold {
+    background-image: var(--gradient-gold);
+  }
+
+  /* Dotted 1px rules that fade out at both ends (the "Our advantage" grid). */
+  .rule-dotted-x,
+  .rule-dotted-y {
+    --rule-color: #898483;
+    background-image: linear-gradient(var(--rule-dir), transparent, var(--rule-color), transparent);
+    mask-image: repeating-linear-gradient(var(--rule-dir), #000 0 2px, transparent 2px 4px);
+  }
+
+  .rule-dotted-x {
+    --rule-dir: 90deg;
+    height: 1px;
+  }
+
+  .rule-dotted-y {
+    --rule-dir: 180deg;
+    width: 1px;
+  }
+
+  /* Soft dark pool behind hero headlines, so white type reads on any photograph. */
+  .hero-glow {
+    background: radial-gradient(50% 50% at 50% 50%, rgba(25, 22, 18, 0.65) 0%, rgba(25, 22, 18, 0) 100%);
+    filter: blur(40px);
+  }
+
+  @media (width >= 768px) {
+    .site-shell {
+      width: min(100% - 4rem, 1320px);
+    }
+
+    .section-band {
+      padding-block: 3.5rem;
+    }
+
+    .section-title {
+      font-size: 2.75rem;
+    }
+  }
+
+  @media (width >= 1280px) {
+    .site-shell {
+      width: min(100% - 7.5rem, 1320px);
+    }
+
+    .section-band {
+      padding-block: 4.375rem;
+    }
+
+    .section-title {
+      font-size: 3.25rem;
+      line-height: 1.05;
+    }
   }
 }
 
@@ -211,6 +333,15 @@
 
 .animate-rise-delay {
   animation: rise 1s var(--ease-out-soft) 0.12s both;
+}
+
+/* Hide the native scrollbar on horizontal card rails; arrows and swipes move them. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

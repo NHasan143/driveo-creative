@@ -1,24 +1,52 @@
 "use client";
 
-import { ArrowRight, Menu, UserRound, X } from "lucide-react";
+import { Menu } from "lucide-react";
 import Link from "next/link";
+import { useSelectedLayoutSegment } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
-import { serviceIcons } from "@/components/icons/service-icons";
-import { pagePath, SITE_PAGES } from "@/config/navigation";
-import { localePath, type Locale } from "@/i18n/config";
+import { BrandLogo } from "@/components/brand/brand-logo";
+import { ArrowRightIcon, CaretDownIcon, CloseIcon } from "@/components/icons/design-icons";
+import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/get-dictionary";
-import type { NavService } from "@/lib/content/site-services";
+import { cn } from "@/lib/cn";
+import { HeaderCta } from "./header-cta";
+import { LanguageSwitcher } from "./language-switcher";
+import type { NavDropdownItem } from "./nav-dropdown";
+
+interface MenuGroup {
+  label: string;
+  items: NavDropdownItem[];
+  footer: NavDropdownItem;
+}
+
+interface MenuLink {
+  href: string;
+  label: string;
+}
+
+export interface MobileMenuLinks {
+  services: MenuGroup;
+  business: MenuGroup;
+  chauffeurs: MenuLink;
+  about: MenuLink;
+  contact: MenuLink;
+}
 
 interface MobileMenuProps {
   locale: Locale;
   nav: Dictionary["nav"];
-  services: NavService[];
-  allServices: string;
+  site: Dictionary["site"]["nav"];
+  links: MobileMenuLinks;
 }
 
-/** The header's navigation below the xl breakpoint: a full-height panel behind a menu button. */
-export function MobileMenu({ locale, nav, services, allServices }: MobileMenuProps) {
+const rowClass =
+  "flex min-h-[4.5rem] w-full items-center gap-4 border-b border-cream-border text-start font-display text-[2rem] leading-tight font-medium tracking-[-0.015em]";
+
+/** The header's navigation below the xl breakpoint: a full-screen sheet with large serif links. */
+export function MobileMenu({ locale, nav, site, links }: MobileMenuProps) {
   const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState<"services" | "business" | null>(null);
+  const segment = useSelectedLayoutSegment();
   const panelId = useId();
   const buttonRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -50,20 +78,54 @@ export function MobileMenu({ locale, nav, services, allServices }: MobileMenuPro
   }, [open]);
 
   const close = () => setOpen(false);
-  const linkClass = "flex min-h-12 items-center justify-between border-b border-border text-lg font-medium";
+  const currentTone = (active: boolean) => (active ? "text-amber-text" : "text-ink");
+
+  function group(key: "services" | "business", active: boolean) {
+    const { label, items, footer } = links[key];
+    const isOpen = expanded === key;
+    return (
+      <li>
+        <button
+          type="button"
+          aria-expanded={isOpen}
+          className={cn(rowClass, currentTone(active))}
+          onClick={() => setExpanded(isOpen ? null : key)}
+        >
+          <span className="flex-1">{label}</span>
+          <CaretDownIcon className={cn("size-5 shrink-0 text-ink transition-transform", isOpen && "rotate-180")} />
+        </button>
+        {isOpen && (
+          <ul className="border-b border-cream-border py-2">
+            {[...items, footer].map((item) => (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  onClick={close}
+                  className="flex min-h-12 items-center justify-between gap-3 text-base font-medium tracking-[-0.01em] text-body"
+                >
+                  {item.label}
+                  <ArrowRightIcon className="size-3.5 shrink-0 text-muted-text rtl:-scale-x-100" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </li>
+    );
+  }
 
   return (
     <>
       <button
         ref={buttonRef}
         type="button"
-        className="grid size-10 place-items-center rounded-full border border-input text-foreground transition-colors hover:border-primary hover:text-primary xl:hidden"
+        className="-me-1.5 grid size-9 place-items-center text-current xl:hidden"
         aria-expanded={open}
         aria-controls={panelId}
         aria-label={nav.menu}
         onClick={() => setOpen(true)}
       >
-        <Menu aria-hidden="true" className="size-5" />
+        <Menu aria-hidden="true" className="size-6" strokeWidth={1.5} />
       </button>
 
       {open && (
@@ -72,65 +134,57 @@ export function MobileMenu({ locale, nav, services, allServices }: MobileMenuPro
           role="dialog"
           aria-modal="true"
           aria-label={nav.menu}
-          className="fixed inset-0 z-[60] flex flex-col overflow-y-auto bg-background xl:hidden"
+          className="fixed inset-0 z-[60] flex flex-col overflow-y-auto bg-white text-stone xl:hidden"
         >
-          <div className="site-shell flex h-[4.5rem] shrink-0 items-center justify-end">
-            <button
-              ref={closeRef}
-              type="button"
-              className="grid size-10 place-items-center rounded-full border border-input transition-colors hover:border-primary hover:text-primary"
-              aria-label={nav.closeMenu}
-              onClick={close}
-            >
-              <X aria-hidden="true" className="size-5" />
-            </button>
+          <div className="flex h-20 shrink-0 items-center justify-between px-6">
+            <BrandLogo tone="dark" tagline={site.exclusive} />
+            <div className="flex items-center gap-3.5">
+              <LanguageSwitcher locale={locale} label={nav.language} />
+              <HeaderCta locale={locale} requestQuote={site.requestQuote} signIn={site.signIn} account={nav.account} />
+              <button
+                ref={closeRef}
+                type="button"
+                className="-me-1.5 grid size-9 place-items-center text-ink"
+                aria-label={nav.closeMenu}
+                onClick={close}
+              >
+                <CloseIcon className="size-5" />
+              </button>
+            </div>
           </div>
 
-          <nav aria-label={nav.main} className="site-shell pb-10">
-            <p className="mono-label mt-2 mb-1">{nav.services}</p>
+          <nav aria-label={nav.main} className="px-5 pt-4 pb-12">
             <ul>
-              {services.map((service) => {
-                const Icon = serviceIcons[service.icon];
-                return (
-                  <li key={service.slug}>
-                    <Link href={localePath(locale, service.path)} className={linkClass} onClick={close}>
-                      <span className="flex items-center gap-3">
-                        <Icon aria-hidden="true" className="size-4 text-primary" strokeWidth={1.5} />
-                        {service.title}
-                      </span>
-                      <ArrowRight aria-hidden="true" className="size-4 text-muted-foreground rtl:-scale-x-100" />
-                    </Link>
-                  </li>
-                );
-              })}
+              {group("services", segment === "services")}
+              {group("business", segment === "business")}
               <li>
-                <Link href={localePath(locale, "/services")} className={`${linkClass} text-base text-muted-foreground`} onClick={close}>
-                  {allServices}
-                  <ArrowRight aria-hidden="true" className="size-4 rtl:-scale-x-100" />
+                <Link href={links.chauffeurs.href} onClick={close} className={cn(rowClass, currentTone(segment === "chauffeurs"))}>
+                  {links.chauffeurs.label}
                 </Link>
               </li>
-            </ul>
-
-            <ul className="mt-8">
-              {SITE_PAGES.filter(({ key }) => key !== "services").map(({ key, segment }) => (
-                <li key={key}>
-                  <Link href={localePath(locale, pagePath(segment))} className={linkClass} onClick={close}>
-                    {nav[key]}
-                    <ArrowRight aria-hidden="true" className="size-4 text-muted-foreground rtl:-scale-x-100" />
-                  </Link>
-                </li>
-              ))}
               <li>
-                <Link href={localePath(locale, "/account")} className={linkClass} onClick={close}>
-                  <span className="flex items-center gap-3">
-                    <UserRound aria-hidden="true" className="size-4 text-primary" />
-                    {nav.account}
-                  </span>
-                  <ArrowRight aria-hidden="true" className="size-4 text-muted-foreground rtl:-scale-x-100" />
+                <Link href={links.about.href} onClick={close} className={cn(rowClass, "text-ink")}>
+                  {links.about.label}
                 </Link>
+              </li>
+              <li>
+                <a href={links.contact.href} onClick={close} className={cn(rowClass, "text-ink")}>
+                  {links.contact.label}
+                </a>
               </li>
             </ul>
           </nav>
+
+          <div className="mt-auto flex flex-col gap-6 px-5 py-8" style={{ backgroundImage: "linear-gradient(125deg, #f5aa89 20%, #fce1d5 38%, #e8e8e8 79%)" }}>
+            <p className="text-[0.9375rem] font-semibold text-muted-text">{site.support}</p>
+            <a
+              href={links.contact.href}
+              onClick={close}
+              className="flex h-12 items-center justify-center rounded-full bg-ink px-6 text-[0.9375rem] font-medium text-white"
+            >
+              {site.contactUs}
+            </a>
+          </div>
         </div>
       )}
     </>

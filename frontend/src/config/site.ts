@@ -5,7 +5,7 @@ export const siteConfig = {
   legalName: "Driveo Exclusive Limited",
   shortName: "Driveo",
   url: env.siteUrl,
-  themeColor: "#12100e",
+  themeColor: "#ffffff",
   contact: {
     phone: "+44 330 043 0976",
     phoneHref: "tel:+443300430976",
@@ -22,6 +22,9 @@ export const siteConfig = {
   },
   assets: {
     logo: "/images/logo.jpg",
+    /** The DRiVEO wordmark from the design: ink for light backgrounds, white for dark ones. */
+    wordmarkDark: "/media/site/brand/logo-dark.png",
+    wordmarkLight: "/media/site/brand/logo-light.png",
     appIcon: "/icons/app-icon-512.png",
     favicon: "/icons/favicon.svg",
     heroPoster: "/media/driveo-journey-poster.jpg",

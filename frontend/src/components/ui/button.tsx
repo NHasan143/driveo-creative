@@ -2,7 +2,7 @@ import type { AnchorHTMLAttributes, ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/cn";
 import styles from "./button.module.css";
 
-type Variant = "primary" | "secondary";
+type Variant = "primary" | "secondary" | "dark" | "light";
 /** `compact` shrinks the button on phones (used in the header). */
 type Size = "md" | "lg" | "compact";
 

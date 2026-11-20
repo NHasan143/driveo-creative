@@ -1,9 +1,10 @@
 "use client";
 
-import { Check, ChevronDown, Globe } from "lucide-react";
+import { Check } from "lucide-react";
 import Link from "next/link";
 import { useSelectedLayoutSegment } from "next/navigation";
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import { CaretDownIcon, GlobeIcon } from "@/components/icons/design-icons";
 import { pagePath } from "@/config/navigation";
 import {
   LOCALE_COOKIE,
@@ -101,12 +102,9 @@ export function LanguageSwitcher({ locale, label }: LanguageSwitcherProps) {
         onClick={() => setOpen((value) => !value)}
         onKeyDown={handleTriggerKeyDown}
       >
-        <Globe aria-hidden="true" />
-        <span className={styles.full} lang={locale}>
-          {localeMeta[locale].label}
-        </span>
-        <span className={styles.short}>{localeMeta[locale].short}</span>
-        <ChevronDown aria-hidden="true" className={styles.chevron} data-open={open || undefined} />
+        <GlobeIcon aria-hidden="true" />
+        <span>{localeMeta[locale].short}</span>
+        <CaretDownIcon aria-hidden="true" className={styles.chevron} data-open={open || undefined} />
       </button>
 
       <ul

@@ -31,7 +31,7 @@ export default async function FleetPage() {
         explore={t.servicePage.explore}
         crumbs={[{ label: t.pages.breadcrumbHome, path: "/" }, { label: t.nav.fleet }]}
       >
-        <BookingBar locale={locale} labels={t.bookingBar} hoursUnit={t.booking.hoursUnit} cityNames={t.cities.names} />
+        <BookingBar locale={locale} labels={t.site.bookingBar} />
       </PageBanner>
 
       <div id="content" className="scroll-mt-24">

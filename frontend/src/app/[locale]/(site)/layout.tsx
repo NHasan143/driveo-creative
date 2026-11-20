@@ -13,22 +13,9 @@ export default async function SiteLayout({ children }: { children: ReactNode }) 
 
   return (
     <>
-      <SiteHeader
-        locale={locale}
-        nav={t.nav}
-        services={services}
-        allServices={t.pages.links.services}
-      />
+      <SiteHeader locale={locale} nav={t.nav} site={t.site.nav} services={services} />
       {children}
-      <SiteFooter
-        locale={locale}
-        nav={t.nav}
-        footer={t.footer}
-        install={t.install}
-        cityNames={t.cities.names}
-        services={services}
-        allServices={t.pages.links.services}
-      />
+      <SiteFooter locale={locale} nav={t.nav} footer={t.footer} site={t.site} cityNames={t.cities.names} />
       <CookieBanner locale={locale} policyLabel={t.footer.cookies} />
     </>
   );

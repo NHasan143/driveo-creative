@@ -1,76 +1,106 @@
-.base {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.65rem;
-  min-height: 2.75rem;
-  padding: 0.65rem 1.35rem;
-  border-radius: 999px;
-  font-family: var(--font-sans);
-  font-size: 0.92rem;
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-  transition:
-    transform 0.25s,
-    background 0.25s,
-    border-color 0.25s,
-    color 0.25s;
-}
+/* Pill buttons from the design: 44px tall, Inter Medium 15px. */
+/* In the components layer so Tailwind utilities (e.g. `hidden`, `xl:inline-flex`) can override it. */
+@layer components {
+  .base {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.625rem;
+    min-height: 2.75rem;
+    padding: 0.625rem 1.25rem;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    line-height: 1.2;
+    letter-spacing: -0.03em;
+    white-space: nowrap;
+    cursor: pointer;
+    transition:
+      transform 0.25s,
+      filter 0.25s,
+      background-color 0.25s,
+      border-color 0.25s,
+      color 0.25s;
+  }
 
-.base:hover {
-  transform: translateY(-1px);
-}
+  .base:hover {
+    transform: translateY(-1px);
+  }
 
-.base:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-  transform: none;
-}
+  .base:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+    transform: none;
+  }
 
-.base svg {
-  flex: none;
-  width: 1rem;
-  height: 1rem;
-}
+  .base svg {
+    flex: none;
+    width: 0.875rem;
+    height: 0.875rem;
+  }
 
-.primary {
-  border: 1px solid var(--primary);
-  background: var(--primary);
-  color: var(--primary-foreground);
-}
+  /* Amber-to-gold gradient with ink text: the main call to action. */
+  .primary {
+    background-image: var(--gradient-gold);
+    color: var(--ink);
+  }
 
-.secondary {
-  border: 1px solid color-mix(in oklab, var(--foreground) 25%, transparent);
-  background: color-mix(in oklab, var(--background) 65%, transparent);
-  color: var(--foreground);
-  backdrop-filter: blur(10px);
-}
+  .primary:hover {
+    filter: brightness(1.04) saturate(1.05);
+  }
 
-.primary:hover,
-.secondary:hover {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--accent-foreground);
-}
+  /* Ink pill with white text. */
+  .dark {
+    background: var(--ink);
+    color: #ffffff;
+  }
 
-.lg {
-  min-height: 3.25rem;
-  padding-inline: 1.75rem;
-  font-size: 1rem;
-}
+  .dark:hover {
+    background: #2a251e;
+  }
 
-/* Header size: the same height as the language and account pills beside it. */
-.compact {
-  gap: 0.5rem;
-  min-height: 2.5rem;
-  padding: 0.45rem 1.05rem;
-  font-size: 0.85rem;
-}
+  /* White pill with ink text, for dark backgrounds. */
+  .light {
+    background: #ffffff;
+    color: var(--ink);
+  }
 
-@media (width <= 639px) {
+  .light:hover {
+    background: var(--cream);
+  }
+
+  /* Outlined pill. */
+  .secondary {
+    border-color: var(--line-warm);
+    background: transparent;
+    color: var(--ink);
+  }
+
+  .secondary:hover {
+    border-color: var(--ink);
+  }
+
+  .lg {
+    min-height: 3rem;
+    padding-inline: 1.5rem;
+  }
+
+  /* Header size on phones: 36px tall, 12px text. */
   .compact {
-    padding-inline: 0.85rem;
-    font-size: 0.8rem;
+    min-height: 2.25rem;
+    padding: 0.5rem 0.9375rem;
+    font-size: 0.75rem;
+    letter-spacing: -0.01em;
+  }
+
+  @media (width >= 1280px) {
+    .compact {
+      min-height: 2.75rem;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.9375rem;
+      letter-spacing: -0.03em;
+    }
   }
 }

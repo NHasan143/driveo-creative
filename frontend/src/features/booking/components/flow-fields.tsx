@@ -3,7 +3,7 @@ import type { ReactNode, SelectHTMLAttributes } from "react";
 import { cn } from "@/lib/cn";
 
 export const inputClass =
-  "w-full min-h-12 rounded-xl border border-input bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:outline-none [color-scheme:dark] user-invalid:border-destructive";
+  "w-full min-h-12 rounded-xl border border-input bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:outline-none [color-scheme:light] user-invalid:border-destructive";
 
 export function FlowField({
   label,

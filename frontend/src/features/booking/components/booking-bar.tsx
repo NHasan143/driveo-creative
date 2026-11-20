@@ -1,9 +1,17 @@
 "use client";
 
-import { ArrowRight, ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useId, useState, type FormEvent, type ReactNode } from "react";
-import { CITIES, HIRE_HOURS, type City, type ServiceType } from "@/domain/booking";
+import { useEffect, useId, useState, type ComponentType, type FormEvent, type ReactNode, type SVGProps } from "react";
+import {
+  ArrowRightIcon,
+  CalendarBlankIcon,
+  CaretDownIcon,
+  CarIcon,
+  ClockIcon,
+  HourglassLowIcon,
+  MapPinIcon,
+} from "@/components/icons/design-icons";
+import { HIRE_HOURS, type City, type ServiceType } from "@/domain/booking";
 import type { Locale } from "@/i18n/config";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import { cn } from "@/lib/cn";
@@ -11,10 +19,8 @@ import { bookHref } from "../book-link";
 
 interface BookingBarProps {
   locale: Locale;
-  labels: Dictionary["bookingBar"];
-  hoursUnit: string;
-  cityNames: Dictionary["cities"]["names"];
-  /** The page's service, e.g. on a service page; "By the hour" always means hourly hire. */
+  labels: Dictionary["site"]["bookingBar"];
+  /** The page's service, e.g. on a service page; "Hourly" always means hourly hire. */
   service?: ServiceType | null;
   city?: City;
   className?: string;
@@ -28,15 +34,12 @@ function todayIso() {
   return now.toISOString().slice(0, 10);
 }
 
-function Cell({ label, htmlFor, children, className }: { label: string; htmlFor: string; children: ReactNode; className?: string }) {
+type Icon = ComponentType<SVGProps<SVGSVGElement>>;
+
+function Field({ label, htmlFor, children, className }: { label: string; htmlFor: string; children: ReactNode; className?: string }) {
   return (
-    <div
-      className={cn(
-        "relative flex min-w-0 flex-col justify-center gap-1 px-4 py-3 lg:border-e lg:border-border lg:last-of-type:border-e-0",
-        className,
-      )}
-    >
-      <label htmlFor={htmlFor} className="text-xs font-semibold text-foreground">
+    <div className={cn("flex min-w-0 flex-col gap-2.5 xl:gap-3", className)}>
+      <label htmlFor={htmlFor} className="text-xs leading-[1.2] font-semibold tracking-[-0.01em] text-cream-border xl:text-[0.9375rem]">
         {label}
       </label>
       {children}
@@ -44,15 +47,23 @@ function Cell({ label, htmlFor, children, className }: { label: string; htmlFor:
   );
 }
 
-const fieldClass =
-  "w-full min-w-0 appearance-none border-0 bg-transparent p-0 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none [color-scheme:dark]";
+const boxClass =
+  "relative flex h-10 items-center rounded-lg border border-white/14 bg-[#272521] text-white focus-within:border-amber/70";
+const inputClass =
+  "h-full w-full min-w-0 appearance-none border-0 bg-transparent px-2.5 text-xs leading-[1.2] font-medium tracking-[-0.01em] text-white placeholder:text-[#8c8b89] focus:outline-none xl:text-sm [color-scheme:dark]";
+/* Native date and time pickers stay usable but invisible, over the design's own icon. */
+const pickerClass =
+  "pe-8 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-y-0 [&::-webkit-calendar-picker-indicator]:end-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-9 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0";
 
-/** The hero search: trip type, city, places, date and time, then on to the booking page. */
-export function BookingBar({ locale, labels, hoursUnit, cityNames, service, city: presetCity, className }: BookingBarProps) {
+function EndIcon({ icon: Glyph }: { icon: Icon }) {
+  return <Glyph aria-hidden="true" className="pointer-events-none absolute end-2.5 size-3.5 text-amber" />;
+}
+
+/** The hero search on a dark glass panel: one way or hourly, pickup, date and time, then on to the booking page. */
+export function BookingBar({ locale, labels, service, city, className }: BookingBarProps) {
   const router = useRouter();
   const id = useId();
   const [hourly, setHourly] = useState(service === "hourly_hire");
-  const [city, setCity] = useState<City | "">(presetCity ?? "");
   const [minDate, setMinDate] = useState<string>();
 
   // "Today" must come from the visitor's clock, not the build server's.
@@ -80,103 +91,99 @@ export function BookingBar({ locale, labels, hoursUnit, cityNames, service, city
 
   const tab = (active: boolean) =>
     cn(
-      "min-h-9 rounded-full px-5 text-sm font-semibold transition-colors",
-      active ? "bg-primary text-primary-foreground" : "text-foreground/85 hover:text-foreground",
+      "inline-flex h-8 items-center gap-1 rounded-full px-3 text-xs leading-[1.2] font-medium tracking-[-0.03em] transition-colors xl:h-10 xl:px-4 xl:text-[0.9375rem]",
+      active ? "bg-amber text-ink" : "border border-white/33 text-cream-border hover:border-white/60",
     );
 
   return (
-    <form onSubmit={handleSubmit} aria-label={labels.label} className={cn("w-full", className)}>
-      <div role="group" aria-label={labels.label} className="mx-auto mb-4 flex w-fit gap-1 rounded-full border border-input bg-background/60 p-1 backdrop-blur-md">
+    <form
+      onSubmit={handleSubmit}
+      aria-label={labels.label}
+      className={cn(
+        "flex w-full flex-col items-center gap-6 rounded-2xl text-start border border-white/12 bg-[rgba(31,26,20,0.6)] p-3 backdrop-blur-md xl:gap-8 xl:p-6",
+        className,
+      )}
+    >
+      <div role="group" aria-label={labels.label} className="flex items-center gap-2.5 xl:gap-3.5">
         <button type="button" aria-pressed={!hourly} className={tab(!hourly)} onClick={() => setHourly(false)}>
+          <CarIcon aria-hidden="true" className="size-3.5 xl:size-4" />
           {labels.oneWay}
         </button>
         <button type="button" aria-pressed={hourly} className={tab(hourly)} onClick={() => setHourly(true)}>
-          {labels.byTheHour}
+          <HourglassLowIcon aria-hidden="true" className="size-3.5 xl:size-4" />
+          {labels.hourly}
         </button>
       </div>
 
-      <div className="grid overflow-hidden rounded-2xl border border-input bg-background/75 shadow-[0_30px_80px_-20px_color-mix(in_oklab,var(--background)_80%,transparent)] backdrop-blur-xl sm:grid-cols-2 lg:grid-cols-[1fr_1.4fr_1.4fr_1fr_0.9fr_auto] lg:rounded-full lg:ps-3">
-        <Cell label={labels.city} htmlFor={`${id}-city`} className="border-b border-border sm:border-e lg:border-b-0">
-          <div className="relative">
-            <select
-              id={`${id}-city`}
-              name="city"
-              required
-              value={city}
-              onChange={(event) => setCity(event.target.value as City)}
-              className={cn(fieldClass, "pe-5", !city && "text-muted-foreground")}
-            >
-              <option value="" disabled>
-                {labels.cityPlaceholder}
-              </option>
-              {CITIES.map((option) => (
-                <option key={option} value={option}>
-                  {cityNames[option]}
-                </option>
-              ))}
-            </select>
-            <ChevronDown aria-hidden="true" className="pointer-events-none absolute end-0 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-          </div>
-        </Cell>
-
-        <Cell label={labels.pickup} htmlFor={`${id}-pickup`} className="border-b border-border lg:border-b-0">
-          <input
-            id={`${id}-pickup`}
-            name="pickup"
-            required
-            minLength={2}
-            maxLength={300}
-            autoComplete="off"
-            placeholder={labels.pickupPlaceholder}
-            className={fieldClass}
-          />
-        </Cell>
-
-        {hourly ? (
-          <Cell label={labels.duration} htmlFor={`${id}-hours`} className="border-b border-border sm:border-e lg:border-b-0">
-            <div className="relative">
-              <select id={`${id}-hours`} name="hours" defaultValue={HIRE_HOURS.min} className={cn(fieldClass, "pe-5")}>
-                {HOUR_OPTIONS.map((hours) => (
-                  <option key={hours} value={hours}>
-                    {hours} {hoursUnit}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown aria-hidden="true" className="pointer-events-none absolute end-0 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-            </div>
-          </Cell>
-        ) : (
-          <Cell label={labels.dropoff} htmlFor={`${id}-dropoff`} className="border-b border-border sm:border-e lg:border-b-0">
+      <div className="grid w-full grid-cols-2 gap-x-3 gap-y-4 xl:flex xl:items-end xl:gap-5">
+        <Field label={labels.pickup} htmlFor={`${id}-pickup`} className="col-span-2 xl:min-w-[13.75rem] xl:flex-1">
+          <div className={boxClass}>
+            <MapPinIcon aria-hidden="true" className="pointer-events-none ms-3 size-3.5 shrink-0 text-amber" />
             <input
-              id={`${id}-dropoff`}
-              name="dropoff"
+              id={`${id}-pickup`}
+              name="pickup"
               required
               minLength={2}
               maxLength={300}
               autoComplete="off"
-              placeholder={labels.dropoffPlaceholder}
-              className={fieldClass}
+              placeholder={labels.pickupPlaceholder}
+              className={cn(inputClass, "ps-1.5")}
             />
-          </Cell>
+          </div>
+        </Field>
+
+        {hourly ? (
+          <Field label={labels.duration} htmlFor={`${id}-hours`} className="col-span-2 xl:w-[10.9375rem] xl:shrink-0">
+            <div className={boxClass}>
+              <select id={`${id}-hours`} name="hours" defaultValue={HIRE_HOURS.min} className={cn(inputClass, "pe-8")}>
+                {HOUR_OPTIONS.map((hours) => (
+                  <option key={hours} value={hours} className="bg-ink">
+                    {labels.hours.replace("{count}", String(hours))}
+                  </option>
+                ))}
+              </select>
+              <EndIcon icon={CaretDownIcon} />
+            </div>
+          </Field>
+        ) : (
+          <Field label={labels.dropoff} htmlFor={`${id}-dropoff`} className="col-span-2 xl:min-w-[13.75rem] xl:flex-1">
+            <div className={boxClass}>
+              <MapPinIcon aria-hidden="true" className="pointer-events-none ms-3 size-3.5 shrink-0 text-amber" />
+              <input
+                id={`${id}-dropoff`}
+                name="dropoff"
+                required
+                minLength={2}
+                maxLength={300}
+                autoComplete="off"
+                placeholder={labels.dropoffPlaceholder}
+                className={cn(inputClass, "ps-1.5")}
+              />
+            </div>
+          </Field>
         )}
 
-        <Cell label={labels.date} htmlFor={`${id}-date`} className="border-b border-border lg:border-b-0">
-          <input id={`${id}-date`} name="date" type="date" required min={minDate} className={fieldClass} />
-        </Cell>
+        <Field label={labels.date} htmlFor={`${id}-date`} className="xl:w-40 xl:shrink-0">
+          <div className={boxClass}>
+            <input id={`${id}-date`} name="date" type="date" required min={minDate} className={cn(inputClass, pickerClass)} />
+            <EndIcon icon={CalendarBlankIcon} />
+          </div>
+        </Field>
 
-        <Cell label={labels.time} htmlFor={`${id}-time`} className="border-b border-border sm:border-e sm:border-b-0">
-          <input id={`${id}-time`} name="time" type="time" required className={fieldClass} />
-        </Cell>
+        <Field label={labels.time} htmlFor={`${id}-time`} className="xl:w-40 xl:shrink-0">
+          <div className={boxClass}>
+            <input id={`${id}-time`} name="time" type="time" required className={cn(inputClass, pickerClass)} />
+            <EndIcon icon={ClockIcon} />
+          </div>
+        </Field>
 
-        <div className="flex items-center p-3 lg:ps-1">
-          <button
-            type="submit"
-            className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-accent lg:w-auto"
-          >
-            {labels.submit}
-            <ArrowRight aria-hidden="true" className="size-4 rtl:-scale-x-100" />
-          </button>
-        </div>
+        <button
+          type="submit"
+          className="col-span-2 mt-1 inline-flex h-12 items-center justify-center gap-2.5 rounded-full bg-gold px-5 text-[0.9375rem] leading-[1.2] font-medium tracking-[-0.01em] text-ink transition-[filter,transform] hover:-translate-y-px hover:brightness-105 xl:mt-0 xl:h-10 xl:shrink-0"
+        >
+          {labels.submit}
+          <ArrowRightIcon aria-hidden="true" className="size-3.5 rtl:-scale-x-100" />
+        </button>
       </div>
     </form>
   );

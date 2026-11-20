@@ -18,7 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export const viewport: Viewport = {
   themeColor: siteConfig.themeColor,
-  colorScheme: "dark",
+  colorScheme: "light",
 };
 
 export default async function LocaleLayout({ children }: LayoutProps<"/[locale]">) {

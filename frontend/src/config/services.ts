@@ -17,6 +17,22 @@ export function servicePath(type: ServiceType) {
   return `/services/${SERVICE_SLUGS[type]}`;
 }
 
+/** Photos for the service page's "How it works" steps, in step order. */
+export const serviceStepImages = [
+  "/media/site/services/step-hours.jpg",
+  "/media/site/services/step-vehicle.jpg",
+  "/media/site/services/step-stops.jpg",
+  "/media/site/services/step-ride.jpg",
+];
+
+/** Photos for the service page's "Use cases", in the order of the dictionary's `useCases.items`. */
+export const serviceUseCaseImages = [
+  "/media/site/services/use-meetings.jpg",
+  "/media/site/services/use-shopping.jpg",
+  "/media/site/services/use-exploration.jpg",
+  "/media/site/services/use-events.jpg",
+];
+
 interface ServiceMedia {
   /** Portrait photograph for the services gallery. */
   collection: string;
@@ -41,7 +57,7 @@ export const serviceMedia: Record<ServiceType, ServiceMedia> = {
   },
   hourly_hire: {
     collection: "/media/services/gallery-hourly-hire.png",
-    hero: "/media/london-thames-night.jpg",
+    hero: "/media/site/services/hourly-hero.jpg",
     overview: "/media/fleet-business-2026.jpg",
     vehicles: ["business_class", "first_class", "business_van"],
   },

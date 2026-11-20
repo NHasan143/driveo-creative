@@ -1,6 +1,8 @@
-/** Top-level site pages, in navigation order. `segment` is the route folder under app/[locale]/(site). */
+/** Top-level site pages, for the sitemap. `segment` is the route folder under app/[locale]/(site). */
 export const SITE_PAGES = [
   { key: "services", segment: "services" },
+  { key: "business", segment: "business" },
+  { key: "chauffeurs", segment: "chauffeurs" },
   { key: "fleet", segment: "fleet" },
   { key: "cities", segment: "cities" },
   { key: "process", segment: "process" },
@@ -13,3 +15,13 @@ export type SitePageKey = (typeof SITE_PAGES)[number]["key"];
 export function pagePath(segment: string | null) {
   return segment ? `/${segment}` : "/";
 }
+
+/** In-page anchors the header and footer link to. */
+export const ANCHORS = {
+  /** The footer's contact column, on every page. */
+  contact: "contact",
+  /** The home page's "Why choose us" section. */
+  about: "about",
+  /** The FAQ section on pages that have one. */
+  faq: "faq",
+} as const;

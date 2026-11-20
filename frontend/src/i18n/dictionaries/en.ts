@@ -1,3 +1,5 @@
+import { enSite } from "./site/en";
+
 export const en = {
   meta: {
     title: "Driveo Exclusive | Private Chauffeur Service",
@@ -55,7 +57,7 @@ export const en = {
         copy: "One fixed price agreed before you travel — from boardroom to residence, restaurant to hotel, or city to coast.",
       },
       hourly_hire: {
-        label: "Retainer",
+        label: "Hourly service",
         title: "Hourly hire",
         copy: "Your chauffeur stays with you for meetings, viewings, events and every stop in between.",
       },
@@ -313,10 +315,12 @@ export const en = {
           "No surge, no meter, no surprises",
         ],
         hourly_hire: [
-          "From 2 to 16 hours",
-          "15 miles per hour included within Greater London",
-          "Your chauffeur waits between every stop",
-          "Meetings, viewings and events",
+          "Your Own Itinerary: Choose your destinations and decide where your day takes you.",
+          "More Time, Less Waiting: Your chauffeur is ready whenever you need to move to your next stop.",
+          "Comfort Along the Way: Enjoy a premium vehicle and a relaxing space between destinations.",
+          "One Booking, Multiple Stops: Manage your entire journey with a single reservation.",
+          "Professional Service: Travel with experienced chauffeurs who value your comfort and privacy.",
+          "Flexible Duration: Choose a booking period that works around your schedule.",
         ],
         private_event: [
           "Weddings, premieres and long road journeys",
@@ -476,26 +480,27 @@ export const en = {
             description:
               "Hire a chauffeur by the hour, from 2 to 16 hours, for meetings, viewings and events. 15 miles per hour included within Greater London.",
           },
-          title: "A chauffeur at your side, by the hour.",
+          title: "Your Day, Your Way.",
           facts: [
             { value: "2–16", label: "Hours per booking" },
             { value: "15 mi", label: "Included per hour in Greater London" },
             { value: "1", label: "Dedicated chauffeur" },
             { value: "3", label: "Vehicle classes" },
           ],
-          overviewTitle: "Every stop, one chauffeur.",
+          overviewTitle: "Freedom to travel, on your schedule.",
           overviewBody:
-            "Book a chauffeur for as long as your day needs. They stay with you between meetings, viewings and events, waiting quietly at every stop. Each hour includes 15 miles within Greater London; journeys outside this area may be charged differently.",
+            "Enjoy the convenience of having a private chauffeur for as long as you need. Whether you're attending multiple meetings, exploring the city, or planning a day of errands, your chauffeur stays with you throughout the journey. Travel between destinations at your own pace without the hassle of arranging separate rides.",
           features: [
-            { title: "From 2 to 16 hours", copy: "Choose the hours that fit your schedule." },
-            { title: "Waits at every stop", copy: "No need to book a new car between appointments." },
-            { title: "Mileage included", copy: "15 miles per hour within Greater London." },
-            { title: "One price for the day", copy: "Priced by the hour before you book." },
+            { title: "Professional Chauffeurs", copy: "Experienced, courteous drivers who put your comfort and safety first." },
+            { title: "Time Matters", copy: "Your chauffeur is ready when you are, so every stop runs to your schedule." },
+            { title: "Comfort in Every Detail", copy: "Premium vehicles and carefully considered details make every ride enjoyable." },
+            { title: "Service That Cares", copy: "Personal attention and dependable support throughout your journey." },
           ],
           steps: [
-            { title: "Plan your day", copy: "Choose the city, start time and number of hours." },
-            { title: "Book at a fixed price", copy: "See the total for your hours, then book." },
-            { title: "Go at your pace", copy: "Your chauffeur stays with you until the last stop." },
+            { title: "Choose Your Hours", copy: "Select how long you need a chauffeur." },
+            { title: "Pick Your Vehicle", copy: "Choose a vehicle that suits your journey." },
+            { title: "Set Your Stops", copy: "Plan the places you want to go along the way." },
+            { title: "Enjoy the Ride", copy: "Sit back while your chauffeur takes care of the rest." },
           ],
         },
         private_event: {
@@ -721,6 +726,7 @@ export const en = {
       unavailable: "Accounts aren't available in this preview of the website.",
     },
   },
+  site: enSite,
   notFound: {
     eyebrow: "Error 404",
     title: "This road does not lead anywhere.",

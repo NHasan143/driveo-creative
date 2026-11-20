@@ -1,5 +1,6 @@
 "use client";
 
+import { useSelectedLayoutSegment } from "next/navigation";
 import { useSyncExternalStore, type ReactNode } from "react";
 
 function subscribe(onChange: () => void) {
@@ -7,18 +8,25 @@ function subscribe(onChange: () => void) {
   return () => window.removeEventListener("scroll", onChange);
 }
 
-/** Transparent over the page's hero; a solid bar once the visitor scrolls. */
+/**
+ * White bar on every page. On the home page it starts transparent, with white
+ * text over the hero photograph, and turns white once the visitor scrolls.
+ * Children style themselves with `group-data-[overlay]/header:` variants.
+ */
 export function HeaderFrame({ children }: { children: ReactNode }) {
+  const home = useSelectedLayoutSegment() === null;
   const scrolled = useSyncExternalStore(
     subscribe,
     () => window.scrollY > 24,
     () => false,
   );
+  const overlay = home && !scrolled;
 
   return (
     <header
-      data-scrolled={scrolled || undefined}
-      className="fixed inset-x-0 top-0 z-50 border-b border-transparent bg-gradient-to-b from-background/70 to-transparent transition-[background-color,border-color] duration-300 data-[scrolled]:border-border data-[scrolled]:bg-background/92 data-[scrolled]:backdrop-blur-md"
+      data-overlay={overlay || undefined}
+      data-home={home || undefined}
+      className="group/header fixed inset-x-0 top-0 z-50 bg-white text-stone transition-[background-color,box-shadow,color] duration-300 data-[overlay]:bg-transparent data-[overlay]:text-white [&:not([data-overlay])]:shadow-[0_1px_0_var(--cream-border)]"
     >
       {children}
     </header>

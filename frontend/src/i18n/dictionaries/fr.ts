@@ -1,4 +1,5 @@
 import type { Dictionary } from "./en";
+import { frSite } from "./site/fr";
 
 export const fr: Dictionary = {
   meta: {
@@ -57,7 +58,7 @@ export const fr: Dictionary = {
         copy: "Un prix fixe convenu avant le départ — du bureau à la résidence, du restaurant à l’hôtel, ou de la ville à la côte.",
       },
       hourly_hire: {
-        label: "Mise à disposition",
+        label: "Service à l’heure",
         title: "Location horaire",
         copy: "Votre chauffeur reste avec vous pour les réunions, visites, événements et chaque arrêt intermédiaire.",
       },
@@ -317,10 +318,12 @@ export const fr: Dictionary = {
           "Pas de majoration, pas de compteur, pas de surprise",
         ],
         hourly_hire: [
-          "De 2 à 16 heures",
-          "15 miles par heure inclus dans le Grand Londres",
-          "Votre chauffeur attend à chaque arrêt",
-          "Réunions, visites et événements",
+          "Votre propre itinéraire : choisissez vos destinations et décidez du programme de votre journée.",
+          "Plus de temps, moins d’attente : votre chauffeur est prêt dès que vous voulez rejoindre l’arrêt suivant.",
+          "Le confort en chemin : profitez d’un véhicule haut de gamme et d’un espace reposant entre deux destinations.",
+          "Une réservation, plusieurs arrêts : gérez tout votre trajet avec une seule réservation.",
+          "Un service professionnel : voyagez avec des chauffeurs expérimentés qui respectent votre confort et votre vie privée.",
+          "Une durée flexible : choisissez une durée adaptée à votre emploi du temps.",
         ],
         private_event: [
           "Mariages, avant-premières et longs trajets",
@@ -485,26 +488,27 @@ export const fr: Dictionary = {
             description:
               "Un chauffeur à l’heure, de 2 à 16 heures, pour vos réunions, visites et événements. 15 miles par heure inclus dans le Grand Londres.",
           },
-          title: "Un chauffeur à vos côtés, à l’heure.",
+          title: "Votre journée, à votre façon.",
           facts: [
             { value: "2–16", label: "Heures par réservation" },
             { value: "15 mi", label: "Inclus par heure dans le Grand Londres" },
             { value: "1", label: "Chauffeur dédié" },
             { value: "3", label: "Classes de véhicules" },
           ],
-          overviewTitle: "Chaque arrêt, un seul chauffeur.",
+          overviewTitle: "La liberté de voyager, à votre rythme.",
           overviewBody:
-            "Réservez un chauffeur aussi longtemps que votre journée l’exige. Il reste avec vous entre réunions, visites et événements, et attend discrètement à chaque arrêt. Chaque heure inclut 15 miles dans le Grand Londres ; les trajets hors de cette zone peuvent être facturés différemment.",
+            "Profitez d’un chauffeur privé aussi longtemps que nécessaire. Que vous enchaîniez les réunions, découvriez la ville ou planifiiez une journée de courses, votre chauffeur reste avec vous tout au long du trajet. Passez d’une destination à l’autre à votre rythme, sans avoir à réserver plusieurs courses.",
           features: [
-            { title: "De 2 à 16 heures", copy: "Choisissez les heures adaptées à votre agenda." },
-            { title: "Attente à chaque arrêt", copy: "Inutile de réserver une nouvelle voiture entre deux rendez-vous." },
-            { title: "Kilométrage inclus", copy: "15 miles par heure dans le Grand Londres." },
-            { title: "Un prix pour la journée", copy: "Prix à l’heure connu avant de réserver." },
+            { title: "Chauffeurs professionnels", copy: "Des chauffeurs expérimentés et courtois qui font passer votre confort et votre sécurité avant tout." },
+            { title: "Le temps compte", copy: "Votre chauffeur est prêt quand vous l’êtes : chaque arrêt suit votre programme." },
+            { title: "Le confort dans chaque détail", copy: "Des véhicules haut de gamme et des détails soignés rendent chaque trajet agréable." },
+            { title: "Un service attentionné", copy: "Une attention personnelle et une assistance fiable tout au long de votre trajet." },
           ],
           steps: [
-            { title: "Planifiez votre journée", copy: "Choisissez la ville, l’heure de début et le nombre d’heures." },
-            { title: "Réservez à prix fixe", copy: "Voyez le total pour vos heures, puis réservez." },
-            { title: "Avancez à votre rythme", copy: "Votre chauffeur reste avec vous jusqu’au dernier arrêt." },
+            { title: "Choisissez vos heures", copy: "Indiquez combien de temps vous avez besoin d’un chauffeur." },
+            { title: "Choisissez votre véhicule", copy: "Sélectionnez le véhicule adapté à votre trajet." },
+            { title: "Fixez vos arrêts", copy: "Prévoyez les lieux où vous souhaitez vous rendre." },
+            { title: "Profitez du trajet", copy: "Installez-vous, votre chauffeur s’occupe du reste." },
           ],
         },
         private_event: {
@@ -730,6 +734,7 @@ export const fr: Dictionary = {
       unavailable: "Les comptes ne sont pas disponibles dans cet aperçu du site.",
     },
   },
+  site: frSite,
   notFound: {
     eyebrow: "Erreur 404",
     title: "Cette route ne mène nulle part.",

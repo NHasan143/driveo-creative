@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { localePath, type Locale } from "@/i18n/config";
+import { cn } from "@/lib/cn";
 import { isRemoteImage } from "@/lib/remote-image";
 
 export interface Crumb {
@@ -15,7 +16,7 @@ interface PageBannerProps {
   locale: Locale;
   title: string;
   intro?: string;
-  /** Without an image the banner is a plain tinted band. */
+  /** Without an image the banner is a plain cream band. */
   image?: string;
   /** Usually the booking bar. */
   children?: ReactNode;
@@ -24,12 +25,15 @@ interface PageBannerProps {
   explore?: string;
 }
 
-/** Inner-page hero: photo, centred title and the booking bar, with breadcrumbs underneath. */
+/** Inner-page hero in the design's style: photo under a dark fade, white serif title and the booking bar. */
 export function PageBanner({ locale, title, intro, image, children, crumbs, explore }: PageBannerProps) {
   return (
     <>
       <section
-        className={`relative isolate flex items-end overflow-hidden bg-secondary ${image ? "min-h-[78svh]" : "min-h-[44svh]"}`}
+        className={cn(
+          "relative isolate flex items-end overflow-hidden pt-[var(--header-height)]",
+          image ? "min-h-[41rem] bg-[#f4f4f4] text-white" : "min-h-[22rem] bg-cream text-ink",
+        )}
       >
         {image && (
           <>
@@ -44,22 +48,31 @@ export function PageBanner({ locale, title, intro, image, children, crumbs, expl
             />
             <div
               aria-hidden="true"
-              className="absolute inset-0 -z-10 bg-[linear-gradient(to_bottom,color-mix(in_oklab,var(--background)_60%,transparent)_0%,color-mix(in_oklab,var(--background)_35%,transparent)_45%,var(--background)_100%)]"
+              className="absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgba(0,0,0,0.16)_9%,rgba(0,0,0,0.05)_31%,rgba(0,0,0,0.02)_64%,rgba(0,0,0,0.5)_84%)]"
+            />
+            <div
+              aria-hidden="true"
+              className="absolute inset-x-0 bottom-0 -z-10 h-[56%] bg-[linear-gradient(180deg,rgba(25,22,18,0.2)_10%,rgb(25,22,18)_100%)] blur-[13.5px]"
             />
           </>
         )}
-        <div className="site-shell pt-36 pb-10 sm:pb-14">
-          <h1 className="mx-auto max-w-4xl text-center font-display text-[clamp(2.4rem,5.5vw,4.6rem)] leading-[1.04] font-medium text-balance">
+        <div className="site-shell pt-16 pb-8 xl:pb-6">
+          <h1 className="mx-auto max-w-4xl text-center font-display text-[2.5rem] leading-none font-medium tracking-[-0.02em] text-balance xl:text-[4.25rem]">
             {title}
           </h1>
           {intro && (
-            <p className="mx-auto mt-5 max-w-2xl text-center text-base leading-7 text-foreground/80 sm:text-lg">{intro}</p>
+            <p className={cn("mx-auto mt-4 max-w-[27rem] text-center text-[0.9375rem] leading-[1.6] font-medium tracking-[-0.03em]", image ? "text-[#e9e9e9]" : "text-muted-text")}>
+              {intro}
+            </p>
           )}
-          {children && <div className="mx-auto mt-10 max-w-6xl">{children}</div>}
+          {children && <div className="mx-auto mt-8 max-w-[63rem]">{children}</div>}
           {explore && (
             <a
               href="#content"
-              className="mx-auto mt-8 flex w-fit items-center gap-2 text-sm font-semibold text-foreground/80 transition-colors hover:text-foreground"
+              className={cn(
+                "mx-auto mt-6 flex w-fit items-center gap-2 text-sm font-medium transition-opacity hover:opacity-75",
+                image ? "text-white/85" : "text-muted-text",
+              )}
             >
               {explore} <ArrowDown aria-hidden="true" className="size-4" />
             </a>
@@ -68,12 +81,12 @@ export function PageBanner({ locale, title, intro, image, children, crumbs, expl
       </section>
 
       <nav aria-label="Breadcrumb" className="site-shell py-6">
-        <ol className="flex flex-wrap items-center justify-center gap-2 text-sm text-muted-foreground">
+        <ol className="flex flex-wrap items-center justify-center gap-2 text-sm text-muted-text">
           {crumbs.map((crumb, index) => (
             <li key={crumb.label} className="flex items-center gap-2">
               {index > 0 && <ChevronRight aria-hidden="true" className="size-3.5 rtl:-scale-x-100" />}
               {crumb.path ? (
-                <Link href={localePath(locale, crumb.path)} className="text-primary transition-colors hover:text-foreground">
+                <Link href={localePath(locale, crumb.path)} className="text-amber-text transition-colors hover:text-ink">
                   {crumb.label}
                 </Link>
               ) : (
